@@ -34,48 +34,52 @@
 
   <main>
     <section class="hero card">
-      <div class="hero-top">
-        <div class="hero-l">
-          <h1>{{h1}}</h1>
-          <form class="ask" id="ask" autocomplete="off">
-            <label class="sr" for="ipIn" data-i="ph"></label>
-            <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
-            <button class="btn pri" id="go" type="submit" data-i="go"></button>
-          </form>
-          <div class="mine" id="mine"><span class="m" data-i="mine_h"></span><button type="button" class="chip sk" id="m4" disabled><em>IPv4</em><b>…</b></button><button type="button" class="chip sk" id="m6" disabled><em>IPv6</em><b>…</b></button></div>
+      <div class="hero-h">
+        <h1>{{h1}}</h1>
+        <form class="ask" id="ask" autocomplete="off">
+          <label class="sr" for="ipIn" data-i="ph"></label>
+          <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
+          <button class="btn pri" id="go" type="submit" data-i="go"></button>
+        </form>
+      </div>
+      <div class="hero-b">
+        <div class="col">
+          <div class="score">
+            <div class="gauge" id="gauge" data-g="">
+              <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/><g id="gSeg"></g></svg>
+              <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
+            </div>
+            <div class="verdict">
+              <p class="v-h" id="vHead" data-i="checking"></p>
+              <p class="v-d" id="vText">&nbsp;</p>
+              <p class="parts" id="parts">&nbsp;</p>
+            </div>
+          </div>
+          <div class="sec-h"><span data-i="h_id"></span><button class="mini" id="eye" type="button" data-i="hide"></button></div>
+          <ul class="kv" id="facts">
+            <li><span data-i="r_ip"></span><b class="ipv"><i class="skl"></i></b></li>
+            <li><span data-i="r_loc"></span><b><i class="skl"></i></b></li>
+            <li><span data-i="r_net"></span><b><i class="skl"></i></b></li>
+            <li><span data-i="r_host"></span><b><i class="skl"></i></b></li>
+          </ul>
+          <div class="sec-h"><span data-i="mine_h"></span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more"></a></div>
+          <ul class="exits" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
         </div>
-        <div class="hero-r">
-          <div class="gauge" id="gauge" data-g="">
-            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/><g id="gSeg"></g></svg>
-            <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
-          </div>
-          <div class="verdict">
-            <p class="v-h" id="vHead" data-i="checking"></p>
-            <p class="v-d" id="vText">&nbsp;</p>
-            <p class="parts" id="parts">&nbsp;</p>
-          </div>
+        <div class="col">
+          <div class="sec-h"><span data-i="h_finds"></span></div>
+          <ul id="finds">{{finds}}</ul>
         </div>
       </div>
-      <dl class="facts" id="facts">
-        <div><dt><span data-i="r_ip"></span><button class="mini" id="eye" type="button" data-i="hide"></button></dt><dd class="ipv sk-l"></dd></div>
-        <div><dt data-i="r_loc"></dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_net"></dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_type"></dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_reg"></dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_host"></dt><dd class="sk-l"></dd></div>
-      </dl>
-      <div class="hero-notes"><h2 data-i="h_notes"></h2><ul class="notes" id="notes"><li class="sk-l"></li><li class="sk-l"></li></ul></div>
+      <div class="bar">
+        <div class="prog" id="prog"><i></i></div>
+        <span class="prog-t" id="progTxt">&nbsp;</span>
+        <div class="acts"><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun"></span></button></div>
+      </div>
     </section>
 
-    <section class="card pad"><h2 data-i="h_uses"></h2><ul class="uses" id="uses">{{uses}}</ul></section>
-
-
-    <section class="card pad">
-      <div class="src-h"><h2 data-i="h_src"></h2><span class="m num" id="srcN"></span></div>
-      <div class="tbl-wrap"><table class="src" id="src">
-        <thead><tr><th data-i="col_item"></th><th data-i="col_result"></th><th data-i="col_by"></th></tr></thead>
-        <tbody>{{srcRows}}</tbody>
-      </table></div>
+    <section class="probes card">
+      <h2 data-i="h_src"></h2>
+      <div class="pgroups">{{groups}}</div>
       <p class="src-foot m" id="srcFoot">&nbsp;</p>
     </section>
 

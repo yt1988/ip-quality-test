@@ -9,7 +9,7 @@ export default {
   h1: "あなたの IP はどれだけクリーン？",
 
   lang_label: "言語", faq_h: "ヘルプ", th_system: "テーマ：システム", th_light: "テーマ：ライト", th_dark: "テーマ：ダーク",
-  ph: "IPv4 または IPv6 アドレス", go: "チェック", mine_h: "あなたの出口：", none: "なし",
+  ph: "IPv4 または IPv6 アドレス", go: "チェック", mine_h: "あなたの出口", none: "なし",
   checking: "チェック中…", progress: "{of} 件中 {n} 件が応答",
   err_h: "チェックできませんでした", err_net: "サーバーから応答がありません。少し待ってからもう一度お試しください。", err_bad_ip: "IP アドレスではありません。",
   err_private: "プライベートまたは予約済みのアドレスです。どのデータベースにも情報がありません。", err_rate: "1 分間の照会が多すぎます。少し待ってからお試しください。",
@@ -114,6 +114,7 @@ export default {
   col_result: "結果", f_clean: "プロキシ・VPN 判定なし",
   p_why: "{why}：−{n} 点",
   col_item: "項目", col_by: "ソース", q_loc: "場所", q_type: "ネットワーク種別", q_anon: "プロキシ / VPN", q_tor: "Tor 出口", q_risk: "リスクスコア", q_abuse: "不正報告", q_reg: "登録情報", q_ports: "開いているポート", q_dnsbl: "メールブラックリスト", q_nodata: "データなし", q_clean: "{n} 個のソースすべて判定なし", q_tor_yes: "Tor 出口", q_tor_no: "出口ではない（{n} 個）", q_abuse_yes: "不正報告あり", q_abuse_no: "報告なし", q_by_asn: "（ネットワーク）", q_bl_clean: "{n} 個すべて未掲載",
+  h_finds: "検査結果", fl_type: "ネットワーク", fl_native: "ネイティブ", fl_anon: "プロキシ / VPN", fl_tor: "Tor", fl_risk: "リスク", fl_abuse: "不正報告", fl_dnsbl: "ブラックリスト", fl_stream: "動画配信", fl_ai: "AI サービス", fl_captcha: "CAPTCHA", fl_account: "登録・決済", fl_mail: "メール送信", g_intel: "IP インテリジェンス", g_reg: "登録情報とスキャン", g_dnsbl: "メールブラックリスト", g_reg_cc: "登録国", g_as_cc: "ネットワーク登録国", rerun: "再チェック", bl_in: "掲載", fv_native: "ネイティブ：{reg}で登録され、{reg}にある", fv_broadcast: "ブロードキャスト：{reg}で登録、{cc}にある", fv_broadcast_as: "おそらくブロードキャスト：ネットワークは{reg}で登録、{cc}にある", fv_risk_avg: "平均 {v}", fv_abuse_yes: "{of} 個中 {n} 個が不正を報告", fv_cgnat: "多数で共有",
   docs: [
     ["スコアの計算方法は？", "どのアドレスも 100 点から始まり、ソースの結果に応じて減点します。データセンターは最大 20、プロキシ 20、VPN 15、Tor 40、不正報告 10、平均不正スコアで最大 35、メールブラックリスト 1 件につき 6（最大 24）。フラグは同意したソースの割合で数えるので、1 つだけなら一部しか減りません。\nランク：A 85 以上、B 70 以上、C 50 以上、D 30 以上、F 30 未満。ソース表の下に内訳が出ます。"],
     ["どのソースを使っていますか？", "キー不要：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（地域インターネットレジストリ）、ip.guide、Shodan InternetDB、Tor Project の出口リスト、Cloudflare（自分のアドレスのみ）。サイト運営者が無料 API キーを設定すると IPQualityScore、AbuseIPDB、Scamalytics、ipdata も加わります。各行はそのソース自身のページにリンクしています。"],

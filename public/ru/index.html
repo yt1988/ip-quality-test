@@ -37,7 +37,7 @@
 <meta name="twitter:description" content="Десяток источников и 8 чёрных списков — одна оценка">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IPQS · 1ms.dog","url":"https://ipqs.1ms.dog/ru/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Проверьте репутацию IP сразу в десятке баз IP-аналитики и 8 чёрных списках: оценка от 0 до 100, домашний или дата-центр, нативный или «вещательный» IP, метки VPN, прокси и Tor, и что это значит для стриминга, ChatGPT, капчи и регистраций. Бесплатно.","inLanguage":"ru","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Как считается оценка?","acceptedAnswer":{"@type":"Answer","text":"Каждый адрес начинает со 100 и теряет баллы за то, что нашли источники: до 20 за сеть дата-центра, 20 за метку прокси и 15 за VPN, 40 за Tor, 10 за жалобы на злоупотребления, до 35 за средний фрод-скор и по 6 за каждый почтовый чёрный список (не больше 24). Метки учитываются по доле согласных источников, поэтому один источник снимает лишь часть. Классы: A от 85, B от 70, C от 50, D от 30, F ниже 30. Разбивка под таблицей показывает каждое снятие."}},{"@type":"Question","name":"Какие источники используются?","acceptedAnswer":{"@type":"Answer","text":"Без ключей: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (региональные регистратуры), ip.guide, Shodan InternetDB, список выходов Tor Project и Cloudflare (только ваш адрес). С бесплатными API-ключами владелец сайта может добавить IPQualityScore, AbuseIPDB, Scamalytics и ipdata. Каждая строка ведёт на страницу источника для проверки."}},{"@type":"Question","name":"Что такое нативный и вещательный IP?","acceptedAnswer":{"@type":"Answer","text":"Нативный IP используется в стране, где он зарегистрирован. Вещательный зарегистрирован в одной стране (часто хостинг-компанией), а анонсируется из другой. Большинство геобаз смотрят на реальное местоположение, но некоторые сервисы — на регистрацию, поэтому с вещательным IP вы можете выглядеть так, будто находитесь в другой стране. Мы сравниваем запись региональной регистратуры (RDAP) с местоположением, которое дают большинство баз. Если в записи нет страны (часто у ARIN), берём страну сети, которой принадлежит блок."}},{"@type":"Question","name":"Домашний или дата-центр: в чём разница?","acceptedAnswer":{"@type":"Answer","text":"Сайты считают адреса дата-центров серверами, VPN и прокси, а не людьми. Стриминг, билетные сервисы, банки и формы регистрации их блокируют или требуют доп. проверку. Домашние и мобильные адреса выглядят как обычные пользователи; мобильные к тому же делят многие (CGNAT), поэтому их почти не блокируют."}},{"@type":"Question","name":"Почему источники расходятся?","acceptedAnswer":{"@type":"Answer","text":"У каждого свои данные: одни знают только, какие сети принадлежат хостингам, другие держат ханипоты или собирают жалобы на мошенничество от клиентов. VPN-сервер может быть известен одному и ещё неизвестен другому. Поэтому мы считаем, сколько источников согласны, а не верим одному."}},{"@type":"Question","name":"Оценка низкая. Что делать?","acceptedAnswer":{"@type":"Answer","text":"Если это домашний интернет: жалоба или запись в чёрном списке часто значит, что устройство в сети было заражено или работало как прокси. Почистите его и подайте запрос на удаление (у каждого списка есть ссылка). Если это VPN или сервер, оценка в основном отражает тип сети и не изменится — выберите провайдера с домашними или менее используемыми адресами."}},{"@type":"Question","name":"Что-нибудь сохраняется?","acceptedAnswer":{"@type":"Answer","text":"Результаты кэшируются на шесть часов для каждого адреса, чтобы не опрашивать бесплатные источники при каждом визите. Больше ничего не хранится, а определение IPv4/IPv6 идёт в вашем браузере."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.4bab5a68cb.css">
+<link rel="stylesheet" href="/assets/app.bc7150d281.css">
 </head>
 <body>
 <div class="app">
@@ -65,48 +65,52 @@
 
   <main>
     <section class="hero card">
-      <div class="hero-top">
-        <div class="hero-l">
-          <h1>Насколько чист ваш IP?</h1>
-          <form class="ask" id="ask" autocomplete="off">
-            <label class="sr" for="ipIn" data-i="ph">Любой адрес IPv4 или IPv6</label>
-            <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
-            <button class="btn pri" id="go" type="submit" data-i="go">Проверить</button>
-          </form>
-          <div class="mine" id="mine"><span class="m" data-i="mine_h">Ваши выходы:</span><button type="button" class="chip sk" id="m4" disabled><em>IPv4</em><b>…</b></button><button type="button" class="chip sk" id="m6" disabled><em>IPv6</em><b>…</b></button></div>
+      <div class="hero-h">
+        <h1>Насколько чист ваш IP?</h1>
+        <form class="ask" id="ask" autocomplete="off">
+          <label class="sr" for="ipIn" data-i="ph">Любой адрес IPv4 или IPv6</label>
+          <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
+          <button class="btn pri" id="go" type="submit" data-i="go">Проверить</button>
+        </form>
+      </div>
+      <div class="hero-b">
+        <div class="col">
+          <div class="score">
+            <div class="gauge" id="gauge" data-g="">
+              <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/><g id="gSeg"></g></svg>
+              <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
+            </div>
+            <div class="verdict">
+              <p class="v-h" id="vHead" data-i="checking">Проверяем…</p>
+              <p class="v-d" id="vText">&nbsp;</p>
+              <p class="parts" id="parts">&nbsp;</p>
+            </div>
+          </div>
+          <div class="sec-h"><span data-i="h_id">Этот адрес</span><button class="mini" id="eye" type="button" data-i="hide">Скрыть IP</button></div>
+          <ul class="kv" id="facts">
+            <li><span data-i="r_ip">IP</span><b class="ipv"><i class="skl"></i></b></li>
+            <li><span data-i="r_loc">Где</span><b><i class="skl"></i></b></li>
+            <li><span data-i="r_net">Сеть</span><b><i class="skl"></i></b></li>
+            <li><span data-i="r_host">Обратный DNS</span><b><i class="skl"></i></b></li>
+          </ul>
+          <div class="sec-h"><span data-i="mine_h">Ваши выходы</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">Какой IP видит каждый сайт →</a></div>
+          <ul class="exits" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
         </div>
-        <div class="hero-r">
-          <div class="gauge" id="gauge" data-g="">
-            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/><g id="gSeg"></g></svg>
-            <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
-          </div>
-          <div class="verdict">
-            <p class="v-h" id="vHead" data-i="checking">Проверяем…</p>
-            <p class="v-d" id="vText">&nbsp;</p>
-            <p class="parts" id="parts">&nbsp;</p>
-          </div>
+        <div class="col">
+          <div class="sec-h"><span data-i="h_finds">Итоги</span></div>
+          <ul id="finds"><li class="fr" data-f="type"><i class="st"></i><span class="fr-l">Сеть</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="native"><i class="st"></i><span class="fr-l">Нативный?</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="anon"><i class="st"></i><span class="fr-l">Прокси / VPN</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="tor"><i class="st"></i><span class="fr-l">Tor</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="risk"><i class="st"></i><span class="fr-l">Риск</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="abuse"><i class="st"></i><span class="fr-l">Жалобы</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="dnsbl"><i class="st"></i><span class="fr-l">Чёрные списки</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="stream"><i class="st"></i><span class="fr-l">Стриминг</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="ai"><i class="st"></i><span class="fr-l">ИИ-сервисы</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="captcha"><i class="st"></i><span class="fr-l">Капча</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="account"><i class="st"></i><span class="fr-l">Регистрации</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="mail"><i class="st"></i><span class="fr-l">Почта</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li></ul>
         </div>
       </div>
-      <dl class="facts" id="facts">
-        <div><dt><span data-i="r_ip">IP</span><button class="mini" id="eye" type="button" data-i="hide">Скрыть IP</button></dt><dd class="ipv sk-l"></dd></div>
-        <div><dt data-i="r_loc">Где</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_net">Сеть</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_type">Тип</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_reg">Зарегистрирован</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_host">Обратный DNS</dt><dd class="sk-l"></dd></div>
-      </dl>
-      <div class="hero-notes"><h2 data-i="h_notes">Стоит знать</h2><ul class="notes" id="notes"><li class="sk-l"></li><li class="sk-l"></li></ul></div>
+      <div class="bar">
+        <div class="prog" id="prog"><i></i></div>
+        <span class="prog-t" id="progTxt">&nbsp;</span>
+        <div class="acts"><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">Проверить снова</span></button></div>
+      </div>
     </section>
 
-    <section class="card pad"><h2 data-i="h_uses">Подойдёт ли для…</h2><ul class="uses" id="uses"><li data-u="stream"><b>Стриминг (Netflix, Disney+)</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="ai"><b>ИИ-сервисы (ChatGPT, Claude)</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="captcha"><b>Google и Cloudflare без капчи</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="account"><b>Регистрации и оплаты</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="mail"><b>Отправка почты с него</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li></ul></section>
-
-
-    <section class="card pad">
-      <div class="src-h"><h2 data-i="h_src">Источники</h2><span class="m num" id="srcN"></span></div>
-      <div class="tbl-wrap"><table class="src" id="src">
-        <thead><tr><th data-i="col_item">Вопрос</th><th data-i="col_result">Ответ</th><th data-i="col_by">Источники</th></tr></thead>
-        <tbody><tr data-q="loc"><th scope="row">Местоположение</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="type"><th scope="row">Тип сети</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="anon"><th scope="row">Прокси / VPN</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="tor"><th scope="row">Выход Tor</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="risk"><th scope="row">Оценки риска</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="abuse"><th scope="row">Жалобы</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="reg"><th scope="row">Регистрация</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="ports"><th scope="row">Открытые порты</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="dnsbl"><th scope="row">Почтовые чёрные списки</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr></tbody>
-      </table></div>
+    <section class="probes card">
+      <h2 data-i="h_src">Источники</h2>
+      <div class="pgroups"><div class="pg" data-g="intel"><h3>IP-аналитика<span class="pg-n" id="n-intel"></span></h3><div class="pr wait" data-s="cloudflare"><span class="pn">Cloudflare</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipapi"><span class="pn">ip-api.com</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="proxycheck"><span class="pn">proxycheck.io</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipquery"><span class="pn">IPQuery</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipapiis"><span class="pn">ipapi.is</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ip2location"><span class="pn">IP2Location</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipinfo"><span class="pn">IPinfo</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipqs"><span class="pn">IPQualityScore</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="abuseipdb"><span class="pn">AbuseIPDB</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="scamalytics"><span class="pn">Scamalytics</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipdata"><span class="pn">ipdata</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div></div><div class="pg" data-g="reg"><h3>Регистратуры и сканы<span class="pg-n" id="n-reg"></span></h3><div class="pr wait" data-s="rdap"><span class="pn">RDAP (RIR)</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipguide"><span class="pn">ip.guide</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="shodan"><span class="pn">Shodan InternetDB</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="tor"><span class="pn">Tor Project</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div></div><div class="pg" data-g="dnsbl"><h3>Почтовые чёрные списки<span class="pg-n" id="n-dnsbl"></span></h3><div class="pr wait" data-s="spamcop"><span class="pn">SpamCop</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="barracuda"><span class="pn">Barracuda</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="psbl"><span class="pn">PSBL</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="mailspike"><span class="pn">Mailspike</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="uceprotect"><span class="pn">UCEPROTECT L1</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="gbudb"><span class="pn">GBUdb</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="blocklistde"><span class="pn">blocklist.de</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="anonmails"><span class="pn">Anonmails</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div></div></div>
       <p class="src-foot m" id="srcFoot">&nbsp;</p>
     </section>
 
@@ -134,7 +138,7 @@
 
 
 <script type="application/json" id="data">{"lang":"ru","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.ru.0367dedb7f.js"></script>
-<script src="/assets/app.07c711c172.js"></script>
+<script src="/assets/l.ru.e34f47bfdd.js"></script>
+<script src="/assets/app.7a408d221a.js"></script>
 </body>
 </html>

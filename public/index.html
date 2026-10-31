@@ -37,7 +37,7 @@
 <meta name="twitter:description" content="A dozen sources and 8 blocklists, one score">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IPQS · 1ms.dog","url":"https://ipqs.1ms.dog/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How is the score calculated?","acceptedAnswer":{"@type":"Answer","text":"Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network, 20 for proxy and 15 for VPN flags, 40 for Tor, 10 for abuse reports, up to 35 for the average fraud score, and 6 per mail blocklist (at most 24). Flags count by how many sources agree, so one source alone takes off only part of the points. Grades: A 85+, B 70+, C 50+, D 30+, F below 30. The breakdown under the source table shows exactly where the points went."}},{"@type":"Question","name":"Which sources are used?","acceptedAnswer":{"@type":"Answer","text":"Without any keys: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (the regional registries), ip.guide, Shodan InternetDB, the Tor Project's exit list, and Cloudflare (your own address only). With free API keys the site owner can add IPQualityScore, AbuseIPDB, Scamalytics and ipdata. Each row links to that source's own page, so you can check its answer there."}},{"@type":"Question","name":"What is a native IP, and a broadcast IP?","acceptedAnswer":{"@type":"Answer","text":"A native IP is used in the country where it's registered. A broadcast IP is registered in one country (in the registry's records, often by a hosting company) and announced from another. Most geolocation databases follow where the address really is, but some services go by the registration, so a broadcast IP can make you look like you're in another country. We compare the regional registry's record (RDAP) with where most databases place the address. When the registry record has no country (common for ARIN), we use the country of the network that owns the block."}},{"@type":"Question","name":"Residential or data center: why does it matter?","acceptedAnswer":{"@type":"Answer","text":"Sites see data-center addresses as servers, VPNs and proxies, not people. Streaming services, ticketing, banks and sign-up forms block them or ask for more verification. Residential and mobile addresses look like ordinary users. Mobile addresses are also shared by many people at once (CGNAT), so sites rarely block them."}},{"@type":"Question","name":"Why do the sources disagree?","acceptedAnswer":{"@type":"Answer","text":"Each one has its own data: some only know which networks belong to hosting companies, others run honeypots or collect fraud reports from their customers. A VPN server may be known to one and not yet to another. That's why we count how many agree instead of trusting any single one."}},{"@type":"Question","name":"My score is low. What can I do?","acceptedAnswer":{"@type":"Answer","text":"If it's your home connection: an abuse report or blocklist entry often means a device on your network was infected or used as a proxy. Clean it, then ask the blocklist to remove the address (each one links to its removal page). If it's a VPN or server, the score mostly reflects the network type and you can't change it. Pick a provider that offers residential or less-used addresses."}},{"@type":"Question","name":"Is anything stored?","acceptedAnswer":{"@type":"Answer","text":"Results are cached for six hours per address so the free sources aren't asked again for every visit. Nothing else is kept, and the IPv4/IPv6 detection runs in your browser."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.4bab5a68cb.css">
+<link rel="stylesheet" href="/assets/app.bc7150d281.css">
 </head>
 <body>
 <div class="app">
@@ -65,48 +65,52 @@
 
   <main>
     <section class="hero card">
-      <div class="hero-top">
-        <div class="hero-l">
-          <h1>How clean is your IP?</h1>
-          <form class="ask" id="ask" autocomplete="off">
-            <label class="sr" for="ipIn" data-i="ph">Any IPv4 or IPv6 address</label>
-            <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
-            <button class="btn pri" id="go" type="submit" data-i="go">Check</button>
-          </form>
-          <div class="mine" id="mine"><span class="m" data-i="mine_h">Your exits:</span><button type="button" class="chip sk" id="m4" disabled><em>IPv4</em><b>…</b></button><button type="button" class="chip sk" id="m6" disabled><em>IPv6</em><b>…</b></button></div>
+      <div class="hero-h">
+        <h1>How clean is your IP?</h1>
+        <form class="ask" id="ask" autocomplete="off">
+          <label class="sr" for="ipIn" data-i="ph">Any IPv4 or IPv6 address</label>
+          <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
+          <button class="btn pri" id="go" type="submit" data-i="go">Check</button>
+        </form>
+      </div>
+      <div class="hero-b">
+        <div class="col">
+          <div class="score">
+            <div class="gauge" id="gauge" data-g="">
+              <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/><g id="gSeg"></g></svg>
+              <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
+            </div>
+            <div class="verdict">
+              <p class="v-h" id="vHead" data-i="checking">Checking…</p>
+              <p class="v-d" id="vText">&nbsp;</p>
+              <p class="parts" id="parts">&nbsp;</p>
+            </div>
+          </div>
+          <div class="sec-h"><span data-i="h_id">This address</span><button class="mini" id="eye" type="button" data-i="hide">Hide IP</button></div>
+          <ul class="kv" id="facts">
+            <li><span data-i="r_ip">IP</span><b class="ipv"><i class="skl"></i></b></li>
+            <li><span data-i="r_loc">Location</span><b><i class="skl"></i></b></li>
+            <li><span data-i="r_net">Network</span><b><i class="skl"></i></b></li>
+            <li><span data-i="r_host">Reverse DNS</span><b><i class="skl"></i></b></li>
+          </ul>
+          <div class="sec-h"><span data-i="mine_h">Your exits</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">Which IP each site sees →</a></div>
+          <ul class="exits" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
         </div>
-        <div class="hero-r">
-          <div class="gauge" id="gauge" data-g="">
-            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/><g id="gSeg"></g></svg>
-            <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
-          </div>
-          <div class="verdict">
-            <p class="v-h" id="vHead" data-i="checking">Checking…</p>
-            <p class="v-d" id="vText">&nbsp;</p>
-            <p class="parts" id="parts">&nbsp;</p>
-          </div>
+        <div class="col">
+          <div class="sec-h"><span data-i="h_finds">Findings</span></div>
+          <ul id="finds"><li class="fr" data-f="type"><i class="st"></i><span class="fr-l">Network</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="native"><i class="st"></i><span class="fr-l">Native?</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="anon"><i class="st"></i><span class="fr-l">Proxy / VPN</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="tor"><i class="st"></i><span class="fr-l">Tor</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="risk"><i class="st"></i><span class="fr-l">Risk</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="abuse"><i class="st"></i><span class="fr-l">Abuse</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="dnsbl"><i class="st"></i><span class="fr-l">Blocklists</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="stream"><i class="st"></i><span class="fr-l">Streaming</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="ai"><i class="st"></i><span class="fr-l">AI services</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="captcha"><i class="st"></i><span class="fr-l">CAPTCHAs</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="account"><i class="st"></i><span class="fr-l">Sign-ups</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li><li class="fr" data-f="mail"><i class="st"></i><span class="fr-l">Mail</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li></ul>
         </div>
       </div>
-      <dl class="facts" id="facts">
-        <div><dt><span data-i="r_ip">IP</span><button class="mini" id="eye" type="button" data-i="hide">Hide IP</button></dt><dd class="ipv sk-l"></dd></div>
-        <div><dt data-i="r_loc">Location</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_net">Network</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_type">Type</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_reg">Registered in</dt><dd class="sk-l"></dd></div>
-        <div><dt data-i="r_host">Reverse DNS</dt><dd class="sk-l"></dd></div>
-      </dl>
-      <div class="hero-notes"><h2 data-i="h_notes">Worth knowing</h2><ul class="notes" id="notes"><li class="sk-l"></li><li class="sk-l"></li></ul></div>
+      <div class="bar">
+        <div class="prog" id="prog"><i></i></div>
+        <span class="prog-t" id="progTxt">&nbsp;</span>
+        <div class="acts"><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">Check again</span></button></div>
+      </div>
     </section>
 
-    <section class="card pad"><h2 data-i="h_uses">Will it work for…</h2><ul class="uses" id="uses"><li data-u="stream"><b>Streaming (Netflix, Disney+)</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="ai"><b>AI services (ChatGPT, Claude)</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="captcha"><b>Google and Cloudflare without CAPTCHAs</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="account"><b>Sign-ups and payments</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li><li data-u="mail"><b>Sending mail from it</b><span class="lv"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></span><span class="why">&nbsp;</span></li></ul></section>
-
-
-    <section class="card pad">
-      <div class="src-h"><h2 data-i="h_src">Sources</h2><span class="m num" id="srcN"></span></div>
-      <div class="tbl-wrap"><table class="src" id="src">
-        <thead><tr><th data-i="col_item">Question</th><th data-i="col_result">Answer</th><th data-i="col_by">Sources</th></tr></thead>
-        <tbody><tr data-q="loc"><th scope="row">Location</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="type"><th scope="row">Network type</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="anon"><th scope="row">Proxy / VPN</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="tor"><th scope="row">Tor exit</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="risk"><th scope="row">Risk scores</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="abuse"><th scope="row">Abuse reports</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="reg"><th scope="row">Registry</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="ports"><th scope="row">Open ports</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr><tr data-q="dnsbl"><th scope="row">Mail blocklists</th><td class="ans"><span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span></td><td class="by"></td></tr></tbody>
-      </table></div>
+    <section class="probes card">
+      <h2 data-i="h_src">Sources</h2>
+      <div class="pgroups"><div class="pg" data-g="intel"><h3>IP intelligence<span class="pg-n" id="n-intel"></span></h3><div class="pr wait" data-s="cloudflare"><span class="pn">Cloudflare</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipapi"><span class="pn">ip-api.com</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="proxycheck"><span class="pn">proxycheck.io</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipquery"><span class="pn">IPQuery</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipapiis"><span class="pn">ipapi.is</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ip2location"><span class="pn">IP2Location</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipinfo"><span class="pn">IPinfo</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipqs"><span class="pn">IPQualityScore</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="abuseipdb"><span class="pn">AbuseIPDB</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="scamalytics"><span class="pn">Scamalytics</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipdata"><span class="pn">ipdata</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div></div><div class="pg" data-g="reg"><h3>Registry and scans<span class="pg-n" id="n-reg"></span></h3><div class="pr wait" data-s="rdap"><span class="pn">RDAP (RIR)</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="ipguide"><span class="pn">ip.guide</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="shodan"><span class="pn">Shodan InternetDB</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="tor"><span class="pn">Tor Project</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div></div><div class="pg" data-g="dnsbl"><h3>Mail blocklists<span class="pg-n" id="n-dnsbl"></span></h3><div class="pr wait" data-s="spamcop"><span class="pn">SpamCop</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="barracuda"><span class="pn">Barracuda</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="psbl"><span class="pn">PSBL</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="mailspike"><span class="pn">Mailspike</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="uceprotect"><span class="pn">UCEPROTECT L1</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="gbudb"><span class="pn">GBUdb</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="blocklistde"><span class="pn">blocklist.de</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div><div class="pr wait" data-s="anonmails"><span class="pn">Anonmails</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div></div></div>
       <p class="src-foot m" id="srcFoot">&nbsp;</p>
     </section>
 
@@ -134,7 +138,7 @@
 
 
 <script type="application/json" id="data">{"lang":"en","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.en.9bc4aa0e20.js"></script>
-<script src="/assets/app.07c711c172.js"></script>
+<script src="/assets/l.en.21861334b8.js"></script>
+<script src="/assets/app.7a408d221a.js"></script>
 </body>
 </html>

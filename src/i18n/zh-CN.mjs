@@ -9,7 +9,7 @@ export default {
   h1: "你的 IP 有多干净？",
 
   lang_label: "语言", faq_h: "帮助", th_system: "主题：跟随系统", th_light: "主题：浅色", th_dark: "主题：深色",
-  ph: "任意 IPv4 或 IPv6 地址", go: "查询", mine_h: "你的出口：", none: "无",
+  ph: "任意 IPv4 或 IPv6 地址", go: "查询", mine_h: "你的出口", none: "无",
   checking: "查询中…", progress: "已返回 {n} / {of}",
   err_h: "查询失败", err_net: "服务器没有响应，请稍后再试。", err_bad_ip: "这不是一个 IP 地址。",
   err_private: "这是内网或保留地址，任何数据库都没有它的信息。", err_rate: "一分钟内查询太多次了，请稍等再试。",
@@ -114,6 +114,7 @@ export default {
   col_result: "结果", f_clean: "未标记为代理或 VPN",
   p_why: "{why}：扣 {n} 分",
   col_item: "项目", col_by: "来源", q_loc: "位置", q_type: "网络类型", q_anon: "代理 / VPN", q_tor: "Tor 出口", q_risk: "风险分", q_abuse: "滥用记录", q_reg: "注册信息", q_ports: "开放端口", q_dnsbl: "邮件黑名单", q_nodata: "没有数据", q_clean: "{n} 个来源均未标记", q_tor_yes: "是 Tor 出口", q_tor_no: "不是（{n} 个来源）", q_abuse_yes: "有滥用记录", q_abuse_no: "没有记录", q_by_asn: "（所属网络）", q_bl_clean: "{n} 个都未收录",
+  h_finds: "检测结论", fl_type: "网络类型", fl_native: "原生 IP", fl_anon: "代理 / VPN", fl_tor: "Tor", fl_risk: "风险分", fl_abuse: "滥用记录", fl_dnsbl: "邮件黑名单", fl_stream: "流媒体", fl_ai: "AI 服务", fl_captcha: "验证码", fl_account: "注册支付", fl_mail: "发邮件", g_intel: "IP 情报", g_reg: "注册与扫描", g_dnsbl: "邮件黑名单", g_reg_cc: "注册地", g_as_cc: "网络注册地", rerun: "重新检测", bl_in: "已收录", fv_native: "原生 IP：注册和位置都在{reg}", fv_broadcast: "广播 IP：注册在{reg}，位于{cc}", fv_broadcast_as: "可能是广播 IP：所属网络注册在{reg}，位于{cc}", fv_risk_avg: "平均 {v}", fv_abuse_yes: "{of} 个来源中 {n} 个报告滥用", fv_cgnat: "多人共用",
   docs: [
     ["评分是怎么算的？", "每个地址从 100 分开始，按各来源的发现扣分：机房网络最多扣 20，代理标记扣 20，VPN 标记扣 15，Tor 扣 40，滥用报告扣 10，平均欺诈分数最多扣 35，每个邮件黑名单扣 6（最多 24）。标记按多少个来源同意来折算，只有一个来源标记时只扣一部分。\n等级：A 85 分以上，B 70 以上，C 50 以上，D 30 以上，F 低于 30。来源表格下方的明细列出了每一项扣了多少。"],
     ["用了哪些数据来源？", "不需要密钥的：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各大洲的地址注册机构）、ip.guide、Shodan InternetDB、Tor 项目的出口列表，以及 Cloudflare（只查本机地址）。站长配置免费 API 密钥后，还会加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。每一行都链接到该来源自己的查询页，可以去核对。"],

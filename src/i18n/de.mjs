@@ -9,7 +9,7 @@ export default {
   h1: "Wie sauber ist Ihre IP?",
 
   lang_label: "Sprache", faq_h: "Hilfe", th_system: "Design: System", th_light: "Design: hell", th_dark: "Design: dunkel",
-  ph: "Beliebige IPv4- oder IPv6-Adresse", go: "Prüfen", mine_h: "Ihre Ausgänge:", none: "keine",
+  ph: "Beliebige IPv4- oder IPv6-Adresse", go: "Prüfen", mine_h: "Ihre Ausgänge", none: "keine",
   checking: "Wird geprüft…", progress: "{n} von {of} haben geantwortet",
   err_h: "Prüfung nicht möglich", err_net: "Keine Antwort vom Server. Bitte gleich noch einmal versuchen.", err_bad_ip: "Das ist keine IP-Adresse.",
   err_private: "Das ist eine private oder reservierte Adresse: Keine Datenbank weiß etwas darüber.", err_rate: "Zu viele Abfragen in einer Minute. Bitte kurz warten.",
@@ -114,6 +114,7 @@ export default {
   col_result: "Antwort", f_clean: "Keine Proxy- oder VPN-Markierung",
   p_why: "{why}: −{n} Punkte",
   col_item: "Frage", col_by: "Quellen", q_loc: "Standort", q_type: "Netztyp", q_anon: "Proxy / VPN", q_tor: "Tor-Exit", q_risk: "Risiko-Scores", q_abuse: "Missbrauchsmeldungen", q_reg: "Registrierung", q_ports: "Offene Ports", q_dnsbl: "Mail-Blocklisten", q_nodata: "Keine Daten", q_clean: "Keine Markierung von {n} Quellen", q_tor_yes: "Tor-Exit", q_tor_no: "Kein Exit ({n} Quellen)", q_abuse_yes: "Missbrauch gemeldet", q_abuse_no: "Nichts gemeldet", q_by_asn: "(Netz)", q_bl_clean: "Auf keiner der {n}",
+  h_finds: "Befunde", fl_type: "Netz", fl_native: "Nativ?", fl_anon: "Proxy / VPN", fl_tor: "Tor", fl_risk: "Risiko", fl_abuse: "Missbrauch", fl_dnsbl: "Blocklisten", fl_stream: "Streaming", fl_ai: "KI-Dienste", fl_captcha: "CAPTCHAs", fl_account: "Anmeldungen", fl_mail: "Mailversand", g_intel: "IP-Datenbanken", g_reg: "Registry und Scans", g_dnsbl: "Mail-Blocklisten", g_reg_cc: "registriert", g_as_cc: "Netz registriert", rerun: "Erneut prüfen", bl_in: "Gelistet", fv_native: "Nativ: registriert und verortet in {reg}", fv_broadcast: "Broadcast: registriert in {reg}, verortet in {cc}", fv_broadcast_as: "Wahrscheinlich Broadcast: Netz registriert in {reg}, verortet in {cc}", fv_risk_avg: "Schnitt {v}", fv_abuse_yes: "{n} von {of} Quellen melden Missbrauch", fv_cgnat: "von vielen geteilt",
   docs: [
     ["Wie wird der Score berechnet?", "Jede Adresse startet bei 100 und verliert Punkte für das, was die Quellen finden: bis zu 20 für ein Rechenzentrumsnetz, 20 für Proxy- und 15 für VPN-Markierungen, 40 für Tor, 10 für Missbrauchsmeldungen, bis zu 35 für den durchschnittlichen Fraud-Score und 6 je Mail-Blockliste (höchstens 24). Markierungen zählen nach Anteil der zustimmenden Quellen, eine einzelne zieht also nur einen Teil ab.\nNoten: A ab 85, B ab 70, C ab 50, D ab 30, F darunter. Die Aufschlüsselung unter der Tabelle zeigt jeden Abzug."],
     ["Welche Quellen werden genutzt?", "Ohne Schlüssel: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (die regionalen Registries), ip.guide, Shodan InternetDB, die Exit-Liste des Tor Project und Cloudflare (nur Ihre eigene Adresse). Mit kostenlosen API-Schlüsseln kann der Betreiber IPQualityScore, AbuseIPDB, Scamalytics und ipdata ergänzen. Jede Zeile verlinkt auf die Seite der Quelle zum Gegenprüfen."],

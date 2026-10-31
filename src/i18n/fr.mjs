@@ -9,7 +9,7 @@ export default {
   h1: "Votre IP est-elle propre ?",
 
   lang_label: "Langue", faq_h: "Aide", th_system: "Thème : système", th_light: "Thème : clair", th_dark: "Thème : sombre",
-  ph: "N’importe quelle adresse IPv4 ou IPv6", go: "Vérifier", mine_h: "Vos sorties :", none: "aucune",
+  ph: "N’importe quelle adresse IPv4 ou IPv6", go: "Vérifier", mine_h: "Vos sorties", none: "aucune",
   checking: "Vérification…", progress: "{n} sur {of} ont répondu",
   err_h: "Vérification impossible", err_net: "Le serveur ne répond pas. Réessayez dans un instant.", err_bad_ip: "Ce n’est pas une adresse IP.",
   err_private: "C’est une adresse privée ou réservée : aucune base n’en sait rien.", err_rate: "Trop de recherches en une minute. Patientez un peu.",
@@ -114,6 +114,7 @@ export default {
   col_result: "Réponse", f_clean: "Aucun signalement proxy ou VPN",
   p_why: "{why} : −{n} points",
   col_item: "Question", col_by: "Sources", q_loc: "Lieu", q_type: "Type de réseau", q_anon: "Proxy / VPN", q_tor: "Sortie Tor", q_risk: "Scores de risque", q_abuse: "Signalements d’abus", q_reg: "Registre", q_ports: "Ports ouverts", q_dnsbl: "Listes noires de messagerie", q_nodata: "Aucune donnée", q_clean: "Aucun signalement sur {n} sources", q_tor_yes: "Sortie Tor", q_tor_no: "Pas une sortie ({n} sources)", q_abuse_yes: "Abus signalé", q_abuse_no: "Aucun signalement", q_by_asn: "(réseau)", q_bl_clean: "Sur aucune des {n}",
+  h_finds: "Constats", fl_type: "Réseau", fl_native: "Native ?", fl_anon: "Proxy / VPN", fl_tor: "Tor", fl_risk: "Risque", fl_abuse: "Abus", fl_dnsbl: "Listes noires", fl_stream: "Streaming", fl_ai: "IA", fl_captcha: "CAPTCHA", fl_account: "Inscriptions", fl_mail: "E-mail", g_intel: "Renseignement IP", g_reg: "Registre et scans", g_dnsbl: "Listes noires de messagerie", g_reg_cc: "enregistrée", g_as_cc: "réseau enregistré", rerun: "Revérifier", bl_in: "Listée", fv_native: "Native : enregistrée et située en {reg}", fv_broadcast: "De diffusion : enregistrée en {reg}, située en {cc}", fv_broadcast_as: "Probablement de diffusion : réseau enregistré en {reg}, situé en {cc}", fv_risk_avg: "Moyenne {v}", fv_abuse_yes: "{n} sur {of} sources signalent des abus", fv_cgnat: "partagée par beaucoup",
   docs: [
     ["Comment le score est-il calculé ?", "Chaque adresse part de 100 et perd des points selon ce que trouvent les sources : jusqu’à 20 pour un réseau de datacenter, 20 pour un signalement proxy et 15 pour VPN, 40 pour Tor, 10 pour des signalements d’abus, jusqu’à 35 pour le score de fraude moyen et 6 par liste noire de messagerie (24 au plus). Les signalements comptent selon le nombre de sources d’accord : une seule ne retire qu’une partie.\nNotes : A 85+, B 70+, C 50+, D 30+, F en dessous de 30. Le détail sous le tableau montre chaque retrait."],
     ["Quelles sources sont utilisées ?", "Sans clé : ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (les registres régionaux), ip.guide, Shodan InternetDB, la liste de sortie du Tor Project et Cloudflare (votre propre adresse uniquement). Avec des clés API gratuites, le propriétaire du site peut ajouter IPQualityScore, AbuseIPDB, Scamalytics et ipdata. Chaque ligne renvoie à la page de la source pour vérifier."],

@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { LANGS, QROWS } from "../scripts/build.mjs";
+import { LANGS, FINDS, GROUPS } from "../scripts/build.mjs";
 import { SOURCES, DNSBL } from "../src/sources.mjs";
 
 const page = slug => readFile(new URL(`../public/${slug ? slug + "/" : ""}index.html`, import.meta.url), "utf8");
@@ -21,10 +21,11 @@ test("every language page keeps the shell contract", async () => {
   }
 });
 
-test("every question has its row before any answer", async () => {
+test("every finding and every source has its row before any answer", async () => {
   const h = await page("");
-  assert.equal((h.match(/<tr data-q="/g) || []).length, QROWS.length);
-  assert.equal((h.match(/<li data-u="/g) || []).length, 5);
+  assert.equal((h.match(/<li class="fr" data-f="/g) || []).length, FINDS.length);
+  assert.equal((h.match(/<div class="pr wait" data-s="/g) || []).length, SOURCES.length + DNSBL.length);
+  assert.deepEqual(GROUPS.flatMap(([, l]) => l.map(([id]) => id)).sort(), [...SOURCES, ...DNSBL].map(x => x.id).sort());
 });
 
 test("every language has every string, with the same placeholders", async () => {

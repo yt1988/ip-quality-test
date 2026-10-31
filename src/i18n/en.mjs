@@ -9,7 +9,7 @@ export default {
   h1: "How clean is your IP?",
 
   lang_label: "Language", faq_h: "Help", th_system: "Theme: system", th_light: "Theme: light", th_dark: "Theme: dark",
-  ph: "Any IPv4 or IPv6 address", go: "Check", mine_h: "Your exits:", none: "none",
+  ph: "Any IPv4 or IPv6 address", go: "Check", mine_h: "Your exits", none: "none",
   checking: "Checking…", progress: "{n} of {of} answered",
   err_h: "Couldn't check", err_net: "No answer from the server. Try again in a moment.", err_bad_ip: "That isn't an IP address.",
   err_private: "That's a private or reserved address: no database knows anything about it.", err_rate: "Too many lookups in a minute. Wait a moment and try again.",
@@ -114,6 +114,7 @@ export default {
   col_result: "Answer", f_clean: "No proxy or VPN flag",
   p_why: "{why}: −{n} points",
   col_item: "Question", col_by: "Sources", q_loc: "Location", q_type: "Network type", q_anon: "Proxy / VPN", q_tor: "Tor exit", q_risk: "Risk scores", q_abuse: "Abuse reports", q_reg: "Registry", q_ports: "Open ports", q_dnsbl: "Mail blocklists", q_nodata: "No data", q_clean: "No flag from {n} sources", q_tor_yes: "Tor exit", q_tor_no: "Not an exit ({n} sources)", q_abuse_yes: "Abuse reported", q_abuse_no: "None reported", q_by_asn: "(network)", q_bl_clean: "Not on any of {n}",
+  h_finds: "Findings", fl_type: "Network", fl_native: "Native?", fl_anon: "Proxy / VPN", fl_tor: "Tor", fl_risk: "Risk", fl_abuse: "Abuse", fl_dnsbl: "Blocklists", fl_stream: "Streaming", fl_ai: "AI services", fl_captcha: "CAPTCHAs", fl_account: "Sign-ups", fl_mail: "Mail", g_intel: "IP intelligence", g_reg: "Registry and scans", g_dnsbl: "Mail blocklists", g_reg_cc: "registered", g_as_cc: "network registered", rerun: "Check again", bl_in: "Listed", fv_native: "Native: registered and located in {reg}", fv_broadcast: "Broadcast: registered in {reg}, located in {cc}", fv_broadcast_as: "Probably broadcast: network registered in {reg}, located in {cc}", fv_risk_avg: "Average {v}", fv_abuse_yes: "{n} of {of} sources report abuse", fv_cgnat: "shared by many users",
   docs: [
     ["How is the score calculated?", "Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network, 20 for proxy and 15 for VPN flags, 40 for Tor, 10 for abuse reports, up to 35 for the average fraud score, and 6 per mail blocklist (at most 24). Flags count by how many sources agree, so one source alone takes off only part of the points.\nGrades: A 85+, B 70+, C 50+, D 30+, F below 30. The breakdown under the source table shows exactly where the points went."],
     ["Which sources are used?", "Without any keys: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (the regional registries), ip.guide, Shodan InternetDB, the Tor Project's exit list, and Cloudflare (your own address only). With free API keys the site owner can add IPQualityScore, AbuseIPDB, Scamalytics and ipdata. Each row links to that source's own page, so you can check its answer there."],

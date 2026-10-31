@@ -30,8 +30,15 @@ const TOOLS = [
 const TOOL_PATH = { ls: { "zh-CN": "/zh/" } };
 const toolHome = (id, lang, slug) => (TOOL_PATH[id] || {})[lang] || (slug ? "/" + slug + "/" : "/");
 // the questions the sources table answers, one row each (src/app.js fills them)
-export const QROWS = ["loc", "type", "anon", "tor", "risk", "abuse", "reg", "ports", "dnsbl"];
-const USES = ["stream", "ai", "captcha", "account", "mail"];
+// the findings column: what the address is, then what it is good for (src/score.mjs decides each)
+export const FINDS = ["type", "native", "anon", "tor", "risk", "abuse", "dnsbl", "stream", "ai", "captcha", "account", "mail"];
+// the source groups of the second card, in the order the rows are drawn
+const nameOf = id => (SOURCES.find(s => s.id === id) || DNSBL.find(s => s.id === id)).name;
+export const GROUPS = [
+  ["intel", ["cloudflare", "ipapi", "proxycheck", "ipquery", "ipapiis", "ip2location", "ipinfo", "ipqs", "abuseipdb", "scamalytics", "ipdata"]],
+  ["reg", ["rdap", "ipguide", "shodan", "tor"]],
+  ["dnsbl", DNSBL.map(x => x.id)],
+].map(([g, ids]) => [g, ids.map(id => [id, nameOf(id)])]);
 
 // Runs before first paint: apply the saved theme. On the English root, send visitors to their language's page
 // (a saved choice first, then the browser languages); crawlers and English readers stay. Keeps ?ip=.
@@ -102,9 +109,11 @@ export async function build({ check = false } = {}) {
 
     // every source and blocklist has its row from the start; answers fill them in place
     const skel = '<span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span>';
-    // one row per question the sources answer; answers fill them as they arrive
-    const srcRows = QROWS.map(q => `<tr data-q="${q}"><th scope="row">${esc(T("q_" + q))}</th><td class="ans">${skel}</td><td class="by"></td></tr>`).join("");
-    const uses = USES.map(k => `<li data-u="${k}"><b>${esc(T("use_" + k))}</b><span class="lv">${skel}</span><span class="why">&nbsp;</span></li>`).join("");
+    // the findings: one row each, drawn now and filled when every source is in
+    const finds = FINDS.map(f => `<li class="fr" data-f="${f}"><i class="st"></i><span class="fr-l">${esc(T("fl_" + f))}</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li>`).join("");
+    // every source has its row from the start, grouped as on EgressLens; answers fill them as they arrive
+    const groups = GROUPS.map(([g, ids]) => `<div class="pg" data-g="${g}"><h3>${esc(T("g_" + g))}<span class="pg-n" id="n-${g}"></span></h3>` +
+      ids.map(([id, name]) => `<div class="pr wait" data-s="${id}"><span class="pn">${esc(name)}</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div>`).join("") + "</div>").join("");
     const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(typeof x.name === "string" ? x.name : x.name[lang] || x.name.en)}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
     const helpNav = docs.map(([q], i) => `<button type="button" role="tab" data-hq="${i}" aria-selected="${i === 0}">${esc(q)}</button>`).join("");
     const helpC = docs.map(([q, a], i) => `<article data-hqb="${i}"${i ? " hidden" : ""}><h3>${esc(q)}</h3>${a.split(/\n+/).map(p => `<p>${esc(p)}</p>`).join("")}</article>`).join("");
@@ -117,7 +126,7 @@ export async function build({ check = false } = {}) {
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
       .replace("{{prepaint}}", PREPAINT).replace("{{head}}", head).replace("{{css}}", cssName).replace("{{js}}", jsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("h1")))
-      .replace("{{uses}}", uses).replace("{{srcRows}}", srcRows).replace("{{tools}}", tools)
+      .replace("{{finds}}", finds).replace("{{groups}}", groups).replace("{{tools}}", tools)
       .replace("{{helpNav}}", helpNav).replace("{{helpC}}", helpC).replace("{{data}}", JSON.stringify(data).replace(/</g, "\\u003c"));
     if (/\{\{\w+\}\}/.test(html)) throw new Error("unfilled placeholder in " + path(slug) + ": " + /\{\{\w+\}\}/.exec(html)[0]);
     files[(slug ? slug + "/" : "") + "index.html"] = html;
