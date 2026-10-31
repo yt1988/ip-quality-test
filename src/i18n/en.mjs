@@ -112,6 +112,7 @@ export default {
   pp_dnsbl: "blocklists",
   ex_wait: "Finding your exits {n}/{of}", ex_more: "Which IP each site sees →", src_down: "{list} didn’t answer.",
   col_result: "Answer", f_clean: "No proxy or VPN flag",
+  p_why: "{why}: −{n} points",
   docs: [
     ["How is the score calculated?", "Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network, 20 for proxy and 15 for VPN flags, 40 for Tor, 10 for abuse reports, up to 35 for the average fraud score, and 6 per mail blocklist (at most 24). Flags count by how many sources agree, so one source alone takes off only part of the points.\nGrades: A 85+, B 70+, C 50+, D 30+, F below 30. The breakdown under the source table shows exactly where the points went."],
     ["Which sources are used?", "Without any keys: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (the regional registries), ip.guide, Shodan InternetDB, the Tor Project's exit list, and Cloudflare (your own address only). With free API keys the site owner can add IPQualityScore, AbuseIPDB, Scamalytics and ipdata. Each row links to that source's own page, so you can check its answer there."],

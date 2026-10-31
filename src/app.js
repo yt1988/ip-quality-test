@@ -2,6 +2,7 @@
 // HTML from the start), then shows the score, notes and verdicts once every source is in. Strings: window.L1MS.
 import { family, canon, isPublic } from "./ip.mjs";
 import { assess } from "./score.mjs";
+import { ccOfName } from "./sources.mjs";
 
 (function () {
   "use strict";
@@ -60,7 +61,7 @@ import { assess } from "./score.mjs";
   /* ---------- rendering pieces ---------- */
   const NA = '<span class="na">–</span>';
   const riskColor = v => v >= 70 ? "var(--t5)" : v >= 35 ? "var(--t3)" : "var(--t1)";
-  const bar = v => `<span class="bar" style="--v:${v / 100};--c:${riskColor(v)}"><em>${esc(t("col_risk"))}</em><i></i><b class="num">${v}</b></span>`;
+  const bar = v => `<span class="bar" data-p="risk" style="--v:${v / 100};--c:${riskColor(v)}"><em>${esc(t("col_risk"))}</em><i></i><b class="num">${v}</b></span>`;
   const typeName = ty => ty ? t("t_" + ty) : "–";
   const rows = Object.fromEntries($$("#src tr[data-s]").map(r => [r.dataset.s, r]));
 
@@ -90,9 +91,9 @@ import { assess } from "./score.mjs";
     const reg = d.regCc || d.asCc;
     if (reg && !d.cc) out.push(`<span class="pl">${flag(reg)} ${esc(t(d.regCc ? "x_reg" : "x_as_cc", { c: country(reg) }))}${d.rir ? ` <span class="m">${esc(d.rir)}</span>` : ""}</span>`);
     else if (!d.cc && d.rir) out.push(`<span class="m">${esc(d.rir)}</span>`);
-    if (d.type) out.push(`<span class="ft ${d.type === "hosting" ? "warn" : ""}">${esc(typeName(d.type))}</span>`);
+    if (d.type) out.push(`<span class="ft ${d.type === "hosting" ? "warn" : ""}" data-p="${d.type}">${esc(typeName(d.type))}</span>`);
     const on = [["tor", "Tor"], ["vpn", "VPN"], ["proxy", t("tag_proxy")], ["abuser", t("f_abuse")]].filter(([k]) => d[k] === true);
-    if (on.length) out.push(on.map(([, x]) => `<span class="ft bad">${esc(x)}</span>`).join(""));
+    if (on.length) out.push(on.map(([k, x]) => `<span class="ft bad" data-p="${k}">${esc(x)}</span>`).join(""));
     else if (m.id === "tor") out.push(`<span class="no">${esc(t("x_tor_no"))}</span>`);
     else if (["tor", "vpn", "proxy"].some(k => d[k] === false)) out.push(`<span class="no">${esc(t("f_clean"))}</span>`);
     if (typeof d.risk === "number") out.push(bar(d.risk));
@@ -103,7 +104,7 @@ import { assess } from "./score.mjs";
   // the blocklists: one row, counting as they answer; the lists that carry the address are named and linked
   const BL = { of: 0, done: 0, hits: [] };
   function blRow(final) {
-    const hits = BL.hits.map(b => `<a class="ft bad" href="${esc(b.site)}" target="_blank" rel="noopener noreferrer">${esc(b.name)}</a>`).join("");
+    const hits = BL.hits.map(b => `<a class="ft bad" data-p="dnsbl" href="${esc(b.site)}" target="_blank" rel="noopener noreferrer">${esc(b.name)}</a>`).join("");
     const cell = !BL.of ? `<span class="m">${esc(t("bl_v6"))}</span>`
       : hits || (final || BL.done === BL.of ? `<span class="no">${esc(t("bl_clean"))}</span>` : `<span class="m num">${BL.done}/${BL.of}</span>`);
     srcRow("dnsbl", [cell], BL.of ? "" : "fail");
@@ -121,7 +122,7 @@ import { assess } from "./score.mjs";
     gauge.classList.add("busy"); gauge.dataset.g = ""; $("#gArc").style.strokeDashoffset = 100;
     $("#gNum").textContent = "–"; $("#gGrade").innerHTML = "&nbsp;";
     $("#vHead").textContent = t("checking"); const vt = $("#vText"); vt.classList.remove("err"); vt.innerHTML = "&nbsp;";
-    $("#parts").innerHTML = "&nbsp;";
+    $("#parts").innerHTML = "&nbsp;"; $("#gSeg").innerHTML = "";
     $$("#facts dd").forEach(dd => { dd.className = "sk-l"; dd.innerHTML = ""; });
     $("#facts dd").classList.add("ipv");
     $("#notes").innerHTML = '<li class="sk-l"></li>'.repeat(2);
@@ -200,6 +201,7 @@ import { assess } from "./score.mjs";
           () => { if (CUR === cur) fillSource(m); }).finally(() => { if (CUR === cur) { got++; progress(); } }));
         return;
       }
+      if (m.ok && !m.d.cc && m.d.cname) { m.d.cc = ccOfName(m.d.cname); delete m.d.cname; }
       if (m.ok) RES.push({ id: m.id, data: m.d });
       fillSource(m); got++; progress();
     }
@@ -214,6 +216,19 @@ import { assess } from "./score.mjs";
     else if (m.t === "error") fail("err_net");
   }
 
+  const NOTE_PART = { n_tor: "tor", n_abuser: "abuser", n_dnsbl: "dnsbl" };
+  // the tooltip for items that cost points (and the deductions under the score)
+  let tipEl;
+  function showTip(el) {
+    if (!tipEl) { tipEl = document.body.appendChild(Object.assign(document.createElement("div"), { className: "tip" })); addEventListener("scroll", () => tipEl.classList.remove("on"), { passive: true }); }
+    tipEl.textContent = el.dataset.why;
+    const b = el.getBoundingClientRect(), w = tipEl.offsetWidth;
+    tipEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left + b.width / 2 - w / 2)) + "px";
+    tipEl.style.top = b.bottom + 6 + "px"; tipEl.classList.add("on");
+  }
+  document.addEventListener("mouseover", e => { const el = e.target.closest && e.target.closest("[data-why]"); if (el) showTip(el); else if (tipEl) tipEl.classList.remove("on"); });
+  document.addEventListener("focusin", e => { const el = e.target.closest && e.target.closest("[data-why]"); if (el) showTip(el); });
+
   function finish(r) {
     const s = r.summary;
     gauge.classList.remove("busy"); gauge.dataset.g = r.grade;
@@ -222,7 +237,11 @@ import { assess } from "./score.mjs";
     $("#vHead").textContent = t("g_" + r.grade);
     $("#vText").textContent = t("d_" + r.grade);
     // where the points went, in one line (the full wording on hover)
-    $("#parts").innerHTML = r.parts.map(p => `<span title="${esc(t(p.k, p.p))}">−${p.pts} ${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
+    const why = p => t("p_why", { why: t(p.k, p.p), n: p.pts });
+    $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
+    // the ring: the score in the grade's color, then one segment per deduction in that deduction's color
+    let at = r.score;
+    $("#gSeg").innerHTML = r.parts.map(p => { const len = Math.min(p.pts, 100 - at); if (len <= 0) return ""; const s = `<circle class="g-seg" cx="60" cy="60" r="52" pathLength="100" stroke="var(--p-${p.k.slice(2)})" stroke-dasharray="${Math.max(0, len - .8)} 100" stroke-dashoffset="${-(at + .4)}"/>`; at += len; return s; }).join("");
 
     const dd = $$("#facts dd");
     const set = (i, h) => { dd[i].className = i ? "" : "ipv"; dd[i].innerHTML = h; };
@@ -230,19 +249,23 @@ import { assess } from "./score.mjs";
     set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` + (s.ccs.length > 1 ? ` <span class="m">${esc(t("also", { list: s.ccs.slice(1).map(c => c.cc).join(", ") }))}</span>` : "") : "–");
     set(2, s.asn || s.org ? `${s.asn ? "AS" + s.asn + " " : ""}<span class="m">${esc(s.org || "")}</span>` : "–");
     const typeLv = s.type === "hosting" ? "warn" : s.type === "residential" || s.type === "mobile" ? "good" : "";
-    set(3, s.type ? `<span class="tag ${typeLv}">${esc(typeName(s.type))}</span>` : "–");
+    set(3, s.type ? `<span class="tag ${typeLv}" data-p="${s.type}">${esc(typeName(s.type))}</span>` : "–");
     const nat = s.native === true ? `<span class="tag good">${esc(t("tag_native"))}</span>` : s.native === false ? `<span class="tag warn">${esc(t("tag_broadcast"))}</span>` : "";
     set(4, s.regCc ? `${flag(s.regCc)} ${esc(country(s.regCc))} ${nat}` : "–");
     set(5, s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
 
-    // only what needs attention; the score and the facts above already say the rest
-    const shown = r.notes.filter(n => n.lv !== "good" && n.k !== "n_ports");
+    // only what needs attention: problems, plus anything that cost points; the score and the facts above say the rest
+    const partOf = n => NOTE_PART[n.k] || (n.k === "n_anon" ? ["vpn", "proxy"].find(k => r.parts.some(x => x.k === "p_" + k))
+      : n.k.startsWith("n_risk") ? "risk" : n.k === "n_type_hosting" ? "hosting" : n.k === "n_type_business" ? "business" : null);
+    const costs = n => { const pk = partOf(n); return pk && r.parts.some(x => x.k === "p_" + pk) ? pk : null; };
+    const shown = r.notes.filter(n => (n.lv !== "good" || costs(n)) && n.k !== "n_ports");
     $("#notes").innerHTML = shown.length ? shown.map(n => {
       const p = { ...n.p };
       for (const k of ["reg", "cc"]) if (p[k]) p[k] = country(p[k]);
       if (Array.isArray(p.list)) p.list = list(p.list.map(x => /^[A-Z]{2}$/.test(x) ? country(x) : x));
       for (const k in p) p[k] = esc(p[k]);
-      return `<li><i class="dot ${n.lv}"></i><span>${t(n.k, p)}</span></li>`;
+      const pk = costs(n);
+      return `<li${pk ? ` data-p="${pk}"` : ""}><i class="dot ${n.lv}"></i><span>${t(n.k, p)}</span><span class="pts"></span></li>`;
     }).join("") : `<li><i class="dot good"></i><span>${esc(t("n_none"))}</span></li>`;
     for (const li of $$("#uses li")) {
       const u = r.uses[li.dataset.u]; if (!u) continue;
@@ -251,6 +274,12 @@ import { assess } from "./score.mjs";
       li.querySelector(".why").textContent = t(u.why);
     }
     blRow(true);
+    // every item below that caused a deduction takes its color and explains itself on hover
+    for (const p of r.parts) for (const el of $$(`[data-p="${p.k.slice(2)}"]`)) {
+      el.classList.add("hit"); el.style.setProperty("--pc", `var(--p-${p.k.slice(2)})`); el.dataset.why = why(p);
+      if (el.classList.contains("bar")) el.style.setProperty("--c", `var(--p-${p.k.slice(2)})`);
+      const pts = el.querySelector(":scope > .pts"); if (pts) pts.textContent = "−" + p.pts;
+    }
     // the checked address, when it is one of the visitor's exits that no check placed, takes the country found here
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     // sources that didn't answer leave the table now that everything is in, named in the footnote instead

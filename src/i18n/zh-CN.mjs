@@ -112,6 +112,7 @@ export default {
   pp_dnsbl: "黑名单",
   ex_wait: "正在检测出口 {n}/{of}", ex_more: "每个网站看到的出口 →", src_down: "{list} 没有响应。",
   col_result: "结果", f_clean: "未标记为代理或 VPN",
+  p_why: "{why}：扣 {n} 分",
   docs: [
     ["评分是怎么算的？", "每个地址从 100 分开始，按各来源的发现扣分：机房网络最多扣 20，代理标记扣 20，VPN 标记扣 15，Tor 扣 40，滥用报告扣 10，平均欺诈分数最多扣 35，每个邮件黑名单扣 6（最多 24）。标记按多少个来源同意来折算，只有一个来源标记时只扣一部分。\n等级：A 85 分以上，B 70 以上，C 50 以上，D 30 以上，F 低于 30。来源表格下方的明细列出了每一项扣了多少。"],
     ["用了哪些数据来源？", "不需要密钥的：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各大洲的地址注册机构）、ip.guide、Shodan InternetDB、Tor 项目的出口列表，以及 Cloudflare（只查本机地址）。站长配置免费 API 密钥后，还会加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。每一行都链接到该来源自己的查询页，可以去核对。"],

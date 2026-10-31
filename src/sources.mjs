@@ -117,7 +117,9 @@ export const SOURCES = [
       const label = String(c.abuser_score || a.abuser_score || "");
       const LV = { "very low": 3, "low": 10, "elevated": 40, "high": 70, "very high": 90 };
       const lv = (/\(([^)]+)\)/.exec(label) || [])[1];
-      return { cc: upper(loc.country_code) || ccOfName(j.country), city: loc.city || j.city, asn: a.asn || asnOf(j.asn),
+      // Workers have no Intl.DisplayNames: when the name can't be mapped here, it travels as cname and the page maps it
+      const cc = upper(loc.country_code) || ccOfName(j.country);
+      return { cc, cname: cc ? undefined : j.country, city: loc.city || j.city, asn: a.asn || asnOf(j.asn),
         org: c.name || (typeof j.company === "string" ? j.company : undefined) || a.org,
         type: j.is_datacenter ? "hosting" : j.is_mobile ? "mobile" : mapType(c.type || a.type),
         proxy: bool(j.is_proxy), vpn: bool(j.is_vpn), tor: bool(j.is_tor), abuser: bool(j.is_abuser),

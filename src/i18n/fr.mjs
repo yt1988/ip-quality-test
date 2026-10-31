@@ -112,6 +112,7 @@ export default {
   pp_dnsbl: "listes noires",
   ex_wait: "Recherche de vos sorties {n}/{of}", ex_more: "L’IP que voit chaque site →", src_down: "{list} n’a pas répondu.",
   col_result: "Réponse", f_clean: "Aucun signalement proxy ou VPN",
+  p_why: "{why} : −{n} points",
   docs: [
     ["Comment le score est-il calculé ?", "Chaque adresse part de 100 et perd des points selon ce que trouvent les sources : jusqu’à 20 pour un réseau de datacenter, 20 pour un signalement proxy et 15 pour VPN, 40 pour Tor, 10 pour des signalements d’abus, jusqu’à 35 pour le score de fraude moyen et 6 par liste noire de messagerie (24 au plus). Les signalements comptent selon le nombre de sources d’accord : une seule ne retire qu’une partie.\nNotes : A 85+, B 70+, C 50+, D 30+, F en dessous de 30. Le détail sous le tableau montre chaque retrait."],
     ["Quelles sources sont utilisées ?", "Sans clé : ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (les registres régionaux), ip.guide, Shodan InternetDB, la liste de sortie du Tor Project et Cloudflare (votre propre adresse uniquement). Avec des clés API gratuites, le propriétaire du site peut ajouter IPQualityScore, AbuseIPDB, Scamalytics et ipdata. Chaque ligne renvoie à la page de la source pour vérifier."],

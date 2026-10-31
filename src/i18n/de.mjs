@@ -112,6 +112,7 @@ export default {
   pp_dnsbl: "Blocklisten",
   ex_wait: "Ausgänge werden gesucht {n}/{of}", ex_more: "Welche IP jede Website sieht →", src_down: "{list} hat nicht geantwortet.",
   col_result: "Antwort", f_clean: "Keine Proxy- oder VPN-Markierung",
+  p_why: "{why}: −{n} Punkte",
   docs: [
     ["Wie wird der Score berechnet?", "Jede Adresse startet bei 100 und verliert Punkte für das, was die Quellen finden: bis zu 20 für ein Rechenzentrumsnetz, 20 für Proxy- und 15 für VPN-Markierungen, 40 für Tor, 10 für Missbrauchsmeldungen, bis zu 35 für den durchschnittlichen Fraud-Score und 6 je Mail-Blockliste (höchstens 24). Markierungen zählen nach Anteil der zustimmenden Quellen, eine einzelne zieht also nur einen Teil ab.\nNoten: A ab 85, B ab 70, C ab 50, D ab 30, F darunter. Die Aufschlüsselung unter der Tabelle zeigt jeden Abzug."],
     ["Welche Quellen werden genutzt?", "Ohne Schlüssel: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (die regionalen Registries), ip.guide, Shodan InternetDB, die Exit-Liste des Tor Project und Cloudflare (nur Ihre eigene Adresse). Mit kostenlosen API-Schlüsseln kann der Betreiber IPQualityScore, AbuseIPDB, Scamalytics und ipdata ergänzen. Jede Zeile verlinkt auf die Seite der Quelle zum Gegenprüfen."],

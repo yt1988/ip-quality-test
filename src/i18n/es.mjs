@@ -112,6 +112,7 @@ export default {
   pp_dnsbl: "listas negras",
   ex_wait: "Buscando tus salidas {n}/{of}", ex_more: "Qué IP ve cada sitio →", src_down: "{list} no respondió.",
   col_result: "Respuesta", f_clean: "Sin marca de proxy ni VPN",
+  p_why: "{why}: −{n} puntos",
   docs: [
     ["¿Cómo se calcula la puntuación?", "Cada dirección empieza en 100 y pierde puntos según lo que encuentran las fuentes: hasta 20 por red de centro de datos, 20 por marcas de proxy y 15 por VPN, 40 por Tor, 10 por denuncias de abuso, hasta 35 por la puntuación de fraude media y 6 por cada lista negra de correo (máximo 24). Las marcas cuentan según cuántas fuentes coinciden, así que una sola resta solo parte.\nNotas: A 85+, B 70+, C 50+, D 30+, F menos de 30. El desglose bajo la tabla muestra cada resta."],
     ["¿Qué fuentes se usan?", "Sin claves: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (los registros regionales), ip.guide, Shodan InternetDB, la lista de salidas del Tor Project y Cloudflare (solo tu propia dirección). Con claves API gratuitas el dueño del sitio puede añadir IPQualityScore, AbuseIPDB, Scamalytics e ipdata. Cada fila enlaza a la página de esa fuente para comprobarla allí."],

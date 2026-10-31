@@ -112,6 +112,7 @@ export default {
   pp_dnsbl: "블랙리스트",
   ex_wait: "출구 확인 중 {n}/{of}", ex_more: "사이트마다 보이는 출구 →", src_down: "{list}: 응답 없음.",
   col_result: "결과", f_clean: "프록시·VPN 표시 없음",
+  p_why: "{why}: −{n}점",
   docs: [
     ["점수는 어떻게 계산하나요?", "모든 주소는 100점에서 시작해 소스의 결과에 따라 감점됩니다. 데이터센터 최대 20, 프록시 20, VPN 15, Tor 40, 악용 신고 10, 평균 사기 점수 최대 35, 메일 블랙리스트 하나당 6(최대 24). 표시는 동의한 소스의 비율로 계산하므로, 하나만 표시하면 일부만 감점됩니다.\n등급: A 85 이상, B 70 이상, C 50 이상, D 30 이상, F 30 미만. 소스 표 아래에 내역이 나옵니다."],
     ["어떤 소스를 쓰나요?", "키 없이: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP(지역 인터넷 레지스트리), ip.guide, Shodan InternetDB, Tor Project 출구 목록, Cloudflare(내 주소만). 사이트 운영자가 무료 API 키를 설정하면 IPQualityScore, AbuseIPDB, Scamalytics, ipdata가 추가됩니다. 각 행은 해당 소스의 페이지로 연결됩니다."],
