@@ -113,6 +113,7 @@ export default {
   ex_wait: "正在偵測出口 {n}/{of}", ex_more: "每個網站看到的出口 →", src_down: "{list} 沒有回應。",
   col_result: "結果", f_clean: "未標記為代理或 VPN",
   p_why: "{why}：扣 {n} 分",
+  col_item: "項目", col_by: "來源", q_loc: "位置", q_type: "網路類型", q_anon: "代理 / VPN", q_tor: "Tor 出口", q_risk: "風險分", q_abuse: "濫用紀錄", q_reg: "註冊資訊", q_ports: "開放埠", q_dnsbl: "郵件黑名單", q_nodata: "沒有資料", q_clean: "{n} 個來源皆未標記", q_tor_yes: "是 Tor 出口", q_tor_no: "不是（{n} 個來源）", q_abuse_yes: "有濫用紀錄", q_abuse_no: "沒有紀錄", q_by_asn: "（所屬網路）", q_bl_clean: "{n} 個都未收錄",
   docs: [
     ["分數怎麼算？", "每個位址從 100 分開始，依各來源的發現扣分：機房網路最多扣 20，代理標記扣 20，VPN 標記扣 15，Tor 扣 40，濫用回報扣 10，平均詐騙分數最多扣 35，每個郵件黑名單扣 6（最多 24）。標記依同意的來源數折算，只有一個來源標記時只扣一部分。\n等級：A 85 分以上，B 70 以上，C 50 以上，D 30 以上，F 低於 30。來源表格下方的明細列出每一項扣了多少。"],
     ["用了哪些資料來源？", "不需要金鑰的：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各區域的位址註冊機構）、ip.guide、Shodan InternetDB、Tor 專案的出口清單，以及 Cloudflare（只查本機位址）。站長設定免費 API 金鑰後，還會加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。每一列都連到該來源自己的查詢頁，可以去核對。"],

@@ -61,54 +61,64 @@ import { ccOfName } from "./sources.mjs";
   /* ---------- rendering pieces ---------- */
   const NA = '<span class="na">–</span>';
   const riskColor = v => v >= 70 ? "var(--t5)" : v >= 35 ? "var(--t3)" : "var(--t1)";
-  const bar = v => `<span class="bar" data-p="risk" style="--v:${v / 100};--c:${riskColor(v)}"><em>${esc(t("col_risk"))}</em><i></i><b class="num">${v}</b></span>`;
+  const bar = (v, label) => `<span class="bar" data-p="risk" style="--v:${v / 100};--c:${riskColor(v)}"><em>${esc(label)}</em><i></i><b class="num">${v}</b></span>`;
   const typeName = ty => ty ? t("t_" + ty) : "–";
-  const rows = Object.fromEntries($$("#src tr[data-s]").map(r => [r.dataset.s, r]));
-
-  function srcRow(id, cells, cls = "") {
-    const r = rows[id]; if (!r) return;
-    r.className = cls;
-    for (let i = 0; i < cells.length; i++) r.children[i + 1].innerHTML = cells[i];
-  }
-  function srcName(id, site, x) {
-    const r = rows[id]; if (!r) return;
-    const name = r.dataset.name;
-    r.children[0].innerHTML = (site ? `<a href="${esc(site)}" target="_blank" rel="noopener noreferrer">${esc(name)}</a>` : `<b>${esc(name)}</b>`) + (x ? `<span class="x">${x}</span>` : "");
-  }
   const SK = '<span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span>';
+  const qrows = Object.fromEntries($$("#src tr[data-q]").map(r => [r.dataset.q, r]));
 
-  // A source's answer as one line of what it actually said: place, network type, flags, risk. Sources answer
-  // different questions (a registry only knows where the block is registered, the Tor list only whether it's an exit),
-  // so one summary cell reads better than columns that would be mostly empty.
-  function fillSource(m) {
-    if (!m.ok) { srcName(m.id, m.site, ""); srcRow(m.id, [`<span class="m">${esc(t("src_fail"))}</span>`], "fail"); return; }
-    const d = m.d, extra = (d.extra || []).map(([k, v]) => `${esc(t(k))} ${esc(v)}`);
-    if (d.org && (d.cc || !d.regCc)) extra.unshift(esc((d.asn ? "AS" + d.asn + " " : "") + d.org));
-    if (d.tags && d.tags.length) extra.push(esc(d.tags.join(", ")));
-    srcName(m.id, m.site, extra.join(" · "));
-    const out = [];
-    if (d.cc) out.push(`<span class="pl">${flag(d.cc)} ${esc(country(d.cc))}${d.city ? ` <span class="m">${esc(d.city)}</span>` : ""}</span>`);
-    const reg = d.regCc || d.asCc;
-    if (reg && !d.cc) out.push(`<span class="pl">${flag(reg)} ${esc(t(d.regCc ? "x_reg" : "x_as_cc", { c: country(reg) }))}${d.rir ? ` <span class="m">${esc(d.rir)}</span>` : ""}</span>`);
-    else if (!d.cc && d.rir) out.push(`<span class="m">${esc(d.rir)}</span>`);
-    if (d.type) out.push(`<span class="ft ${d.type === "hosting" ? "warn" : ""}" data-p="${d.type}">${esc(typeName(d.type))}</span>`);
-    const on = [["tor", "Tor"], ["vpn", "VPN"], ["proxy", t("tag_proxy")], ["abuser", t("f_abuse")]].filter(([k]) => d[k] === true);
-    if (on.length) out.push(on.map(([k, x]) => `<span class="ft bad" data-p="${k}">${esc(x)}</span>`).join(""));
-    else if (m.id === "tor") out.push(`<span class="no">${esc(t("x_tor_no"))}</span>`);
-    else if (["tor", "vpn", "proxy"].some(k => d[k] === false)) out.push(`<span class="no">${esc(t("f_clean"))}</span>`);
-    if (typeof d.risk === "number") out.push(bar(d.risk));
-    if (d.ports) out.push(`<span class="m">${esc(d.ports.length ? t("x_ports") + " " + d.ports.slice(0, 10).join(", ") : t("x_no_ports"))}</span>`);
-    srcRow(m.id, [out.join("") || NA]);
+  // The table answers questions, not sources: one row per question (where is it, what kind of network, flagged as
+  // VPN/proxy, Tor, risk scores, abuse, registry, open ports, blocklists), its answer from every source that has one
+  // (with how many agree), and those sources as links on the right. Rows fill in as sources answer.
+  const SRC = {};                       // id → { name, site } of the sources that answered
+  const by = ids => [...new Set(ids)].map(id => SRC[id] ? `<a href="${esc(SRC[id].site)}" target="_blank" rel="noopener noreferrer">${esc(SRC[id].name)}</a>` : "").filter(Boolean).join(" · ");
+  const count = (list, f) => { const m = new Map(); for (const x of list) { const k = f(x); if (k != null) m.set(k, [...(m.get(k) || []), x]); } return [...m.entries()].sort((a, b) => b[1].length - a[1].length); };
+  const times = n => n > 1 ? ` <span class="m num">×${n}</span>` : "";
+  function setQ(q, ans, ids) {
+    const r = qrows[q]; if (!r) return;
+    r.children[1].innerHTML = ans; r.children[2].innerHTML = by(ids);
   }
-
-  // the blocklists: one row, counting as they answer; the lists that carry the address are named and linked
-  const BL = { of: 0, done: 0, hits: [] };
-  function blRow(final) {
+  // sources that answered nothing to a question yet keep the placeholder; at the end such rows say "no data"
+  function renderQ(final) {
+    const R = RES, has = f => R.filter(x => f(x.data));
+    const empty = final ? `<span class="m">${esc(t("q_nodata"))}</span>` : SK;
+    const geo = has(d => d.cc);
+    setQ("loc", geo.length ? count(geo, x => x.data.cc).map(([cc, l]) => `<span class="pl">${flag(cc)} ${esc(country(cc))}${times(l.length)}</span>`).join("") : empty, geo.map(x => x.id));
+    const typed = has(d => d.type);
+    setQ("type", typed.length ? count(typed, x => x.data.type).map(([ty, l]) => `<span class="ft ${ty === "hosting" ? "warn" : ""}" data-p="${ty}">${esc(typeName(ty))}${l.length > 1 ? " ×" + l.length : ""}</span>`).join("") : empty, typed.map(x => x.id));
+    const anon = has(d => typeof d.proxy === "boolean" || typeof d.vpn === "boolean");
+    const vpn = anon.filter(x => x.data.vpn === true), px = anon.filter(x => x.data.proxy === true);
+    const op = (R.find(x => x.data.extra && x.data.extra.some(e => e[0] === "x_operator")) || {}).data;
+    setQ("anon", !anon.length ? empty : vpn.length || px.length
+      ? [vpn.length && `<span class="ft bad" data-p="vpn">VPN ×${vpn.length}</span>`, px.length && `<span class="ft bad" data-p="proxy">${esc(t("tag_proxy"))} ×${px.length}</span>`,
+        op && `<span class="m">${esc(t("x_operator"))} ${esc(op.extra.find(e => e[0] === "x_operator")[1])}</span>`].filter(Boolean).join("") + ` <span class="m">/ ${anon.length}</span>`
+      : `<span class="no">${esc(t("q_clean", { n: anon.length }))}</span>`, anon.map(x => x.id));
+    const tor = has(d => typeof d.tor === "boolean"), torYes = tor.filter(x => x.data.tor);
+    setQ("tor", !tor.length ? empty : torYes.length ? `<span class="ft bad" data-p="tor">${esc(t("q_tor_yes"))} ×${torYes.length}</span> <span class="m">/ ${tor.length}</span>`
+      : `<span class="no">${esc(t("q_tor_no", { n: tor.length }))}</span>`, tor.map(x => x.id));
+    const risk = has(d => typeof d.risk === "number");
+    setQ("risk", risk.length ? risk.map(x => bar(x.data.risk, SRC[x.id] ? SRC[x.id].name : x.id)).join("") : empty, risk.map(x => x.id));
+    const ab = has(d => typeof d.abuser === "boolean"), abYes = ab.filter(x => x.data.abuser);
+    setQ("abuse", !ab.length ? empty : abYes.length ? `<span class="ft bad" data-p="abuser">${esc(t("q_abuse_yes"))} ×${abYes.length}</span> <span class="m">/ ${ab.length}</span>`
+      : `<span class="no">${esc(t("q_abuse_no"))}</span>`, ab.map(x => x.id));
+    const rd = (R.find(x => x.id === "rdap") || {}).data || {}, ig = (R.find(x => x.id === "ipguide") || {}).data || {};
+    const regCc = rd.regCc || ig.asCc, rir = rd.rir || ig.rir;
+    const regBits = [regCc && `<span class="pl">${flag(regCc)} ${esc(country(regCc))}${rd.regCc ? "" : ` <span class="m">${esc(t("q_by_asn"))}</span>`}</span>`, rir && `<span class="m">${esc(rir)}</span>`,
+      rd.regName && `<span class="m num">${esc(rd.regName)}</span>`, rd.regDate && `<span class="m num">${esc(rd.regDate)}</span>`].filter(Boolean);
+    setQ("reg", regBits.length ? regBits.join("") : empty, R.filter(x => x.id === "rdap" || x.id === "ipguide").map(x => x.id));
+    const sh = R.find(x => x.id === "shodan");
+    setQ("ports", !sh ? (CUR && CUR.skip.shodan ? `<span class="m">${esc(t("skip_v4"))}</span>` : empty)
+      : sh.data.ports && sh.data.ports.length ? `<span class="num">${esc(sh.data.ports.slice(0, 12).join(", "))}</span>` + (sh.data.tags && sh.data.tags.length ? ` <span class="m">${esc(sh.data.tags.join(", "))}</span>` : "")
+      : `<span class="no">${esc(t("x_no_ports"))}</span>`, sh ? ["shodan"] : []);
+    // the blocklists: counting as they answer; the lists that carry the address are named and linked
     const hits = BL.hits.map(b => `<a class="ft bad" data-p="dnsbl" href="${esc(b.site)}" target="_blank" rel="noopener noreferrer">${esc(b.name)}</a>`).join("");
-    const cell = !BL.of ? `<span class="m">${esc(t("bl_v6"))}</span>`
-      : hits || (final || BL.done === BL.of ? `<span class="no">${esc(t("bl_clean"))}</span>` : `<span class="m num">${BL.done}/${BL.of}</span>`);
-    srcRow("dnsbl", [cell], BL.of ? "" : "fail");
+    const r = qrows.dnsbl;
+    if (r) {
+      r.children[1].innerHTML = !BL.of ? `<span class="m">${esc(t("bl_v6"))}</span>`
+        : hits ? hits + ` <span class="m">/ ${BL.of}</span>` : BL.done === BL.of ? `<span class="no">${esc(t("q_bl_clean", { n: BL.of }))}</span>` : `<span class="m num">${BL.done}/${BL.of}</span>`;
+      r.children[2].innerHTML = BL.of ? `<span class="m">${esc(BL.names.join(" · "))}</span>` : "";
+    }
   }
+  const BL = { of: 0, done: 0, hits: [], names: [] };
 
   /* ---------- the check ---------- */
   let RUN = null, total = 0, got = 0;
@@ -127,7 +137,7 @@ import { ccOfName } from "./sources.mjs";
     $("#facts dd").classList.add("ipv");
     $("#notes").innerHTML = '<li class="sk-l"></li>'.repeat(2);
     $$("#uses li").forEach(li => { li.className = ""; li.querySelector(".lv").innerHTML = SK; li.querySelector(".why").innerHTML = "&nbsp;"; });
-    for (const id in rows) { rows[id].hidden = false; srcName(id, null, ""); srcRow(id, [SK]); }
+    for (const q in qrows) { qrows[q].hidden = false; qrows[q].children[1].innerHTML = SK; qrows[q].children[2].innerHTML = ""; }
     $("#srcN").textContent = ""; $("#srcFoot").innerHTML = "&nbsp;";
     $$(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.ip === (ip || selfIp)));
   }
@@ -174,7 +184,7 @@ import { ccOfName } from "./sources.mjs";
     if (ctl === RUN && !done) fail("err_net");
   }
 
-  let CUR = null, keyless = 0, RES = [], BLR = [], PEND = [];
+  let CUR = null, keyless = 0, RES = [], BLR = [], PEND = [], DOWN = [];
   // IPinfo limits the shared Cloudflare addresses the server asks from; the browser asks it directly instead
   const ipinfo = ip => getJ(`https://ipinfo.io/${encodeURIComponent(ip)}/json`).then(j => {
     if (j.bogon || !j.country) throw 0;
@@ -184,30 +194,29 @@ import { ccOfName } from "./sources.mjs";
   });
   function handle(m) {
     if (m.t === "start") {
-      CUR = m; RES = []; BLR = []; PEND = [];
+      CUR = m; RES = []; BLR = []; PEND = []; DOWN = [];
       const dd = $("#facts dd"); dd.className = "ipv"; dd.innerHTML = `${esc(m.ip)} <span class="m">IPv${m.v}</span>`;
-      // sources this check can't use leave the table before any answer arrives; the ones needing keys get a footnote
-      for (const id in m.skip) if (rows[id]) rows[id].hidden = true;
+      // the sources needing keys get a footnote
       keyless = Object.values(m.skip).filter(w => w === "key").length;
-      BL.of = m.bl.length; BL.done = 0; BL.hits = [];
-      blRow(false);
-      total = Object.keys(rows).length - 1 - Object.keys(m.skip).length + m.bl.length;
+      BL.of = m.bl.length; BL.done = 0; BL.hits = []; BL.names = [];
+      total = m.n + m.bl.length;
+      renderQ(false);
       if (m.self) noteMine(m.ip);
       progress();
     } else if (m.t === "src") {
       if (!m.ok && m.id === "ipinfo") {
         const cur = CUR;
-        PEND.push(ipinfo(cur.ip).then(d => { if (CUR !== cur) return; RES.push({ id: m.id, data: d }); fillSource({ ...m, ok: true, d }); },
-          () => { if (CUR === cur) fillSource(m); }).finally(() => { if (CUR === cur) { got++; progress(); } }));
+        PEND.push(ipinfo(cur.ip).then(d => { if (CUR !== cur) return; SRC[m.id] = m; RES.push({ id: m.id, data: d }); renderQ(false); },
+          () => { if (CUR === cur) DOWN.push(m.name); }).finally(() => { if (CUR === cur) { got++; progress(); } }));
         return;
       }
       if (m.ok && !m.d.cc && m.d.cname) { m.d.cc = ccOfName(m.d.cname); delete m.d.cname; }
-      if (m.ok) RES.push({ id: m.id, data: m.d });
-      fillSource(m); got++; progress();
+      if (m.ok) { SRC[m.id] = m; RES.push({ id: m.id, data: m.d }); renderQ(false); } else DOWN.push(m.name);
+      got++; progress();
     }
     else if (m.t === "bl") {
-      BL.done++; BLR.push(m); if (m.listed === true) BL.hits.push(m);
-      blRow(false); got++; progress();
+      BL.done++; BLR.push(m); BL.names.push(m.name); if (m.listed === true) BL.hits.push(m);
+      renderQ(false); got++; progress();
     } else if (m.t === "done") {
       // scored here, once the browser's own lookups are in too (same rules as the API: src/score.mjs)
       const cur = CUR;
@@ -273,7 +282,7 @@ import { ccOfName } from "./sources.mjs";
       li.querySelector(".lv").innerHTML = `<span class="tag ${u.lv}">${esc(t("lv_" + u.lv))}</span>`;
       li.querySelector(".why").textContent = t(u.why);
     }
-    blRow(true);
+    renderQ(true);
     // every item below that caused a deduction takes its color and explains itself on hover
     for (const p of r.parts) for (const el of $$(`[data-p="${p.k.slice(2)}"]`)) {
       el.classList.add("hit"); el.style.setProperty("--pc", `var(--p-${p.k.slice(2)})`); el.dataset.why = why(p);
@@ -282,12 +291,10 @@ import { ccOfName } from "./sources.mjs";
     }
     // the checked address, when it is one of the visitor's exits that no check placed, takes the country found here
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
-    // sources that didn't answer leave the table now that everything is in, named in the footnote instead
-    const down = Object.keys(rows).filter(id => id !== "dnsbl" && !rows[id].hidden && rows[id].className === "fail");
-    for (const id of down) rows[id].hidden = true;
-    const ok = Object.keys(rows).filter(id => !rows[id].hidden && rows[id].className === "" && id !== "dnsbl").length;
-    $("#srcN").textContent = t("src_n", { ok, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
-    $("#srcFoot").innerHTML = (down.length ? esc(t("src_down", { list: list(down.map(id => rows[id].dataset.name)) })) + " " : "") +
+    // questions no source could answer leave the table; sources that didn't answer are named in the footnote
+    for (const q in qrows) if (q !== "dnsbl" && !qrows[q].children[2].textContent) qrows[q].hidden = true;
+    $("#srcN").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
+    $("#srcFoot").innerHTML = (DOWN.length ? esc(t("src_down", { list: list(DOWN) })) + " " : "") +
       (keyless ? esc(t("skip_n", { n: keyless })) + " " : "") +
       `${esc(t("more_l"))} ` + r.elsewhere.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join(" · ");
   }

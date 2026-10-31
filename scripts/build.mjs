@@ -29,6 +29,8 @@ const TOOLS = [
 // each tool's page per language, where it differs from this site's folders
 const TOOL_PATH = { ls: { "zh-CN": "/zh/" } };
 const toolHome = (id, lang, slug) => (TOOL_PATH[id] || {})[lang] || (slug ? "/" + slug + "/" : "/");
+// the questions the sources table answers, one row each (src/app.js fills them)
+export const QROWS = ["loc", "type", "anon", "tor", "risk", "abuse", "reg", "ports", "dnsbl"];
 const USES = ["stream", "ai", "captcha", "account", "mail"];
 
 // Runs before first paint: apply the saved theme. On the English root, send visitors to their language's page
@@ -100,8 +102,8 @@ export async function build({ check = false } = {}) {
 
     // every source and blocklist has its row from the start; answers fill them in place
     const skel = '<span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span>';
-    // the blocklists share one row: their verdict is a count, and each list is linked from it
-    const srcRows = [...SOURCES.map(s => [s.id, s.name]), ["dnsbl", fill(T("bl_row"), { n: DNSBL.length })]].map(([id, name]) => `<tr data-s="${id}" data-name="${esc(name)}"><td><b>${esc(name)}</b></td><td>${skel}</td></tr>`).join("");
+    // one row per question the sources answer; answers fill them as they arrive
+    const srcRows = QROWS.map(q => `<tr data-q="${q}"><th scope="row">${esc(T("q_" + q))}</th><td class="ans">${skel}</td><td class="by"></td></tr>`).join("");
     const uses = USES.map(k => `<li data-u="${k}"><b>${esc(T("use_" + k))}</b><span class="lv">${skel}</span><span class="why">&nbsp;</span></li>`).join("");
     const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(typeof x.name === "string" ? x.name : x.name[lang] || x.name.en)}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
     const helpNav = docs.map(([q], i) => `<button type="button" role="tab" data-hq="${i}" aria-selected="${i === 0}">${esc(q)}</button>`).join("");

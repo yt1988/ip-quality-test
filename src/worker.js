@@ -68,7 +68,7 @@ function skipOf(s, ip, self, env) {
 }
 
 // The answer is NDJSON, one line per event, so the page fills each source's row the moment it answers:
-//   {"t":"start", ip, v, self, skip: {id: why}, bl: [ids]}   every row the page shows, before any answer
+//   {"t":"start", ip, v, self, skip: {id: why}, bl: [ids], n}  what will answer (n sources), before any answer
 //   {"t":"src", id, ok, ms, d | err}                          one source
 //   {"t":"bl", id, listed}                                    one blocklist
 //   {"t":"done", score, grade, parts, notes, uses, summary, at, cached, elsewhere}
@@ -97,12 +97,18 @@ async function check(request, env, ctx) {
 
   ctx.waitUntil((async () => {
     try {
-      await send({ t: "start", ip, v, self, skip, bl: blIds });
+      await send({ t: "start", ip, v, self, skip, bl: blIds, n: SOURCES.filter(s => !skip[s.id]).length });
       let raw, cached = false;
       // what Cloudflare sees for this very request: the visitor's own address only, never cached
       const own = !skip.cloudflare ? runSource(SOURCES.find(s => s.own), ip, { env, cf: request.cf }).then(r => { send({ t: "src", ...r }); return r; }) : null;
       if (hit) {
         raw = await hit.json(); cached = true;
+        // a source that failed last time (rate limit, timeout) is asked again rather than served as a failure
+        const ctx2 = { env, torList };
+        raw.sources = await Promise.all(raw.sources.map(r => {
+          const s = SOURCES.find(x => x.id === r.id);
+          return r.ok || !s ? r : runSource(s, ip, ctx2);
+        }));
         for (const r of raw.sources) await send({ t: "src", ...r });
         for (const b of raw.dnsbl) await send({ t: "bl", ...b });
       } else {

@@ -113,6 +113,7 @@ export default {
   ex_wait: "出口を検出中 {n}/{of}", ex_more: "サイトごとの出口 →", src_down: "{list} は応答がありませんでした。",
   col_result: "結果", f_clean: "プロキシ・VPN 判定なし",
   p_why: "{why}：−{n} 点",
+  col_item: "項目", col_by: "ソース", q_loc: "場所", q_type: "ネットワーク種別", q_anon: "プロキシ / VPN", q_tor: "Tor 出口", q_risk: "リスクスコア", q_abuse: "不正報告", q_reg: "登録情報", q_ports: "開いているポート", q_dnsbl: "メールブラックリスト", q_nodata: "データなし", q_clean: "{n} 個のソースすべて判定なし", q_tor_yes: "Tor 出口", q_tor_no: "出口ではない（{n} 個）", q_abuse_yes: "不正報告あり", q_abuse_no: "報告なし", q_by_asn: "（ネットワーク）", q_bl_clean: "{n} 個すべて未掲載",
   docs: [
     ["スコアの計算方法は？", "どのアドレスも 100 点から始まり、ソースの結果に応じて減点します。データセンターは最大 20、プロキシ 20、VPN 15、Tor 40、不正報告 10、平均不正スコアで最大 35、メールブラックリスト 1 件につき 6（最大 24）。フラグは同意したソースの割合で数えるので、1 つだけなら一部しか減りません。\nランク：A 85 以上、B 70 以上、C 50 以上、D 30 以上、F 30 未満。ソース表の下に内訳が出ます。"],
     ["どのソースを使っていますか？", "キー不要：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（地域インターネットレジストリ）、ip.guide、Shodan InternetDB、Tor Project の出口リスト、Cloudflare（自分のアドレスのみ）。サイト運営者が無料 API キーを設定すると IPQualityScore、AbuseIPDB、Scamalytics、ipdata も加わります。各行はそのソース自身のページにリンクしています。"],

@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { LANGS } from "../scripts/build.mjs";
+import { LANGS, QROWS } from "../scripts/build.mjs";
 import { SOURCES, DNSBL } from "../src/sources.mjs";
 
 const page = slug => readFile(new URL(`../public/${slug ? slug + "/" : ""}index.html`, import.meta.url), "utf8");
@@ -21,9 +21,9 @@ test("every language page keeps the shell contract", async () => {
   }
 });
 
-test("every source, and the blocklists, have their row before any answer", async () => {
+test("every question has its row before any answer", async () => {
   const h = await page("");
-  assert.equal((h.match(/<tr data-s="/g) || []).length, SOURCES.length + 1);   // + the blocklists row
+  assert.equal((h.match(/<tr data-q="/g) || []).length, QROWS.length);
   assert.equal((h.match(/<li data-u="/g) || []).length, 5);
 });
 
