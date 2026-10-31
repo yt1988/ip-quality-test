@@ -23,7 +23,7 @@ test("every language page keeps the shell contract", async () => {
 
 test("every finding and every source has its row before any answer", async () => {
   const h = await page("");
-  assert.equal((h.match(/<li class="fr" data-f="/g) || []).length, FINDS.length);
+  assert.equal((h.match(/<li class="(fc|uc)" data-f="/g) || []).length, FINDS.length);
   assert.equal((h.match(/<div class="pr wait" data-s="/g) || []).length, SOURCES.length + DNSBL.length);
   assert.deepEqual(GROUPS.flatMap(([, l]) => l.map(([id]) => id)).sort(), [...SOURCES, ...DNSBL].map(x => x.id).sort());
 });

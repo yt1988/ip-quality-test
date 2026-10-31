@@ -11,12 +11,17 @@
 //
 // key:  the Worker secrets a source needs (all of them); a source without its secrets is skipped
 // v6:   false when the source has nothing on IPv6 addresses
+// browser: "only" for sources that limit Cloudflare's shared addresses (the page asks them from the visitor's browser
+//       instead, on the visitor's own quota); "retry" for sources the page asks again from the browser when the server
+//       got no answer. Both need the source to answer CORS.
 // site: the source's own page for the address, so a visitor can check the answer at the source
 
 const UA = "ipqs (+https://github.com/yt1988/ipqs)";
 
 export async function getJSON(url, { headers = {}, ms = 4500 } = {}) {
-  const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json", ...headers }, signal: AbortSignal.timeout(ms) });
+  // a browser sends its own User-Agent (setting one would also make the request need a CORS preflight)
+  const h = typeof window === "undefined" ? { "User-Agent": UA, Accept: "application/json", ...headers } : { Accept: "application/json", ...headers };
+  const r = await fetch(url, { headers: h, signal: AbortSignal.timeout(ms) });
   if (!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
 }
@@ -76,10 +81,11 @@ export const SOURCES = [
     },
   },
   {
-    id: "proxycheck", name: "proxycheck.io", opt: ["PROXYCHECK_KEY"],
+    // refuses Cloudflare's shared addresses without a key, so it runs only with one
+    id: "proxycheck", name: "proxycheck.io", key: ["PROXYCHECK_KEY"],
     site: ip => "https://proxycheck.io/threats/" + ip,
     async run(ip, { env }) {
-      const k = env.PROXYCHECK_KEY ? "?key=" + encodeURIComponent(env.PROXYCHECK_KEY) : "";
+      const k = "?key=" + encodeURIComponent(env.PROXYCHECK_KEY);
       const j = await getJSON(`https://proxycheck.io/v3/${ip}${k}`);
       const d = j[ip] || Object.values(j).find(v => v && typeof v === "object" && v.network);
       if (j.status === "error" || j.status === "denied" || !d) throw new Error(j.message || j.status || "fail");
@@ -94,7 +100,7 @@ export const SOURCES = [
     },
   },
   {
-    id: "ipquery", name: "IPQuery",
+    id: "ipquery", name: "IPQuery", browser: "retry",
     site: ip => "https://ipquery.io/?ip=" + ip,
     async run(ip) {
       const j = await getJSON(`https://api.ipquery.io/${ip}`);
@@ -105,7 +111,7 @@ export const SOURCES = [
     },
   },
   {
-    id: "ipapiis", name: "ipapi.is", opt: ["IPAPI_IS_KEY"],
+    id: "ipapiis", name: "ipapi.is", opt: ["IPAPI_IS_KEY"], browser: "retry",
     site: ip => "https://ipapi.is/?q=" + ip,
     async run(ip, { env }) {
       const k = env.IPAPI_IS_KEY ? "&key=" + encodeURIComponent(env.IPAPI_IS_KEY) : "";
@@ -128,17 +134,18 @@ export const SOURCES = [
     },
   },
   {
-    id: "ip2location", name: "IP2Location", opt: ["IP2LOCATION_KEY"],
+    // rate-limits Cloudflare's shared addresses without a key, so it runs only with one
+    id: "ip2location", name: "IP2Location", key: ["IP2LOCATION_KEY"],
     site: ip => "https://www.ip2location.io/" + ip,
     async run(ip, { env }) {
-      const k = env.IP2LOCATION_KEY ? "&key=" + encodeURIComponent(env.IP2LOCATION_KEY) : "";
+      const k = "&key=" + encodeURIComponent(env.IP2LOCATION_KEY);
       const j = await getJSON(`https://api.ip2location.io/?ip=${ip}${k}`);
       if (j.error) throw new Error(j.error.error_message || "fail");
       return { cc: upper(j.country_code), city: j.city_name, asn: asnOf(j.asn), org: j.as, proxy: bool(j.is_proxy) };
     },
   },
   {
-    id: "ipinfo", name: "IPinfo", opt: ["IPINFO_TOKEN"],
+    id: "ipinfo", name: "IPinfo", opt: ["IPINFO_TOKEN"], browser: "only",
     site: ip => "https://ipinfo.io/" + ip,
     async run(ip, { env }) {
       const k = env.IPINFO_TOKEN ? "?token=" + encodeURIComponent(env.IPINFO_TOKEN) : "";
@@ -148,9 +155,45 @@ export const SOURCES = [
         host: j.hostname, anycast: j.anycast === true ? true : undefined };
     },
   },
+  // geolocation databases: where the address is and whose network it is (more votes for the country)
+  {
+    id: "ipwho", name: "ipwho.is", browser: "only",
+    site: ip => "https://ipwho.is/" + ip,
+    async run(ip) {
+      const j = await getJSON(`https://ipwho.is/${ip}`);
+      if (!j.success) throw new Error(j.message || "fail");
+      const c = j.connection || {};
+      return { cc: upper(j.country_code), city: j.city, asn: asnOf(c.asn), org: c.org || c.isp };
+    },
+  },
+  {
+    id: "ipsb", name: "IP.SB",
+    site: ip => "https://ip.sb/ip/" + ip,
+    async run(ip) {
+      const j = await getJSON(`https://api.ip.sb/geoip/${ip}`);
+      return { cc: upper(j.country_code), city: j.city, asn: asnOf(j.asn), org: j.asn_organization || j.isp };
+    },
+  },
+  {
+    id: "iplocation", name: "iplocation.net",
+    site: ip => "https://www.iplocation.net/ip-lookup?query=" + ip,
+    async run(ip) {
+      const j = await getJSON(`https://api.iplocation.net/?ip=${ip}`);
+      if (String(j.response_code) !== "200") throw new Error(j.response_message || "fail");
+      return { cc: upper(j.country_code2), org: j.isp };
+    },
+  },
+  {
+    id: "geojs", name: "GeoJS", browser: "retry",
+    site: ip => "https://www.geojs.io/",
+    async run(ip) {
+      const j = await getJSON(`https://get.geojs.io/v1/ip/geo/${ip}.json`);
+      return { cc: upper(j.country_code), city: j.city, asn: asnOf(j.asn), org: j.organization_name };
+    },
+  },
   {
     // The regional internet registry's record: who the block is registered to, and in which country
-    id: "rdap", name: "RDAP (RIR)",
+    id: "rdap", name: "RDAP (RIR)", browser: "retry",
     site: ip => "https://client.rdap.org/?type=ip&object=" + ip,
     async run(ip) {
       // ARIN's server redirects to the registry that holds the block; rdap.org (behind Cloudflare, which a Worker

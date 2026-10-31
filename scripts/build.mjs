@@ -31,11 +31,13 @@ const TOOL_PATH = { ls: { "zh-CN": "/zh/" } };
 const toolHome = (id, lang, slug) => (TOOL_PATH[id] || {})[lang] || (slug ? "/" + slug + "/" : "/");
 // the questions the sources table answers, one row each (src/app.js fills them)
 // the findings column: what the address is, then what it is good for (src/score.mjs decides each)
-export const FINDS = ["type", "native", "anon", "tor", "risk", "abuse", "dnsbl", "stream", "ai", "captcha", "account", "mail"];
+export const PROFILE = ["type", "native", "geo", "anon", "tor", "risk", "abuse", "dnsbl"];
+export const USES = ["stream", "ai", "captcha", "account", "mail"];
+export const FINDS = [...PROFILE, ...USES];
 // the source groups of the second card, in the order the rows are drawn
 const nameOf = id => (SOURCES.find(s => s.id === id) || DNSBL.find(s => s.id === id)).name;
 export const GROUPS = [
-  ["intel", ["cloudflare", "ipapi", "proxycheck", "ipquery", "ipapiis", "ip2location", "ipinfo", "ipqs", "abuseipdb", "scamalytics", "ipdata"]],
+  ["intel", ["cloudflare", "ipapi", "ipquery", "ipapiis", "ipinfo", "ipwho", "ipsb", "iplocation", "geojs", "proxycheck", "ip2location", "ipqs", "abuseipdb", "scamalytics", "ipdata"]],
   ["reg", ["rdap", "ipguide", "shodan", "tor"]],
   ["dnsbl", DNSBL.map(x => x.id)],
 ].map(([g, ids]) => [g, ids.map(id => [id, nameOf(id)])]);
@@ -109,11 +111,16 @@ export async function build({ check = false } = {}) {
 
     // every source and blocklist has its row from the start; answers fill them in place
     const skel = '<span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span>';
-    // the findings: one row each, drawn now and filled when every source is in
-    const finds = FINDS.map(f => `<li class="fr" data-f="${f}"><i class="st"></i><span class="fr-l">${esc(T("fl_" + f))}</span><span class="fr-v"><span class="skl"></span></span><span class="fr-p"></span></li>`).join("");
+    // the findings, drawn now and filled when every source is in: eight cells on what the address is (a short answer
+    // each, the details on hover), then five on what it is good for (a verdict each, the reason on hover)
+    const finds = `<ul class="fgrid" id="finds">` + PROFILE.map(f => `<li class="fc" data-f="${f}"><span class="fc-l"><i class="st"></i>${esc(T("fl_" + f))}</span><b class="fc-v"><span class="skl"></span></b><span class="fr-p"></span></li>`).join("") + "</ul>" +
+      `<div class="sec-h"><span>${esc(T("h_uses"))}</span></div><ul class="ugrid" id="uses">` + USES.map(f => `<li class="uc" data-f="${f}"><span class="uc-l">${esc(T("fl_" + f))}</span><b class="uc-v"><span class="skl"></span></b></li>`).join("") + "</ul>";
     // every source has its row from the start, grouped as on EgressLens; answers fill them as they arrive
-    const groups = GROUPS.map(([g, ids]) => `<div class="pg" data-g="${g}"><h3>${esc(T("g_" + g))}<span class="pg-n" id="n-${g}"></span></h3>` +
-      ids.map(([id, name]) => `<div class="pr wait" data-s="${id}"><span class="pn">${esc(name)}</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div>`).join("") + "</div>").join("");
+    // two fixed columns (IP intelligence on the left, registry, scans and blocklists on the right), so the layout is
+    // the same whatever address is checked
+    const group = ([g, ids]) => `<div class="pg" data-g="${g}"><h3>${esc(T("g_" + g))}<span class="pg-n" id="n-${g}"></span></h3>` +
+      ids.map(([id, name]) => `<div class="pr wait" data-s="${id}"><span class="pn">${esc(name)}</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div>`).join("") + "</div>";
+    const groups = `<div class="pcol">${group(GROUPS[0])}</div><div class="pcol">${GROUPS.slice(1).map(group).join("")}</div>`;
     const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(typeof x.name === "string" ? x.name : x.name[lang] || x.name.en)}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
     const helpNav = docs.map(([q], i) => `<button type="button" role="tab" data-hq="${i}" aria-selected="${i === 0}">${esc(q)}</button>`).join("");
     const helpC = docs.map(([q, a], i) => `<article data-hqb="${i}"${i ? " hidden" : ""}><h3>${esc(q)}</h3>${a.split(/\n+/).map(p => `<p>${esc(p)}</p>`).join("")}</article>`).join("");
@@ -154,7 +161,9 @@ ${TOOLS.map(x => `- ${typeof x.name === "string" ? x.name : x.name.en}: https://
   // The only inline script is the pre-paint snippet, identical on every page: one hash covers the site.
   const csp = ["default-src 'self'", `script-src 'self' 'sha256-${sha(PREPAINT)}'`, "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data:",
     // the exit checks (as on EgressLens) and IPinfo, which the browser asks directly
-    "connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai",
+    "connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai " +
+      // sources the page asks itself (src/sources.mjs, browser: "only" or "retry"), RDAP with every registry it redirects to
+      "https://ipwho.is https://get.geojs.io https://api.ipapi.is https://api.ipquery.io https://rdap.arin.net https://rdap.org https://rdap.apnic.net https://rdap.db.ripe.net https://rdap.lacnic.net https://rdap.afrinic.net",
     "manifest-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'"].join("; ");
   files["_headers"] = `# Generated by scripts/build.mjs
 /*

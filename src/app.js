@@ -3,7 +3,7 @@
 // The score and findings come once every source is in. Strings: window.L1MS.
 import { family, canon, isPublic } from "./ip.mjs";
 import { assess } from "./score.mjs";
-import { ccOfName } from "./sources.mjs";
+import { ccOfName, SOURCES } from "./sources.mjs";
 
 (function () {
   "use strict";
@@ -83,9 +83,8 @@ import { ccOfName } from "./sources.mjs";
   const GROUP = Object.fromEntries($$(".pg").map(g => [g.dataset.g, [...g.querySelectorAll(".pr")]]));
   function groupCounts() {
     for (const g in GROUP) {
-      const rows = GROUP[g].filter(r => !r.hidden);
-      $("#n-" + g).textContent = rows.length ? `${rows.filter(r => !r.classList.contains("wait")).length} / ${rows.length}` : "";
-      $(`.pg[data-g="${g}"]`).hidden = !rows.length;
+      const rows = GROUP[g].filter(r => !r.hidden && !r.classList.contains("na"));
+      $("#n-" + g).textContent = rows.length ? `${rows.filter(r => !r.classList.contains("wait")).length} / ${rows.length}` : "–";
     }
   }
   function prSet(id, cls, answer, risk, ms, why) {
@@ -134,7 +133,7 @@ import { ccOfName } from "./sources.mjs";
     $("#vHead").textContent = t("checking"); const vt = $("#vText"); vt.classList.remove("err"); vt.innerHTML = "&nbsp;";
     $("#parts").innerHTML = "&nbsp;";
     $$("#facts b").forEach((b, i) => { b.className = i ? "" : "ipv"; b.innerHTML = SKL; });
-    $$("#finds .fr").forEach(r => { r.className = "fr"; r.style.removeProperty("--pc"); delete r.dataset.why; r.querySelector(".fr-v").innerHTML = '<span class="skl"></span>'; r.querySelector(".fr-p").textContent = ""; });
+    $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#srcFoot").innerHTML = "&nbsp;";
     markExit(ip || selfIp);
@@ -184,34 +183,46 @@ import { ccOfName } from "./sources.mjs";
     if (ctl === RUN && !done) fail("err_net");
   }
 
-  // IPinfo limits the shared Cloudflare addresses the server asks from; the browser asks it directly instead
-  const ipinfo = ip => getJ(`https://ipinfo.io/${encodeURIComponent(ip)}/json`).then(j => {
-    if (j.bogon || !j.country) throw 0;
-    const d = { cc: j.country, city: j.city, org: String(j.org || "").replace(/^AS\d+\s*/, "") || undefined, host: j.hostname || undefined };
-    const asn = /^AS(\d+)/.exec(j.org || ""); if (asn) d.asn = +asn[1]; if (j.anycast === true) d.anycast = true;
-    return d;
-  });
+  // Some sources limit Cloudflare's shared addresses: the page asks those from the visitor's own browser (on the
+  // visitor's quota), and asks again from here any source the server got no answer from, when it answers CORS
+  const SRCDEF = Object.fromEntries(SOURCES.map(s => [s.id, s]));
+  function inBrowser(id, ip) {
+    const s = SRCDEF[id], t0 = Date.now(), base = { t: "src", id, name: s.name, site: s.site(ip) };
+    return s.run(ip, { env: {} }).then(d => {
+      for (const k in d) if (d[k] === undefined || d[k] === null || d[k] === "") delete d[k];
+      return { ...base, ok: true, ms: Date.now() - t0, d };
+    }, e => ({ ...base, ok: false, ms: Date.now() - t0, err: String(e && e.message || e).slice(0, 80) }));
+  }
+  function accept(m) {
+    if (m.ok && !m.d.cc && m.d.cname) { m.d.cc = ccOfName(m.d.cname); delete m.d.cname; }
+    if (m.ok) RES.push({ id: m.id, data: m.d });
+    fillSource(m); got++; progress();
+  }
   function handle(m) {
     if (m.t === "start") {
       CUR = m; RES = []; BLR = []; PEND = [];
       const b = $("#facts b"); b.className = "ipv"; b.innerHTML = `${esc(m.ip)} <span class="m">IPv${m.v}</span>`;
-      // sources this check can't use leave the list before any answer arrives; the ones needing keys get a footnote
-      for (const id in m.skip) if (PR[id]) PR[id].hidden = true;
-      if (!m.bl.length) for (const id in PR) if (PR[id].closest('[data-g="dnsbl"]')) PR[id].hidden = true;
+      // sources this deployment has no keys for stay out of the list (the same for every address; a footnote counts
+      // them); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
+      const cur = m, mine = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
+      for (const id in m.skip) {
+        if (!PR[id] || m.skip[id] === "browser") continue;
+        if (m.skip[id] === "key") PR[id].hidden = true;
+        else prSet(id, "na", `<span class="m">${esc(t("skip_" + m.skip[id]))}</span>`, "", "");
+      }
+      if (!m.bl.length) for (const id in PR) if (PR[id].closest('[data-g="dnsbl"]')) prSet(id, "na", `<span class="m">${esc(t("skip_v4"))}</span>`, "", "");
       keyless = Object.values(m.skip).filter(w => w === "key").length;
-      total = m.n + m.bl.length;
+      total = m.n + m.bl.length + mine.length;
+      for (const id of mine) PEND.push(inBrowser(id, m.ip).then(r => { if (CUR === cur) accept(r); }));
       if (m.self) noteMine(m.ip);
       progress();
     } else if (m.t === "src") {
-      if (!m.ok && m.id === "ipinfo") {
+      if (!m.ok && SRCDEF[m.id] && SRCDEF[m.id].browser) {
         const cur = CUR;
-        PEND.push(ipinfo(cur.ip).then(d => { if (CUR !== cur) return; RES.push({ id: m.id, data: d }); fillSource({ ...m, ok: true, d, ms: null }); },
-          () => { if (CUR === cur) fillSource(m); }).finally(() => { if (CUR === cur) { got++; progress(); } }));
+        PEND.push(inBrowser(m.id, cur.ip).then(r => { if (CUR === cur) accept(r.ok ? r : m); }));
         return;
       }
-      if (m.ok && !m.d.cc && m.d.cname) { m.d.cc = ccOfName(m.d.cname); delete m.d.cname; }
-      if (m.ok) RES.push({ id: m.id, data: m.d });
-      fillSource(m); got++; progress();
+      accept(m);
     } else if (m.t === "bl") {
       BLR.push(m);
       prSet(m.id, m.listed === true ? "hit-row" : m.listed === null ? "fail" : "",
@@ -225,15 +236,25 @@ import { ccOfName } from "./sources.mjs";
   }
 
   /* ---------- the result ---------- */
-  // each finding row and the deductions that belong to it
+  // each finding cell and the deductions that belong to it
   const PARTS_OF = { type: ["hosting", "business"], anon: ["vpn", "proxy"], tor: ["tor"], risk: ["risk"], abuse: ["abuser"], dnsbl: ["dnsbl"] };
+  const CELL_OF = Object.fromEntries(Object.entries(PARTS_OF).flatMap(([f, ps]) => ps.map(p => [p, f])));
   const ICON = { ok: "✓", warn: "!", bad: "✕", info: "i", none: "–" };
-  function finding(f, lv, html) {
-    const r = $(`#finds [data-f="${f}"]`); if (!r) return;
-    r.className = "fr st-" + lv;
-    r.querySelector(".st").textContent = ICON[lv];
-    r.querySelector(".fr-v").innerHTML = html;
+  const nodata = () => `<span class="m">${esc(t("q_nodata"))}</span>`;
+  // a finding: its status, a short answer, and the whole sentence on hover
+  function finding(f, lv, html, why) {
+    const c = $(`[data-f="${f}"]`); if (!c) return;
+    c.className = (c.classList.contains("uc") ? "uc" : "fc") + " st-" + lv;
+    const st = c.querySelector(".st"); if (st) st.textContent = ICON[lv];
+    c.querySelector(".fc-v, .uc-v").innerHTML = html;
+    if (why) c.dataset.why = why; else delete c.dataset.why;
   }
+  // hovering a deduction under the score flashes the finding it came from
+  $("#parts").addEventListener("mouseover", e => {
+    const sp = e.target.closest("[data-k]"); if (!sp) return;
+    const c = $(`[data-f="${CELL_OF[sp.dataset.k]}"]`); if (!c) return;
+    c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash");
+  });
   function finish(r) {
     const s = r.summary, part = k => r.parts.find(p => p.k === "p_" + k);
     const why = p => t("p_why", { why: t(p.k, p.p), n: p.pts });
@@ -243,46 +264,57 @@ import { ccOfName } from "./sources.mjs";
     $("#vHead").textContent = t("g_" + r.grade);
     $("#vText").textContent = t("d_" + r.grade);
     // where the points went: one colored line per deduction, the same color as its segment of the ring
-    $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
+    $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-k="${p.k.slice(2)}" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
     let at = r.score;
     $("#gSeg").innerHTML = r.parts.map(p => { const len = Math.min(p.pts, 100 - at); if (len <= 0) return ""; const c = `<circle class="g-seg" cx="60" cy="60" r="52" pathLength="100" stroke="var(--p-${p.k.slice(2)})" stroke-dasharray="${Math.max(0, len - .8)} 100" stroke-dashoffset="${-(at + .4)}"/>`; at += len; return c; }).join("");
 
     // the address
     const fb = $$("#facts b"), set = (i, h) => { fb[i].className = i ? "" : "ipv"; fb[i].innerHTML = h; };
     const where = [s.city, s.cc && country(s.cc)].filter(Boolean).join(", ");
-    set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` + (s.ccs.length > 1 ? ` <span class="m">${esc(t("also", { list: s.ccs.slice(1).map(c => country(c.cc)).join(t("v_join")) }))}</span>` : "") : "–");
+    set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` : "–");
     set(2, s.asn || s.org ? `${s.asn ? "AS" + s.asn + " " : ""}<span class="m">${esc(s.org || "")}</span>` : "–");
     set(3, s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
 
-    // the findings
-    const F = s.flags, tv = RES.filter(x => x.data.type);
+    // what the address is: a short answer per cell, the sentence behind it on hover
+    const F = s.flags, tv = RES.filter(x => x.data.type), geoN = s.ccs.reduce((a, c) => a + c.by.length, 0);
     if (s.type) finding("type", s.type === "hosting" ? "warn" : s.type === "residential" || s.type === "mobile" ? "ok" : "info",
-      `${esc(typeName(s.type))} <span class="m">${tv.filter(x => x.data.type === s.type).length}/${tv.length}</span>` + (s.type === "mobile" ? ` <span class="m">${esc(t("fv_cgnat"))}</span>` : ""));
-    else finding("type", "none", `<span class="m">${esc(t("q_nodata"))}</span>`);
-    if (s.native === null) finding("native", "none", `<span class="m">${esc(t("q_nodata"))}</span>`);
-    else finding("native", s.native ? "ok" : "warn", esc(t(s.native ? "fv_native" : s.regFrom === "rir" ? "fv_broadcast" : "fv_broadcast_as", { reg: country(s.regCc), cc: country(s.cc) })));
-    if (!F.vpn.of && !F.proxy.of) finding("anon", "none", `<span class="m">${esc(t("q_nodata"))}</span>`);
+      `${esc(typeName(s.type))} <span class="m">${tv.filter(x => x.data.type === s.type).length}/${tv.length}</span>`, t("n_type_" + s.type) + (s.type === "mobile" ? " " + t("n_cgnat") : ""));
+    else finding("type", "none", nodata());
+    if (s.native === null) finding("native", "none", nodata());
+    else finding("native", s.native ? "ok" : "warn", `${flag(s.regCc)} ${esc(t(s.native ? "fs_native" : "fs_broadcast"))}`,
+      t(s.native ? "fv_native" : s.regFrom === "rir" ? "fv_broadcast" : "fv_broadcast_as", { reg: country(s.regCc), cc: country(s.cc) }));
+    if (!s.ccs.length) finding("geo", "none", nodata());
+    else if (s.ccs.length === 1) finding("geo", "ok", `${flag(s.cc)} ${esc(t("fs_geo_ok", { n: geoN }))}`, s.ccs[0].by.map(id => PR[id] ? PR[id].querySelector(".pn").textContent : id).join(" · "));
+    else finding("geo", "warn", s.ccs.map(c => `${flag(c.cc)} <span class="m">${c.by.length}</span>`).join(" "),
+      t("n_geo_split", { list: list(s.ccs.map(c => country(c.cc))) }));
+    if (!F.vpn.of && !F.proxy.of) finding("anon", "none", nodata());
     else if (F.vpn.yes || F.proxy.yes) finding("anon", F.vpn.yes + F.proxy.yes > 1 ? "bad" : "warn",
-      [F.vpn.yes && `VPN ${F.vpn.yes}/${F.vpn.of}`, F.proxy.yes && `${t("tag_proxy")} ${F.proxy.yes}/${F.proxy.of}`].filter(Boolean).map(esc).join(" · "));
-    else finding("anon", "ok", esc(t("q_clean", { n: Math.max(F.vpn.of, F.proxy.of) })));
-    if (s.torListed || F.tor.yes) finding("tor", "bad", esc(t("q_tor_yes")) + ` <span class="m">${F.tor.yes}/${F.tor.of}</span>`);
-    else finding("tor", F.tor.of ? "ok" : "none", esc(F.tor.of ? t("q_tor_no", { n: F.tor.of }) : t("q_nodata")));
-    if (s.risk === null) finding("risk", "none", `<span class="m">${esc(t("q_nodata"))}</span>`);
-    else finding("risk", riskLv(s.risk), `${esc(t("fv_risk_avg", { v: s.risk }))} <span class="m">${s.risks.map(x => esc((PR[x.id] ? PR[x.id].querySelector(".pn").textContent : x.id) + " " + x.v)).join(" · ")}</span>`);
-    if (!F.abuser.of) finding("abuse", "none", `<span class="m">${esc(t("q_nodata"))}</span>`);
-    else finding("abuse", F.abuser.yes ? "bad" : "ok", esc(F.abuser.yes ? t("fv_abuse_yes", { n: F.abuser.yes, of: F.abuser.of }) : t("q_abuse_no")));
+      [F.vpn.yes && `VPN ${F.vpn.yes}/${F.vpn.of}`, F.proxy.yes && `${t("tag_proxy")} ${F.proxy.yes}/${F.proxy.of}`].filter(Boolean).map(esc).join(" · "),
+      t("n_anon", { n: new Set([...F.vpn.by, ...F.proxy.by]).size }));
+    else finding("anon", "ok", `${esc(t("fs_clean"))} <span class="m">${Math.max(F.vpn.of, F.proxy.of)}</span>`, t("q_clean", { n: Math.max(F.vpn.of, F.proxy.of) }));
+    if (s.torListed || F.tor.yes) finding("tor", "bad", esc(t("q_tor_yes")), t("n_tor"));
+    else if (F.tor.of) finding("tor", "ok", `${esc(t("fs_no"))} <span class="m">${F.tor.of}</span>`, t("q_tor_no", { n: F.tor.of }));
+    else finding("tor", "none", nodata());
+    if (s.risk === null) finding("risk", "none", nodata());
+    else finding("risk", riskLv(s.risk), `${s.risk} <span class="m">${esc(t("fs_avg", { n: s.risks.length }))}</span>`,
+      s.risks.map(x => (PR[x.id] ? PR[x.id].querySelector(".pn").textContent : x.id) + " " + x.v).join(" · "));
+    if (!F.abuser.of) finding("abuse", "none", nodata());
+    else finding("abuse", F.abuser.yes ? "bad" : "ok", esc(F.abuser.yes ? `${F.abuser.yes}/${F.abuser.of}` : t("q_abuse_no")),
+      F.abuser.yes ? t("fv_abuse_yes", { n: F.abuser.yes, of: F.abuser.of }) : "");
     const hits = BLR.filter(b => b.listed === true);
-    if (!s.dnsbl.checked) finding("dnsbl", "none", `<span class="m">${esc(t(CUR.v === 6 ? "bl_v6" : "q_nodata"))}</span>`);
-    else finding("dnsbl", hits.length ? "bad" : "ok", hits.length ? esc(t("bl_listed", { list: list(hits.map(b => b.name)) })) : esc(t("q_bl_clean", { n: s.dnsbl.checked })));
-    for (const u of ["stream", "ai", "captcha", "account", "mail"]) { const x = r.uses[u]; finding(u, x.lv === "good" ? "ok" : x.lv, esc(t(x.why))); }
+    if (!s.dnsbl.checked) finding("dnsbl", "none", `<span class="m">${esc(t(CUR.v === 6 ? "skip_v4" : "q_nodata"))}</span>`);
+    else finding("dnsbl", hits.length ? "bad" : "ok", hits.length ? esc(t("fs_listed", { n: hits.length, of: s.dnsbl.checked })) : `${esc(t("bl_clean"))} <span class="m">${s.dnsbl.checked}</span>`,
+      hits.length ? t("bl_listed", { list: list(hits.map(b => b.name)) }) : t("q_bl_clean", { n: s.dnsbl.checked }));
+    // what it is good for: a verdict each, the reason on hover
+    for (const u of ["stream", "ai", "captcha", "account", "mail"]) { const x = r.uses[u], lv = x.lv === "good" ? "ok" : x.lv; finding(u, lv, `<span class="tag ${x.lv}">${esc(t("lv_" + x.lv))}</span>`, t(x.why)); }
 
-    // every deduction: its finding row tinted in its color with the points, and every source mark that caused it
+    // every deduction: its finding tinted in its color with the points, and every source mark that caused it
     for (const f in PARTS_OF) {
       const ps = PARTS_OF[f].map(part).filter(Boolean); if (!ps.length) continue;
-      const row = $(`#finds [data-f="${f}"]`);
-      row.classList.add("hit"); row.style.setProperty("--pc", `var(--p-${ps[0].k.slice(2)})`);
-      row.querySelector(".fr-p").textContent = "−" + ps.reduce((a, p) => a + p.pts, 0);
-      row.dataset.why = ps.map(why).join("；");
+      const c = $(`[data-f="${f}"]`);
+      c.classList.add("hit"); c.style.setProperty("--pc", `var(--p-${ps[0].k.slice(2)})`);
+      c.querySelector(".fr-p").textContent = "−" + ps.reduce((a, p) => a + p.pts, 0);
+      c.dataset.why = [c.dataset.why, ...ps.map(why)].filter(Boolean).join("\n");
     }
     for (const p of r.parts) for (const el of $$(`.pr [data-p="${p.k.slice(2)}"]`)) {
       el.classList.add("hit"); el.style.setProperty("--pc", `var(--p-${p.k.slice(2)})`); el.dataset.why = why(p);
@@ -317,7 +349,11 @@ import { ccOfName } from "./sources.mjs";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
   function markExit(ip) { $$("#exList .xr").forEach(li => li.classList.toggle("on", li.dataset.ip === ip)); }
   function renderExits() {
-    const list = [...EX.values()].sort((a, b) => (b.ip === selfIp) - (a.ip === selfIp) || b.n - a.n || family(a.ip) - family(b.ip));
+    // addresses of the same country together, the visitor's own (the one the check sees) country first, then the
+    // countries by how many checks saw them; IPv4 before IPv6 within a country
+    const all = [...EX.values()], selfCc = (EX.get(selfIp) || {}).cc;
+    const weight = cc => all.filter(x => x.cc === cc).reduce((a, x) => a + x.n, 0);
+    const list = all.sort((a, b) => (b.cc === selfCc) - (a.cc === selfCc) || weight(b.cc) - weight(a.cc) || String(a.cc).localeCompare(String(b.cc)) || family(a.ip) - family(b.ip) || b.n - a.n);
     $("#exList").innerHTML = list.length ? list.map(x => `<li class="xr" data-ip="${esc(x.ip)}" tabindex="0" role="button">${flag(x.cc)}<b>${esc(x.ip)}</b><span class="m">${esc(x.cc ? country(x.cc) : "")}</span></li>`).join("")
       : `<li class="xr none"><span class="m">${esc(t("none"))}</span></li>`;
     $$("#exList .xr[data-ip]").forEach(li => {

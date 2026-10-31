@@ -62,6 +62,7 @@ async function runSource(s, ip, ctx) {
 // Why a source is skipped for this address: needs secrets this deployment lacks, IPv4 only, or the visitor's own address only
 function skipOf(s, ip, self, env) {
   if (!enabled(s, env)) return "key";
+  if (s.browser === "only" && !(s.opt || []).some(k => env[k])) return "browser";   // asked by the page itself
   if (family(ip) === 6 && s.v6 === false) return "v4";
   if (s.own && !self) return "own";
   return null;
@@ -109,6 +110,9 @@ async function check(request, env, ctx) {
           const s = SOURCES.find(x => x.id === r.id);
           return r.ok || !s ? r : runSource(s, ip, ctx2);
         }));
+        // sources added since the answer was cached are asked now, and ones no longer used are dropped
+        const missing = SOURCES.filter(s => !s.own && !skip[s.id] && !raw.sources.some(r => r.id === s.id));
+        raw.sources = [...raw.sources.filter(r => SOURCES.some(s => s.id === r.id && !skip[s.id])), ...await Promise.all(missing.map(s => runSource(s, ip, ctx2)))];
         for (const r of raw.sources) await send({ t: "src", ...r });
         for (const b of raw.dnsbl) await send({ t: "bl", ...b });
       } else {
