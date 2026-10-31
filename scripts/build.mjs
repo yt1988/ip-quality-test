@@ -21,6 +21,7 @@ export const LANGS = [["en", "", "en_US"], ["zh-CN", "zh-cn", "zh_CN"], ["zh-TW"
 // the other 1ms.dog tools (names, icons and tints as the site's top bar shows them)
 const TOOLS = [
   { id: "home", host: "1ms.dog", name: "1ms.dog", tint: "#ffb63f", icon: '<circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4 2.8 6.5S10 12.5 8 14.5C6 12.5 5.2 10.5 5.2 8S6 3.5 8 1.5z"/>' },
+  { id: "egress", host: "egress.1ms.dog", name: { en: "EgressLens", "zh-CN": "出口照妖镜", "zh-TW": "出口照妖鏡", ja: "出口照魔鏡", ko: "출구 IP 돋보기", es: "Lupa IP", fr: "Loupe IP", de: "IP-Lupe", pt: "Lupa de IP", ru: "IP-лупа" }, tint: "#06b6d4", icon: '<circle cx="7" cy="7" r="5"/><path d="M10.6 10.6 14.5 14.5M7 4.5v5M4.5 7h5"/>' },
   { id: "m2c", host: "m2c.1ms.dog", name: "Me2Cloud", tint: "#3b82f6", icon: '<path d="M1.5 8.5h2.8l1.6-4.5 3.2 8 1.6-3.5h3.8"/>' },
   { id: "v2c", host: "v2c.1ms.dog", name: "VPS2Cloud", tint: "#10b981", icon: '<rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6.5l2 1.5-2 1.5M8.5 10h3"/>' },
   { id: "ls", host: "ls.1ms.dog", name: "Lightsail Cost Saver", tint: "#f59e0b", icon: '<rect x="3" y="1.5" width="10" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 8h0M8 8h0M10.5 8h0M5.5 11h0M8 11h0M10.5 11h0"/>' },
@@ -46,7 +47,7 @@ async function loadI18n() {
 }
 
 // Strings only the build uses (the page already shows them); everything else goes to the browser
-const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "docs", "tools_h", "lang_label", "faq_h"]);
+const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "app_name", "docs", "tools_h", "lang_label", "faq_h"]);
 
 export async function build({ check = false } = {}) {
   const I = await loadI18n(), en = I.en;
@@ -84,7 +85,7 @@ export async function build({ check = false } = {}) {
       `<meta name="keywords" content="${esc(T("seo_kw"))}">`,
       ...(lang === "zh-CN" ? [`<meta http-equiv="Cache-Control" content="no-transform">`, `<meta http-equiv="Cache-Control" content="no-siteapp">`, `<meta name="applicable-device" content="pc,mobile">`] : []),
       `<meta name="robots" content="index, follow, max-image-preview:large">`,
-      `<meta name="application-name" content="IPQS">`,
+      `<meta name="application-name" content="${esc(T("app_name"))}">`,
       `<meta name="theme-color" content="#f6f6f7" media="(prefers-color-scheme: light)">`,
       `<meta name="theme-color" content="#1c1c1c" media="(prefers-color-scheme: dark)">`,
       `<link rel="canonical" href="${url}">`, alts,
@@ -101,7 +102,7 @@ export async function build({ check = false } = {}) {
     const srcRows = SOURCES.map(s => `<tr data-s="${s.id}" data-name="${esc(s.name)}"><td><b>${esc(s.name)}</b></td>${`<td>${skel}</td>`.repeat(6)}</tr>`).join("");
     const blRows = DNSBL.map(b => `<li data-b="${b.id}"><a href="${esc(b.site(""))}" target="_blank" rel="noopener noreferrer">${esc(b.name)}</a></li>`).join("");
     const uses = USES.map(k => `<li data-u="${k}"><b>${esc(T("use_" + k))}</b><span class="lv">${skel}</span><span class="why">&nbsp;</span></li>`).join("");
-    const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(x.name)}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
+    const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(typeof x.name === "string" ? x.name : x.name[lang] || x.name.en)}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
     const helpNav = docs.map(([q], i) => `<button type="button" role="tab" data-hq="${i}" aria-selected="${i === 0}">${esc(q)}</button>`).join("");
     const helpC = docs.map(([q, a], i) => `<article data-hqb="${i}"${i ? " hidden" : ""}><h3>${esc(q)}</h3>${a.split(/\n+/).map(p => `<p>${esc(p)}</p>`).join("")}</article>`).join("");
     const langOpts = langs.map(([l]) => `<option value="${l}"${l === lang ? " selected" : ""}>${esc(I[l].name)}</option>`).join("");
@@ -136,7 +137,7 @@ export async function build({ check = false } = {}) {
 - Source code: https://github.com/yt1988/ipqs
 
 ## Other 1ms.dog tools
-${TOOLS.map(x => `- ${x.name}: https://${x.host}/ (${en["tool_" + x.id]})`).join("\n")}
+${TOOLS.map(x => `- ${typeof x.name === "string" ? x.name : x.name.en}: https://${x.host}/ (${en["tool_" + x.id]})`).join("\n")}
 `;
   // The only inline script is the pre-paint snippet, identical on every page: one hash covers the site.
   // connect-src: the page's own API, plus the IPv4-only and IPv6-only hosts that find the visitor's other address.

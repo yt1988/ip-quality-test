@@ -1,6 +1,7 @@
 // 日本語。よく検索される語：「IP 品質」「IP 評判」「VPN 判定」「データセンター IP」。
 export default {
   name: "日本語",
+  app_name: "IP 健康診断",
   seo_title: "IP 品質チェック：不正スコア、VPN・プロキシ判定、住宅用かデータセンターか · IPQS",
   seo_desc: "十数個の IP インテリジェンスと 8 つのブラックリストで IP の評判を一度にチェック。0〜100 のスコア、住宅用かデータセンターか、ネイティブ IP かブロードキャスト IP か、VPN・プロキシ・Tor の判定、そして動画配信・ChatGPT・CAPTCHA・登録への影響まで。無料。",
   seo_kw: "IP品質, IP評判, 不正スコア, プロキシ判定, VPN判定, 住宅用IP, データセンターIP, ネイティブIP, IPブラックリスト",
@@ -88,7 +89,7 @@ export default {
   h_bl: "メールブラックリスト", bl_v6: "これらのリストは IPv4 のみです。", bl_ok: "{of} 個すべてクリーン。", bl_hit: "{of} 個中 {n} 個に掲載。",
   h_more: "ほかのサイトで調べる",
   tools_h: "1ms.dog のほかのツール",
-  tool_home: "出口 IP と 40 サービスの遅延", tool_m2c: "360 以上のクラウドリージョンへの遅延", tool_v2c: "サーバーからクラウドへの遅延", tool_ls: "AWS Lightsail 転送量計算",
+  tool_home: "出口 IP と 40 サービスの遅延", tool_egress: "サイトごとに見える出口 IP：分流、プロキシ、WebRTC、IPv6 漏れ", tool_m2c: "360 以上のクラウドリージョンへの遅延", tool_v2c: "サーバーからクラウドへの遅延", tool_ls: "AWS Lightsail 転送量計算",
   v_join: "、",
 
   docs: [

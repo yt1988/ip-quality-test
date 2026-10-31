@@ -1,6 +1,7 @@
 // Français.
 export default {
   name: "Français",
+  app_name: "Bilan IP",
   seo_title: "Qualité d’IP : score de fraude, détection VPN et proxy, résidentielle ou datacenter · IPQS",
   seo_desc: "Vérifiez la réputation de votre IP auprès d’une douzaine de sources de renseignement et de 8 listes noires d’un coup : un score de 0 à 100, résidentielle ou datacenter, IP native ou de diffusion, détection VPN, proxy et Tor, et ce que cela change pour le streaming, ChatGPT, les CAPTCHA et les inscriptions. Gratuit.",
   seo_kw: "qualité IP, réputation IP, score de fraude, détection proxy, détection VPN, IP résidentielle, IP datacenter, IP native, liste noire IP",
@@ -88,7 +89,7 @@ export default {
   h_bl: "Listes noires de messagerie", bl_v6: "Ces listes ne couvrent que l’IPv4.", bl_ok: "Propre sur les {of}.", bl_hit: "Présente sur {n} des {of}.",
   h_more: "Vérifier ailleurs",
   tools_h: "Autres outils 1ms.dog",
-  tool_home: "Vos IP de sortie et la latence vers 40 services", tool_m2c: "Latence vers 360+ régions cloud", tool_v2c: "Latence de votre serveur vers les clouds", tool_ls: "Calculateur de transfert AWS Lightsail",
+  tool_home: "Vos IP de sortie et la latence vers 40 services", tool_egress: "L’IP que voit chaque site : routage partagé, proxys, fuites WebRTC et IPv6", tool_m2c: "Latence vers 360+ régions cloud", tool_v2c: "Latence de votre serveur vers les clouds", tool_ls: "Calculateur de transfert AWS Lightsail",
   v_join: ", ",
 
   docs: [

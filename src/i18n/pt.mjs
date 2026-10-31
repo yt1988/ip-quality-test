@@ -1,6 +1,7 @@
 // Português (Brasil).
 export default {
   name: "Português",
+  app_name: "Check-up de IP",
   seo_title: "Qualidade de IP: pontuação de fraude, detecção de VPN e proxy, residencial ou datacenter · IPQS",
   seo_desc: "Verifique a reputação do seu IP em uma dúzia de fontes de inteligência e 8 listas negras de uma vez: uma nota de 0 a 100, residencial ou datacenter, IP nativo ou de broadcast, sinais de VPN, proxy e Tor, e o que isso significa para streaming, ChatGPT, CAPTCHAs e cadastros. Grátis.",
   seo_kw: "qualidade de IP, reputação de IP, pontuação de fraude, detectar proxy, detectar VPN, IP residencial, IP de datacenter, IP nativo, lista negra de IP",
@@ -88,7 +89,7 @@ export default {
   h_bl: "Listas negras de e-mail", bl_v6: "Estas listas só cobrem IPv4.", bl_ok: "Limpo nas {of}.", bl_hit: "Em {n} de {of}.",
   h_more: "Verifique em outros sites",
   tools_h: "Mais ferramentas 1ms.dog",
-  tool_home: "Seus IPs de saída e a latência para 40 serviços", tool_m2c: "Latência para mais de 360 regiões de nuvem", tool_v2c: "Latência do seu servidor às nuvens", tool_ls: "Calculadora de tráfego do AWS Lightsail",
+  tool_home: "Seus IPs de saída e a latência para 40 serviços", tool_egress: "Qual IP cada site vê: rotas divididas, proxies, vazamentos WebRTC e IPv6", tool_m2c: "Latência para mais de 360 regiões de nuvem", tool_v2c: "Latência do seu servidor às nuvens", tool_ls: "Calculadora de tráfego do AWS Lightsail",
   v_join: ", ",
 
   docs: [

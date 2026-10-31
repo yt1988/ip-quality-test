@@ -1,6 +1,7 @@
 // Deutsch.
 export default {
   name: "Deutsch",
+  app_name: "IP-Check",
   seo_title: "IP-Qualität prüfen: Fraud-Score, VPN- und Proxy-Erkennung, Privatanschluss oder Rechenzentrum · IPQS",
   seo_desc: "Prüfen Sie den Ruf Ihrer IP bei einem Dutzend IP-Datenbanken und 8 Blocklisten auf einmal: ein Score von 0 bis 100, Privatanschluss oder Rechenzentrum, native IP oder Broadcast-IP, VPN-, Proxy- und Tor-Erkennung und was das für Streaming, ChatGPT, CAPTCHAs und Anmeldungen heißt. Kostenlos.",
   seo_kw: "IP-Qualität, IP-Reputation, Fraud-Score, Proxy-Erkennung, VPN-Erkennung, Residential IP, Rechenzentrums-IP, native IP, IP-Blacklist",
@@ -88,7 +89,7 @@ export default {
   h_bl: "Mail-Blocklisten", bl_v6: "Diese Listen decken nur IPv4 ab.", bl_ok: "Auf allen {of} sauber.", bl_hit: "Auf {n} von {of} gelistet.",
   h_more: "Anderswo prüfen",
   tools_h: "Weitere 1ms.dog-Tools",
-  tool_home: "Ihre Ausgangs-IPs und die Latenz zu 40 Diensten", tool_m2c: "Latenz zu über 360 Cloud-Regionen", tool_v2c: "Latenz von Ihrem Server zu den Clouds", tool_ls: "AWS-Lightsail-Transferrechner",
+  tool_home: "Ihre Ausgangs-IPs und die Latenz zu 40 Diensten", tool_egress: "Welche IP jede Website sieht: Split-Routing, Proxys, WebRTC- und IPv6-Lecks", tool_m2c: "Latenz zu über 360 Cloud-Regionen", tool_v2c: "Latenz von Ihrem Server zu den Clouds", tool_ls: "AWS-Lightsail-Transferrechner",
   v_join: ", ",
 
   docs: [

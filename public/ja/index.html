@@ -8,7 +8,7 @@
 <meta name="description" content="十数個の IP インテリジェンスと 8 つのブラックリストで IP の評判を一度にチェック。0〜100 のスコア、住宅用かデータセンターか、ネイティブ IP かブロードキャスト IP か、VPN・プロキシ・Tor の判定、そして動画配信・ChatGPT・CAPTCHA・登録への影響まで。無料。">
 <meta name="keywords" content="IP品質, IP評判, 不正スコア, プロキシ判定, VPN判定, 住宅用IP, データセンターIP, ネイティブIP, IPブラックリスト">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="application-name" content="IPQS">
+<meta name="application-name" content="IP 健康診断">
 <meta name="theme-color" content="#f6f6f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1c1c1c" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://ipqs.1ms.dog/ja/">
@@ -37,14 +37,14 @@
 <meta name="twitter:description" content="十数個のソースと 8 つのブラックリスト、ひとつのスコア">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IPQS · 1ms.dog","url":"https://ipqs.1ms.dog/ja/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"十数個の IP インテリジェンスと 8 つのブラックリストで IP の評判を一度にチェック。0〜100 のスコア、住宅用かデータセンターか、ネイティブ IP かブロードキャスト IP か、VPN・プロキシ・Tor の判定、そして動画配信・ChatGPT・CAPTCHA・登録への影響まで。無料。","inLanguage":"ja","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"スコアの計算方法は？","acceptedAnswer":{"@type":"Answer","text":"どのアドレスも 100 点から始まり、ソースの結果に応じて減点します。データセンターは最大 20、プロキシ 20、VPN 15、Tor 40、不正報告 10、平均不正スコアで最大 35、メールブラックリスト 1 件につき 6（最大 24）。フラグは同意したソースの割合で数えるので、1 つだけなら一部しか減りません。 ランク：A 85 以上、B 70 以上、C 50 以上、D 30 以上、F 30 未満。ソース表の下に内訳が出ます。"}},{"@type":"Question","name":"どのソースを使っていますか？","acceptedAnswer":{"@type":"Answer","text":"キー不要：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（地域インターネットレジストリ）、ip.guide、Shodan InternetDB、Tor Project の出口リスト、Cloudflare（自分のアドレスのみ）。サイト運営者が無料 API キーを設定すると IPQualityScore、AbuseIPDB、Scamalytics、ipdata も加わります。各行はそのソース自身のページにリンクしています。"}},{"@type":"Question","name":"ネイティブ IP とブロードキャスト IP とは？","acceptedAnswer":{"@type":"Answer","text":"ネイティブ IP は登録された国で使われています。ブロードキャスト IP はある国で登録され（多くはホスティング会社）、別の国から使われています。多くの位置情報データベースは実際の場所を見ますが、登録国で判断するサービスもあり、ブロードキャスト IP では別の国にいるように見えることがあります。 ここではレジストリの記録（RDAP）と多くのデータベースが示す場所を比べます。記録に国がない場合（ARIN に多い）は、そのブロックを持つネットワークの登録国を使います。"}},{"@type":"Question","name":"住宅用とデータセンター、何が違う？","acceptedAnswer":{"@type":"Answer","text":"サイトはデータセンターのアドレスを人ではなくサーバー、VPN、プロキシと見なします。動画配信、チケット、銀行、登録フォームはブロックしたり追加確認を求めたりします。住宅用とモバイルは普通のユーザーに見えます。モバイルは多数で共有（CGNAT）されるため、ブロックはまれです。"}},{"@type":"Question","name":"なぜソースごとに結果が違う？","acceptedAnswer":{"@type":"Answer","text":"データの集め方が違います。ホスティング会社のネットワークだけを知るもの、ハニーポットや顧客の不正報告を集めるものなど。ある VPN サーバーを知っているところと、まだ知らないところがあります。だから 1 つを信じるのではなく、いくつが同意するかを数えます。"}},{"@type":"Question","name":"スコアが低いときは？","acceptedAnswer":{"@type":"Answer","text":"自宅の回線なら、不正報告やブラックリスト掲載は、ネットワーク内の機器が感染したりプロキシとして使われたりしたサインのことが多いです。対処してから、ブラックリストに削除を申請してください（各リストにリンクあり）。VPN やサーバーなら、スコアはおもにネットワークの種類によるもので変えられません。住宅用や利用者の少ないアドレスを提供する事業者を選びましょう。"}},{"@type":"Question","name":"何か保存されますか？","acceptedAnswer":{"@type":"Answer","text":"無料のソースに毎回問い合わせないよう、結果はアドレスごとに 6 時間キャッシュします。それ以外は保存せず、IPv4/IPv6 の判定はブラウザ内で行います。"}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.a6ed8c2e87.css">
+<link rel="stylesheet" href="/assets/app.b464194a88.css">
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <a class="brand" href="/ja/" aria-label="IPQS">
-      <img class="logo-light" src="/assets/logo-light.svg" width="90" height="36" alt="1ms">
-      <img class="logo-dark" src="/assets/logo-dark.svg" width="90" height="36" alt="1ms">
+    <a class="brand" href="/ja/" aria-current="page">
+      <span class="logo"><img class="logo-light" src="/assets/logo-light.svg" width="90" height="36" alt="1ms"><img class="logo-dark" src="/assets/logo-dark.svg" width="90" height="36" alt="1ms"></span>
+      <span class="brand-name" data-i="app_name">IP 健康診断</span>
     </a>
     <div class="top-acts">
       <label class="sel"><span class="sr" data-i="lang_label">言語</span>
@@ -122,7 +122,7 @@
 
     <section class="tools-sec">
       <h2 data-i="tools_h">1ms.dog のほかのツール</h2>
-      <div class="tools"><a class="tool" href="https://1ms.dog/ja/" style="--tint:#ffb63f"><b><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4 2.8 6.5S10 12.5 8 14.5C6 12.5 5.2 10.5 5.2 8S6 3.5 8 1.5z"/></svg>1ms.dog</b><span>出口 IP と 40 サービスの遅延</span></a><a class="tool" href="https://m2c.1ms.dog/ja/" style="--tint:#3b82f6"><b><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8.5h2.8l1.6-4.5 3.2 8 1.6-3.5h3.8"/></svg>Me2Cloud</b><span>360 以上のクラウドリージョンへの遅延</span></a><a class="tool" href="https://v2c.1ms.dog/ja/" style="--tint:#10b981"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6.5l2 1.5-2 1.5M8.5 10h3"/></svg>VPS2Cloud</b><span>サーバーからクラウドへの遅延</span></a><a class="tool" href="https://ls.1ms.dog/ja/" style="--tint:#f59e0b"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 8h0M8 8h0M10.5 8h0M5.5 11h0M8 11h0M10.5 11h0"/></svg>Lightsail Cost Saver</b><span>AWS Lightsail 転送量計算</span></a></div>
+      <div class="tools"><a class="tool" href="https://1ms.dog/ja/" style="--tint:#ffb63f"><b><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4 2.8 6.5S10 12.5 8 14.5C6 12.5 5.2 10.5 5.2 8S6 3.5 8 1.5z"/></svg>1ms.dog</b><span>出口 IP と 40 サービスの遅延</span></a><a class="tool" href="https://egress.1ms.dog/ja/" style="--tint:#06b6d4"><b><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M10.6 10.6 14.5 14.5M7 4.5v5M4.5 7h5"/></svg>出口照魔鏡</b><span>サイトごとに見える出口 IP：分流、プロキシ、WebRTC、IPv6 漏れ</span></a><a class="tool" href="https://m2c.1ms.dog/ja/" style="--tint:#3b82f6"><b><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8.5h2.8l1.6-4.5 3.2 8 1.6-3.5h3.8"/></svg>Me2Cloud</b><span>360 以上のクラウドリージョンへの遅延</span></a><a class="tool" href="https://v2c.1ms.dog/ja/" style="--tint:#10b981"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6.5l2 1.5-2 1.5M8.5 10h3"/></svg>VPS2Cloud</b><span>サーバーからクラウドへの遅延</span></a><a class="tool" href="https://ls.1ms.dog/ja/" style="--tint:#f59e0b"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 8h0M8 8h0M10.5 8h0M5.5 11h0M8 11h0M10.5 11h0"/></svg>Lightsail Cost Saver</b><span>AWS Lightsail 転送量計算</span></a></div>
     </section>
   </main>
 </div>
@@ -144,7 +144,7 @@
 
 
 <script type="application/json" id="data">{"lang":"ja","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.ja.2d93fb4fb3.js"></script>
+<script src="/assets/l.ja.3cedb72e82.js"></script>
 <script src="/assets/app.5084a009f5.js"></script>
 </body>
 </html>

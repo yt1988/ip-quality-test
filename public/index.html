@@ -8,7 +8,7 @@
 <meta name="description" content="Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.">
 <meta name="keywords" content="IP quality, IP reputation, IP fraud score, proxy detection, VPN detection, residential IP check, data center IP, native IP, IP blacklist check">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="application-name" content="IPQS">
+<meta name="application-name" content="IP Checkup">
 <meta name="theme-color" content="#f6f6f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1c1c1c" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://ipqs.1ms.dog/">
@@ -37,14 +37,14 @@
 <meta name="twitter:description" content="A dozen sources and 8 blocklists, one score">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IPQS · 1ms.dog","url":"https://ipqs.1ms.dog/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How is the score calculated?","acceptedAnswer":{"@type":"Answer","text":"Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network, 20 for proxy and 15 for VPN flags, 40 for Tor, 10 for abuse reports, up to 35 for the average fraud score, and 6 per mail blocklist (at most 24). Flags count by how many sources agree, so one source alone takes off only part of the points. Grades: A 85+, B 70+, C 50+, D 30+, F below 30. The breakdown under the source table shows exactly where the points went."}},{"@type":"Question","name":"Which sources are used?","acceptedAnswer":{"@type":"Answer","text":"Without any keys: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (the regional registries), ip.guide, Shodan InternetDB, the Tor Project's exit list, and Cloudflare (your own address only). With free API keys the site owner can add IPQualityScore, AbuseIPDB, Scamalytics and ipdata. Each row links to that source's own page, so you can check its answer there."}},{"@type":"Question","name":"What is a native IP, and a broadcast IP?","acceptedAnswer":{"@type":"Answer","text":"A native IP is used in the country where it's registered. A broadcast IP is registered in one country (in the registry's records, often by a hosting company) and announced from another. Most geolocation databases follow where the address really is, but some services go by the registration, so a broadcast IP can make you look like you're in another country. We compare the regional registry's record (RDAP) with where most databases place the address. When the registry record has no country (common for ARIN), we use the country of the network that owns the block."}},{"@type":"Question","name":"Residential or data center: why does it matter?","acceptedAnswer":{"@type":"Answer","text":"Sites see data-center addresses as servers, VPNs and proxies, not people. Streaming services, ticketing, banks and sign-up forms block them or ask for more verification. Residential and mobile addresses look like ordinary users. Mobile addresses are also shared by many people at once (CGNAT), so sites rarely block them."}},{"@type":"Question","name":"Why do the sources disagree?","acceptedAnswer":{"@type":"Answer","text":"Each one has its own data: some only know which networks belong to hosting companies, others run honeypots or collect fraud reports from their customers. A VPN server may be known to one and not yet to another. That's why we count how many agree instead of trusting any single one."}},{"@type":"Question","name":"My score is low. What can I do?","acceptedAnswer":{"@type":"Answer","text":"If it's your home connection: an abuse report or blocklist entry often means a device on your network was infected or used as a proxy. Clean it, then ask the blocklist to remove the address (each one links to its removal page). If it's a VPN or server, the score mostly reflects the network type and you can't change it. Pick a provider that offers residential or less-used addresses."}},{"@type":"Question","name":"Is anything stored?","acceptedAnswer":{"@type":"Answer","text":"Results are cached for six hours per address so the free sources aren't asked again for every visit. Nothing else is kept, and the IPv4/IPv6 detection runs in your browser."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.a6ed8c2e87.css">
+<link rel="stylesheet" href="/assets/app.b464194a88.css">
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <a class="brand" href="/" aria-label="IPQS">
-      <img class="logo-light" src="/assets/logo-light.svg" width="90" height="36" alt="1ms">
-      <img class="logo-dark" src="/assets/logo-dark.svg" width="90" height="36" alt="1ms">
+    <a class="brand" href="/" aria-current="page">
+      <span class="logo"><img class="logo-light" src="/assets/logo-light.svg" width="90" height="36" alt="1ms"><img class="logo-dark" src="/assets/logo-dark.svg" width="90" height="36" alt="1ms"></span>
+      <span class="brand-name" data-i="app_name">IP Checkup</span>
     </a>
     <div class="top-acts">
       <label class="sel"><span class="sr" data-i="lang_label">Language</span>
@@ -122,7 +122,7 @@
 
     <section class="tools-sec">
       <h2 data-i="tools_h">More 1ms.dog tools</h2>
-      <div class="tools"><a class="tool" href="https://1ms.dog/" style="--tint:#ffb63f"><b><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4 2.8 6.5S10 12.5 8 14.5C6 12.5 5.2 10.5 5.2 8S6 3.5 8 1.5z"/></svg>1ms.dog</b><span>Your exit IPs and latency to 40 services</span></a><a class="tool" href="https://m2c.1ms.dog/" style="--tint:#3b82f6"><b><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8.5h2.8l1.6-4.5 3.2 8 1.6-3.5h3.8"/></svg>Me2Cloud</b><span>Latency to 360+ cloud regions</span></a><a class="tool" href="https://v2c.1ms.dog/" style="--tint:#10b981"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6.5l2 1.5-2 1.5M8.5 10h3"/></svg>VPS2Cloud</b><span>Latency from your server to the clouds</span></a><a class="tool" href="https://ls.1ms.dog/" style="--tint:#f59e0b"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 8h0M8 8h0M10.5 8h0M5.5 11h0M8 11h0M10.5 11h0"/></svg>Lightsail Cost Saver</b><span>AWS Lightsail transfer calculator</span></a></div>
+      <div class="tools"><a class="tool" href="https://1ms.dog/" style="--tint:#ffb63f"><b><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4 2.8 6.5S10 12.5 8 14.5C6 12.5 5.2 10.5 5.2 8S6 3.5 8 1.5z"/></svg>1ms.dog</b><span>Your exit IPs and latency to 40 services</span></a><a class="tool" href="https://egress.1ms.dog/" style="--tint:#06b6d4"><b><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M10.6 10.6 14.5 14.5M7 4.5v5M4.5 7h5"/></svg>EgressLens</b><span>Which IP each site sees: split routing, proxies, WebRTC and IPv6 leaks</span></a><a class="tool" href="https://m2c.1ms.dog/" style="--tint:#3b82f6"><b><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8.5h2.8l1.6-4.5 3.2 8 1.6-3.5h3.8"/></svg>Me2Cloud</b><span>Latency to 360+ cloud regions</span></a><a class="tool" href="https://v2c.1ms.dog/" style="--tint:#10b981"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6.5l2 1.5-2 1.5M8.5 10h3"/></svg>VPS2Cloud</b><span>Latency from your server to the clouds</span></a><a class="tool" href="https://ls.1ms.dog/" style="--tint:#f59e0b"><b><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 8h0M8 8h0M10.5 8h0M5.5 11h0M8 11h0M10.5 11h0"/></svg>Lightsail Cost Saver</b><span>AWS Lightsail transfer calculator</span></a></div>
     </section>
   </main>
 </div>
@@ -144,7 +144,7 @@
 
 
 <script type="application/json" id="data">{"lang":"en","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.en.3c80efd027.js"></script>
+<script src="/assets/l.en.46807147db.js"></script>
 <script src="/assets/app.5084a009f5.js"></script>
 </body>
 </html>

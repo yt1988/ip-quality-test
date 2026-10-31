@@ -1,6 +1,7 @@
 // 한국어. 자주 검색되는 말: "IP 품질", "IP 평판", "VPN 감지", "데이터센터 IP".
 export default {
   name: "한국어",
+  app_name: "IP 건강검진",
   seo_title: "IP 품질 검사: 사기 점수, VPN·프록시 감지, 가정용인지 데이터센터인지 · IPQS",
   seo_desc: "IP 인텔리전스 십여 곳과 블랙리스트 8개로 IP 평판을 한 번에 확인하세요. 0–100 점수, 가정용·데이터센터 여부, 네이티브·브로드캐스트 IP, VPN·프록시·Tor 판정, 그리고 스트리밍·ChatGPT·CAPTCHA·가입에 미치는 영향까지. 무료.",
   seo_kw: "IP 품질, IP 평판, 사기 점수, 프록시 감지, VPN 감지, 가정용 IP, 데이터센터 IP, 네이티브 IP, IP 블랙리스트",
@@ -88,7 +89,7 @@ export default {
   h_bl: "메일 블랙리스트", bl_v6: "이 목록들은 IPv4만 다룹니다.", bl_ok: "{of}개 모두 깨끗함.", bl_hit: "{of}개 중 {n}개에 등재.",
   h_more: "다른 사이트에서 확인",
   tools_h: "1ms.dog의 다른 도구",
-  tool_home: "출구 IP와 서비스 40개의 지연", tool_m2c: "클라우드 리전 360곳 이상의 지연", tool_v2c: "서버에서 클라우드까지의 지연", tool_ls: "AWS Lightsail 전송량 계산기",
+  tool_home: "출구 IP와 서비스 40개의 지연", tool_egress: "사이트마다 보이는 출구 IP: 분할 라우팅, 프록시, WebRTC, IPv6 누출", tool_m2c: "클라우드 리전 360곳 이상의 지연", tool_v2c: "서버에서 클라우드까지의 지연", tool_ls: "AWS Lightsail 전송량 계산기",
   v_join: ", ",
 
   docs: [

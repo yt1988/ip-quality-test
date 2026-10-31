@@ -1,6 +1,7 @@
 // Español (España y Latinoamérica).
 export default {
   name: "Español",
+  app_name: "Chequeo IP",
   seo_title: "Calidad de IP: puntuación de fraude, detección de VPN y proxy, residencial o centro de datos · IPQS",
   seo_desc: "Comprueba la reputación de tu IP en una docena de fuentes de inteligencia y 8 listas negras a la vez: una puntuación de 0 a 100, residencial o centro de datos, IP nativa o de difusión, marcas de VPN, proxy y Tor, y qué significa para streaming, ChatGPT, CAPTCHAs y registros. Gratis.",
   seo_kw: "calidad de IP, reputación de IP, puntuación de fraude, detectar proxy, detectar VPN, IP residencial, IP de centro de datos, lista negra IP",
@@ -88,7 +89,7 @@ export default {
   h_bl: "Listas negras de correo", bl_v6: "Estas listas solo cubren IPv4.", bl_ok: "Limpia en las {of}.", bl_hit: "En {n} de {of}.",
   h_more: "Compruébala en otros sitios",
   tools_h: "Más herramientas de 1ms.dog",
-  tool_home: "Tus IP de salida y la latencia a 40 servicios", tool_m2c: "Latencia a más de 360 regiones de nube", tool_v2c: "Latencia de tu servidor a las nubes", tool_ls: "Calculadora de tráfico de AWS Lightsail",
+  tool_home: "Tus IP de salida y la latencia a 40 servicios", tool_egress: "Qué IP ve cada sitio: rutas divididas, proxies, fugas WebRTC e IPv6", tool_m2c: "Latencia a más de 360 regiones de nube", tool_v2c: "Latencia de tu servidor a las nubes", tool_ls: "Calculadora de tráfico de AWS Lightsail",
   v_join: ", ",
 
   docs: [

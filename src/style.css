@@ -115,7 +115,7 @@ dd.sk-l { width: min(220px, 60%); }
 
 /* the other 1ms.dog tools */
 .tools-sec h2 { margin: 0 0 10px 2px; }
-.tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
 .tool { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; text-decoration: none; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); transition: border-color .15s, transform .15s; }
 .tool:hover { border-color: var(--tint); transform: translateY(-1px); }
 .tool b { display: flex; align-items: center; gap: 8px; font-size: 14px; }
@@ -143,7 +143,6 @@ dd.sk-l { width: min(220px, 60%); }
 @media (prefers-reduced-motion: reduce) { .g-fg, .sk-l, .tool { animation: none !important; transition: none !important; } }
 @media (max-width: 860px) {
   .hero { grid-template-columns: minmax(0, 1fr); }
-  .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
   .hero { padding: 16px; gap: 16px; }
@@ -159,6 +158,5 @@ dd.sk-l { width: min(220px, 60%); }
   .help-b .help-pick { display: flex; }
 }
 @media (max-width: 420px) {
-  .tools { grid-template-columns: minmax(0, 1fr); }
   .facts { grid-template-columns: minmax(0, 1fr); }
 }

@@ -1,6 +1,7 @@
 // English. Also the fallback for any key another language leaves out (the build requires every key, though).
 export default {
   name: "English",
+  app_name: "IP Checkup",
   seo_title: "IP Quality Check: fraud score, VPN/proxy detection, residential or data center · IPQS",
   seo_desc: "Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.",
   seo_kw: "IP quality, IP reputation, IP fraud score, proxy detection, VPN detection, residential IP check, data center IP, native IP, IP blacklist check",
@@ -88,7 +89,7 @@ export default {
   h_bl: "Mail blocklists", bl_v6: "These lists only cover IPv4.", bl_ok: "Clean on all {of}.", bl_hit: "Listed on {n} of {of}.",
   h_more: "Check it elsewhere",
   tools_h: "More 1ms.dog tools",
-  tool_home: "Your exit IPs and latency to 40 services", tool_m2c: "Latency to 360+ cloud regions", tool_v2c: "Latency from your server to the clouds", tool_ls: "AWS Lightsail transfer calculator",
+  tool_home: "Your exit IPs and latency to 40 services", tool_egress: "Which IP each site sees: split routing, proxies, WebRTC and IPv6 leaks", tool_m2c: "Latency to 360+ cloud regions", tool_v2c: "Latency from your server to the clouds", tool_ls: "AWS Lightsail transfer calculator",
   v_join: ", ",
 
   docs: [

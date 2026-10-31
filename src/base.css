@@ -47,8 +47,12 @@ svg[viewBox="0 0 16 16"] { fill: none; stroke: currentColor; stroke-width: 1.4; 
 
 /* top bar */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { display: block; width: 90px; height: 36px; border-radius: 8px; }
-.brand img { display: block; width: 90px; height: 36px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; overflow: hidden; border-radius: 8px; }
+.logo { display: block; width: 90px; height: 36px; flex: none; }
+.logo img { display: block; width: 90px; height: 36px; }
+.brand-name { font-size: 20px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+@media (max-width: 720px) { .brand-name { font-size: 17px; } }
+@media (max-width: 520px) { .brand-name { display: none; } }
 .logo-dark { display: none !important; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo-light { display: none !important; } :root:not([data-theme="light"]) .logo-dark { display: block !important; } }
 :root[data-theme="dark"] .logo-light { display: none !important; }
