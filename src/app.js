@@ -119,7 +119,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
   }
 
   /* ---------- the check ---------- */
-  let RUN = null, total = 0, got = 0, CUR = null, keyless = 0, RES = [], BLR = [], PEND = [], lastIp = null;
+  let RUN = null, total = 0, got = 0, CUR = null, RES = [], BLR = [], PEND = [], lastIp = null;
   const gauge = $("#gauge");
   function progress() {
     $("#prog i").style.transform = `scaleX(${total ? got / total : 0})`;
@@ -135,7 +135,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
     $$("#facts b").forEach((b, i) => { b.className = i ? "" : "ipv"; b.innerHTML = SKL; });
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
-    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#srcFoot").innerHTML = "&nbsp;";
+    $("#prog").classList.remove("end"); $("#rerun").disabled = true;
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -202,8 +202,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
     if (m.t === "start") {
       CUR = m; RES = []; BLR = []; PEND = [];
       const b = $("#facts b"); b.className = "ipv"; b.innerHTML = `${esc(m.ip)} <span class="m">IPv${m.v}</span>`;
-      // sources this deployment has no keys for stay out of the list (the same for every address; a footnote counts
-      // them); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
+      // sources this deployment has no keys for stay out of the list (the same for every address); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
       const cur = m, mine = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
       for (const id in m.skip) {
         if (!PR[id] || m.skip[id] === "browser") continue;
@@ -211,7 +210,6 @@ import { ccOfName, SOURCES } from "./sources.mjs";
         else prSet(id, "na", `<span class="m">${esc(t("skip_" + m.skip[id]))}</span>`, "", "");
       }
       if (!m.bl.length) for (const id in PR) if (PR[id].closest('[data-g="dnsbl"]')) prSet(id, "na", `<span class="m">${esc(t("skip_v4"))}</span>`, "", "");
-      keyless = Object.values(m.skip).filter(w => w === "key").length;
       total = m.n + m.bl.length + mine.length;
       for (const id of mine) PEND.push(inBrowser(id, m.ip).then(r => { if (CUR === cur) accept(r); }));
       if (m.self) noteMine(m.ip);
@@ -324,8 +322,6 @@ import { ccOfName, SOURCES } from "./sources.mjs";
     $("#prog").classList.add("end"); $("#rerun").disabled = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
-    $("#srcFoot").innerHTML = (keyless ? esc(t("skip_n", { n: keyless })) + " " : "") +
-      `${esc(t("more_l"))} ` + r.elsewhere.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join(" · ");
   }
   $("#rerun").onclick = () => { findExits(); run(lastIp, false); };
 
