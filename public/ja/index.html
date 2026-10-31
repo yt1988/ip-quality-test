@@ -55,7 +55,7 @@
       <button class="icon-btn" id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="help"><span class="sr" data-i="faq_h">ヘルプ</span>
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4M8 11.3v.1"/></svg>
       </button>
-      <button class="icon-btn" id="theme" type="button" aria-label="Theme">
+      <button class="icon-btn" id="theme" type="button" aria-label="テーマ">
         <svg class="i-sys" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/></svg>
         <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg>
         <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>
@@ -122,13 +122,13 @@
 <div class="scrim" id="help" hidden>
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpT">
     <div class="dlg-h"><h2 id="helpT" data-i="faq_h">ヘルプ</h2>
-      <button class="icon-btn" data-close type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      <button class="icon-btn" data-close type="button" aria-label="閉じる"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
     <div class="help-b">
       <nav class="help-nav" id="helpNav" role="tablist"><button type="button" role="tab" data-hq="0" aria-selected="true">スコアの計算方法は？</button><button type="button" role="tab" data-hq="1" aria-selected="false">どのソースを使っていますか？</button><button type="button" role="tab" data-hq="2" aria-selected="false">ネイティブ IP とブロードキャスト IP とは？</button><button type="button" role="tab" data-hq="3" aria-selected="false">住宅用とデータセンター、何が違う？</button><button type="button" role="tab" data-hq="4" aria-selected="false">なぜソースごとに結果が違う？</button><button type="button" role="tab" data-hq="5" aria-selected="false">スコアが低いときは？</button><button type="button" role="tab" data-hq="6" aria-selected="false">何か保存されますか？</button></nav>
       <div class="help-pick">
-        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Previous"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="-1" aria-label="前へ"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
         <select id="helpSel" aria-labelledby="helpT"></select>
-        <button class="icon-btn" type="button" data-hstep="1" aria-label="Next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="1" aria-label="次へ"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
       </div>
       <div class="help-c" id="helpC"><article data-hqb="0"><h3>スコアの計算方法は？</h3><p>どのアドレスも 100 点から始まり、ソースの結果に応じて減点します。データセンターは最大 20、プロキシ 20、VPN 15、Tor 40、不正報告 10、平均不正スコアで最大 35、メールブラックリスト 1 件につき 6（最大 24）。フラグは同意したソースの割合で数えるので、1 つだけなら一部しか減りません。</p><p>ランク：A 85 以上、B 70 以上、C 50 以上、D 30 以上、F 30 未満。ソース表の下に内訳が出ます。</p></article><article data-hqb="1" hidden><h3>どのソースを使っていますか？</h3><p>キー不要：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（地域インターネットレジストリ）、ip.guide、Shodan InternetDB、Tor Project の出口リスト、Cloudflare（自分のアドレスのみ）。サイト運営者が無料 API キーを設定すると IPQualityScore、AbuseIPDB、Scamalytics、ipdata も加わります。各行はそのソース自身のページにリンクしています。</p></article><article data-hqb="2" hidden><h3>ネイティブ IP とブロードキャスト IP とは？</h3><p>ネイティブ IP は登録された国で使われています。ブロードキャスト IP はある国で登録され（多くはホスティング会社）、別の国から使われています。多くの位置情報データベースは実際の場所を見ますが、登録国で判断するサービスもあり、ブロードキャスト IP では別の国にいるように見えることがあります。</p><p>ここではレジストリの記録（RDAP）と多くのデータベースが示す場所を比べます。記録に国がない場合（ARIN に多い）は、そのブロックを持つネットワークの登録国を使います。</p></article><article data-hqb="3" hidden><h3>住宅用とデータセンター、何が違う？</h3><p>サイトはデータセンターのアドレスを人ではなくサーバー、VPN、プロキシと見なします。動画配信、チケット、銀行、登録フォームはブロックしたり追加確認を求めたりします。住宅用とモバイルは普通のユーザーに見えます。モバイルは多数で共有（CGNAT）されるため、ブロックはまれです。</p></article><article data-hqb="4" hidden><h3>なぜソースごとに結果が違う？</h3><p>データの集め方が違います。ホスティング会社のネットワークだけを知るもの、ハニーポットや顧客の不正報告を集めるものなど。ある VPN サーバーを知っているところと、まだ知らないところがあります。だから 1 つを信じるのではなく、いくつが同意するかを数えます。</p></article><article data-hqb="5" hidden><h3>スコアが低いときは？</h3><p>自宅の回線なら、不正報告やブラックリスト掲載は、ネットワーク内の機器が感染したりプロキシとして使われたりしたサインのことが多いです。対処してから、ブラックリストに削除を申請してください（各リストにリンクあり）。VPN やサーバーなら、スコアはおもにネットワークの種類によるもので変えられません。住宅用や利用者の少ないアドレスを提供する事業者を選びましょう。</p></article><article data-hqb="6" hidden><h3>何か保存されますか？</h3><p>無料のソースに毎回問い合わせないよう、結果はアドレスごとに 6 時間キャッシュします。それ以外は保存せず、IPv4/IPv6 の判定はブラウザ内で行います。</p></article></div>
     </div>
@@ -137,7 +137,7 @@
 
 
 <script type="application/json" id="data">{"lang":"ja","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.ja.0ec7a08909.js"></script>
+<script src="/assets/l.ja.9ceaac12b2.js"></script>
 <script src="/assets/app.1dfd457dc4.js"></script>
 </body>
 </html>

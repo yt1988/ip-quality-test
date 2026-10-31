@@ -29,6 +29,13 @@ const TOOLS = [
 // each tool's page per language, where it differs from this site's folders
 const TOOL_PATH = { ls: { "zh-CN": "/zh/" } };
 const toolHome = (id, lang, slug) => (TOOL_PATH[id] || {})[lang] || (slug ? "/" + slug + "/" : "/");
+// a tool's name in a language: one brand string for every language, or one per language; a gap fails the build
+// instead of showing English
+const toolName = (x, lang) => {
+  const n = typeof x.name === "string" ? x.name : x.name[lang];
+  if (!n) throw new Error(`no ${lang} name for tool ${x.id}`);
+  return n;
+};
 // the questions the sources table answers, one row each (src/app.js fills them)
 // the findings column: what the address is, then what it is good for (src/score.mjs decides each)
 export const PROFILE = ["type", "native", "geo", "anon", "tor", "risk", "abuse", "dnsbl"];
@@ -77,7 +84,7 @@ export async function build({ check = false } = {}) {
 
   const path = slug => "/" + (slug ? slug + "/" : "");
   for (const [lang, slug, locale] of langs) {
-    const d = I[lang], T = k => d[k] ?? en[k] ?? k;
+    const d = I[lang], T = k => { if (!(k in d)) throw new Error(`i18n/${lang}.mjs has no "${k}"`); return d[k]; };
     const strings = Object.fromEntries(Object.keys(en).filter(k => !BUILD_ONLY.has(k)).map(k => [k, T(k)]));
     const sjs = `window.L1MS=${JSON.stringify(strings).replace(/</g, "\\u003c")};\n`;
     const sName = `l.${lang.toLowerCase()}.${hash(sjs)}.js`;
@@ -121,7 +128,7 @@ export async function build({ check = false } = {}) {
     const group = ([g, ids]) => `<div class="pg" data-g="${g}"><h3>${esc(T("g_" + g))}<span class="pg-n" id="n-${g}"></span></h3>` +
       ids.map(([id, name]) => `<div class="pr wait" data-s="${id}"><span class="pn">${esc(name)}</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div>`).join("") + "</div>";
     const groups = `<div class="pcol">${group(GROUPS[0])}</div><div class="pcol">${GROUPS.slice(1).map(group).join("")}</div>`;
-    const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(typeof x.name === "string" ? x.name : x.name[lang] || x.name.en)}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
+    const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(toolName(x, lang))}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
     const helpNav = docs.map(([q], i) => `<button type="button" role="tab" data-hq="${i}" aria-selected="${i === 0}">${esc(q)}</button>`).join("");
     const helpC = docs.map(([q, a], i) => `<article data-hqb="${i}"${i ? " hidden" : ""}><h3>${esc(q)}</h3>${a.split(/\n+/).map(p => `<p>${esc(p)}</p>`).join("")}</article>`).join("");
     const langOpts = langs.map(([l]) => `<option value="${l}"${l === lang ? " selected" : ""}>${esc(I[l].name)}</option>`).join("");
@@ -130,6 +137,7 @@ export async function build({ check = false } = {}) {
 
     const html = tpl
       .replace(/(<(\w+)\b[^>]*\sdata-i="(\w+)"[^>]*>)([^<]*)(<\/\2>)/g, (m, open, tag, k, inner, close) => open + esc(T(k)) + close)
+      .replace(/\{\{a:(\w+)\}\}/g, (m, k) => esc(T(k)))   // translated attribute values (aria-label)
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
       .replace("{{prepaint}}", PREPAINT).replace("{{head}}", head).replace("{{css}}", cssName).replace("{{js}}", jsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("h1")))

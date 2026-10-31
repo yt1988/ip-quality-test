@@ -58,7 +58,7 @@
       <button class="icon-btn" id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="help"><span class="sr" data-i="faq_h">帮助</span>
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4M8 11.3v.1"/></svg>
       </button>
-      <button class="icon-btn" id="theme" type="button" aria-label="Theme">
+      <button class="icon-btn" id="theme" type="button" aria-label="主题">
         <svg class="i-sys" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/></svg>
         <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg>
         <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>
@@ -125,13 +125,13 @@
 <div class="scrim" id="help" hidden>
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpT">
     <div class="dlg-h"><h2 id="helpT" data-i="faq_h">帮助</h2>
-      <button class="icon-btn" data-close type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      <button class="icon-btn" data-close type="button" aria-label="关闭"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
     <div class="help-b">
       <nav class="help-nav" id="helpNav" role="tablist"><button type="button" role="tab" data-hq="0" aria-selected="true">评分是怎么算的？</button><button type="button" role="tab" data-hq="1" aria-selected="false">用了哪些数据来源？</button><button type="button" role="tab" data-hq="2" aria-selected="false">什么是原生 IP，什么是广播 IP？</button><button type="button" role="tab" data-hq="3" aria-selected="false">家宽和机房，区别在哪？</button><button type="button" role="tab" data-hq="4" aria-selected="false">为什么各来源的结果不一样？</button><button type="button" role="tab" data-hq="5" aria-selected="false">分数很低怎么办？</button><button type="button" role="tab" data-hq="6" aria-selected="false">会保存什么吗？</button></nav>
       <div class="help-pick">
-        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Previous"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="-1" aria-label="上一条"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
         <select id="helpSel" aria-labelledby="helpT"></select>
-        <button class="icon-btn" type="button" data-hstep="1" aria-label="Next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="1" aria-label="下一条"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
       </div>
       <div class="help-c" id="helpC"><article data-hqb="0"><h3>评分是怎么算的？</h3><p>每个地址从 100 分开始，按各来源的发现扣分：机房网络最多扣 20，代理标记扣 20，VPN 标记扣 15，Tor 扣 40，滥用报告扣 10，平均欺诈分数最多扣 35，每个邮件黑名单扣 6（最多 24）。标记按多少个来源同意来折算，只有一个来源标记时只扣一部分。</p><p>等级：A 85 分以上，B 70 以上，C 50 以上，D 30 以上，F 低于 30。来源表格下方的明细列出了每一项扣了多少。</p></article><article data-hqb="1" hidden><h3>用了哪些数据来源？</h3><p>不需要密钥的：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各大洲的地址注册机构）、ip.guide、Shodan InternetDB、Tor 项目的出口列表，以及 Cloudflare（只查本机地址）。站长配置免费 API 密钥后，还会加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。每一行都链接到该来源自己的查询页，可以去核对。</p></article><article data-hqb="2" hidden><h3>什么是原生 IP，什么是广播 IP？</h3><p>原生 IP 在它注册的国家使用。广播 IP 在一个国家注册（注册机构的记录里，通常是某家机房公司），却在另一个国家宣告使用。大多数定位数据库按实际位置判断，但有些服务按注册地判断，所以广播 IP 可能让你看起来在另一个国家。</p><p>这里比较的是地址注册机构的记录（RDAP）和多数数据库给出的位置。注册记录里没有国家时（ARIN 常见），改用这个地址段所属网络的注册国家。</p></article><article data-hqb="3" hidden><h3>家宽和机房，区别在哪？</h3><p>网站把机房地址看作服务器、VPN 和代理，而不是真人。流媒体、票务、银行和注册页面会拦截它们，或者要求更多验证。家宽和移动网络的地址像普通用户。移动网络的地址还由很多人同时共用（CGNAT），网站很少封它。</p></article><article data-hqb="4" hidden><h3>为什么各来源的结果不一样？</h3><p>每家的数据不同：有的只知道哪些网段属于机房，有的运营蜜罐或收集客户的欺诈报告。一台 VPN 服务器可能已经被一家发现，另一家还不知道。所以这里看有多少来源同意，而不是只信一家。</p></article><article data-hqb="5" hidden><h3>分数很低怎么办？</h3><p>如果是家里的宽带：滥用报告或黑名单记录，往往说明网络里有设备中了病毒或被当作代理。清理之后，向黑名单申请移除（每个黑名单都链接到它的查询和移除页面）。如果是 VPN 或服务器，分数主要反映网络类型，改变不了，可以换提供家宽或较少人用的地址的服务商。</p></article><article data-hqb="6" hidden><h3>会保存什么吗？</h3><p>每个地址的结果缓存 6 小时，免得每次访问都重复查询免费的数据来源。除此之外不保存任何东西，IPv4/IPv6 检测在你的浏览器里完成。</p></article></div>
     </div>
@@ -140,7 +140,7 @@
 
 
 <script type="application/json" id="data">{"lang":"zh-CN","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.zh-cn.2a77ded0bf.js"></script>
+<script src="/assets/l.zh-cn.91f94b29ab.js"></script>
 <script src="/assets/app.1dfd457dc4.js"></script>
 </body>
 </html>

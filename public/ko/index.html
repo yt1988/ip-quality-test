@@ -55,7 +55,7 @@
       <button class="icon-btn" id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="help"><span class="sr" data-i="faq_h">도움말</span>
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4M8 11.3v.1"/></svg>
       </button>
-      <button class="icon-btn" id="theme" type="button" aria-label="Theme">
+      <button class="icon-btn" id="theme" type="button" aria-label="테마">
         <svg class="i-sys" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/></svg>
         <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg>
         <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>
@@ -122,13 +122,13 @@
 <div class="scrim" id="help" hidden>
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpT">
     <div class="dlg-h"><h2 id="helpT" data-i="faq_h">도움말</h2>
-      <button class="icon-btn" data-close type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      <button class="icon-btn" data-close type="button" aria-label="닫기"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
     <div class="help-b">
       <nav class="help-nav" id="helpNav" role="tablist"><button type="button" role="tab" data-hq="0" aria-selected="true">점수는 어떻게 계산하나요?</button><button type="button" role="tab" data-hq="1" aria-selected="false">어떤 소스를 쓰나요?</button><button type="button" role="tab" data-hq="2" aria-selected="false">네이티브 IP와 브로드캐스트 IP란?</button><button type="button" role="tab" data-hq="3" aria-selected="false">가정용과 데이터센터, 무엇이 다른가요?</button><button type="button" role="tab" data-hq="4" aria-selected="false">소스마다 결과가 왜 다른가요?</button><button type="button" role="tab" data-hq="5" aria-selected="false">점수가 낮으면 어떻게 하나요?</button><button type="button" role="tab" data-hq="6" aria-selected="false">저장되는 것이 있나요?</button></nav>
       <div class="help-pick">
-        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Previous"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="-1" aria-label="이전"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
         <select id="helpSel" aria-labelledby="helpT"></select>
-        <button class="icon-btn" type="button" data-hstep="1" aria-label="Next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="1" aria-label="다음"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
       </div>
       <div class="help-c" id="helpC"><article data-hqb="0"><h3>점수는 어떻게 계산하나요?</h3><p>모든 주소는 100점에서 시작해 소스의 결과에 따라 감점됩니다. 데이터센터 최대 20, 프록시 20, VPN 15, Tor 40, 악용 신고 10, 평균 사기 점수 최대 35, 메일 블랙리스트 하나당 6(최대 24). 표시는 동의한 소스의 비율로 계산하므로, 하나만 표시하면 일부만 감점됩니다.</p><p>등급: A 85 이상, B 70 이상, C 50 이상, D 30 이상, F 30 미만. 소스 표 아래에 내역이 나옵니다.</p></article><article data-hqb="1" hidden><h3>어떤 소스를 쓰나요?</h3><p>키 없이: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP(지역 인터넷 레지스트리), ip.guide, Shodan InternetDB, Tor Project 출구 목록, Cloudflare(내 주소만). 사이트 운영자가 무료 API 키를 설정하면 IPQualityScore, AbuseIPDB, Scamalytics, ipdata가 추가됩니다. 각 행은 해당 소스의 페이지로 연결됩니다.</p></article><article data-hqb="2" hidden><h3>네이티브 IP와 브로드캐스트 IP란?</h3><p>네이티브 IP는 등록된 나라에서 쓰입니다. 브로드캐스트 IP는 한 나라에 등록되어(대개 호스팅 회사) 다른 나라에서 쓰입니다. 대부분의 위치 데이터베이스는 실제 위치를 따르지만 등록 국가로 판단하는 서비스도 있어, 브로드캐스트 IP는 다른 나라에 있는 것처럼 보일 수 있습니다.</p><p>여기서는 레지스트리 기록(RDAP)과 대부분의 데이터베이스가 가리키는 위치를 비교합니다. 기록에 국가가 없으면(ARIN에서 흔함) 그 블록을 가진 네트워크의 등록 국가를 씁니다.</p></article><article data-hqb="3" hidden><h3>가정용과 데이터센터, 무엇이 다른가요?</h3><p>사이트는 데이터센터 주소를 사람이 아닌 서버, VPN, 프록시로 봅니다. 스트리밍, 예매, 은행, 가입 양식은 이를 차단하거나 추가 인증을 요구합니다. 가정용과 모바일 주소는 일반 사용자처럼 보이고, 모바일은 여러 사람이 함께 쓰므로(CGNAT) 거의 차단되지 않습니다.</p></article><article data-hqb="4" hidden><h3>소스마다 결과가 왜 다른가요?</h3><p>데이터를 모으는 방식이 다릅니다. 호스팅 회사 네트워크만 아는 곳도, 허니팟이나 고객의 사기 신고를 모으는 곳도 있습니다. 어떤 VPN 서버를 이미 아는 곳과 아직 모르는 곳이 있으니, 하나만 믿지 않고 몇 곳이 동의하는지 셉니다.</p></article><article data-hqb="5" hidden><h3>점수가 낮으면 어떻게 하나요?</h3><p>집 회선이라면 악용 신고나 블랙리스트 등재는 네트워크의 기기가 감염되었거나 프록시로 쓰였다는 신호인 경우가 많습니다. 정리한 뒤 블랙리스트에 삭제를 요청하세요(각 목록에 링크가 있습니다). VPN이나 서버라면 점수는 주로 네트워크 유형 때문이라 바꿀 수 없습니다. 가정용이나 덜 쓰인 주소를 주는 업체를 고르세요.</p></article><article data-hqb="6" hidden><h3>저장되는 것이 있나요?</h3><p>무료 소스에 매번 묻지 않도록 결과를 주소별로 6시간 캐시합니다. 그 밖에는 아무것도 저장하지 않으며, IPv4/IPv6 확인은 브라우저에서 합니다.</p></article></div>
     </div>
@@ -137,7 +137,7 @@
 
 
 <script type="application/json" id="data">{"lang":"ko","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.ko.861d705d85.js"></script>
+<script src="/assets/l.ko.273a6bd11e.js"></script>
 <script src="/assets/app.1dfd457dc4.js"></script>
 </body>
 </html>

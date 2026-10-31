@@ -55,7 +55,7 @@
       <button class="icon-btn" id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="help"><span class="sr" data-i="faq_h">Ajuda</span>
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4M8 11.3v.1"/></svg>
       </button>
-      <button class="icon-btn" id="theme" type="button" aria-label="Theme">
+      <button class="icon-btn" id="theme" type="button" aria-label="Tema">
         <svg class="i-sys" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/></svg>
         <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg>
         <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>
@@ -122,13 +122,13 @@
 <div class="scrim" id="help" hidden>
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpT">
     <div class="dlg-h"><h2 id="helpT" data-i="faq_h">Ajuda</h2>
-      <button class="icon-btn" data-close type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      <button class="icon-btn" data-close type="button" aria-label="Fechar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
     <div class="help-b">
       <nav class="help-nav" id="helpNav" role="tablist"><button type="button" role="tab" data-hq="0" aria-selected="true">Como a nota é calculada?</button><button type="button" role="tab" data-hq="1" aria-selected="false">Quais fontes são usadas?</button><button type="button" role="tab" data-hq="2" aria-selected="false">O que é IP nativo e IP de broadcast?</button><button type="button" role="tab" data-hq="3" aria-selected="false">Residencial ou datacenter: por que importa?</button><button type="button" role="tab" data-hq="4" aria-selected="false">Por que as fontes discordam?</button><button type="button" role="tab" data-hq="5" aria-selected="false">Minha nota é baixa. O que faço?</button><button type="button" role="tab" data-hq="6" aria-selected="false">Algo é guardado?</button></nav>
       <div class="help-pick">
-        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Previous"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Anterior"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
         <select id="helpSel" aria-labelledby="helpT"></select>
-        <button class="icon-btn" type="button" data-hstep="1" aria-label="Next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="1" aria-label="Próximo"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
       </div>
       <div class="help-c" id="helpC"><article data-hqb="0"><h3>Como a nota é calculada?</h3><p>Todo endereço começa com 100 e perde pontos pelo que as fontes encontram: até 20 por rede de datacenter, 20 por sinal de proxy e 15 de VPN, 40 por Tor, 10 por denúncias de abuso, até 35 pela pontuação de fraude média e 6 por lista negra de e-mail (no máximo 24). Os sinais contam pela proporção de fontes que concordam, então uma só tira apenas parte.</p><p>Notas: A 85+, B 70+, C 50+, D 30+, F abaixo de 30. O detalhamento sob a tabela mostra cada desconto.</p></article><article data-hqb="1" hidden><h3>Quais fontes são usadas?</h3><p>Sem chaves: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (os registros regionais), ip.guide, Shodan InternetDB, a lista de saída do Tor Project e Cloudflare (só o seu próprio endereço). Com chaves de API gratuitas, o dono do site pode somar IPQualityScore, AbuseIPDB, Scamalytics e ipdata. Cada linha leva à página da fonte para conferir.</p></article><article data-hqb="2" hidden><h3>O que é IP nativo e IP de broadcast?</h3><p>Um IP nativo é usado no país onde está registrado. Um IP de broadcast é registrado em um país (muitas vezes por uma empresa de hospedagem) e anunciado de outro. A maioria das bases de geolocalização segue o local real, mas alguns serviços seguem o registro, então um IP de broadcast pode fazer você parecer em outro país.</p><p>Comparamos o registro regional (RDAP) com onde a maioria das bases coloca o endereço. Se o registro não tem país (comum na ARIN), usamos o país da rede dona do bloco.</p></article><article data-hqb="3" hidden><h3>Residencial ou datacenter: por que importa?</h3><p>Os sites veem endereços de datacenter como servidores, VPNs e proxies, não pessoas. Streaming, venda de ingressos, bancos e formulários de cadastro os bloqueiam ou pedem mais verificação. Endereços residenciais e móveis parecem usuários comuns; os móveis ainda são compartilhados por muitos (CGNAT), então raramente são bloqueados.</p></article><article data-hqb="4" hidden><h3>Por que as fontes discordam?</h3><p>Cada uma tem seus próprios dados: umas só sabem quais redes são de hospedagem, outras mantêm honeypots ou coletam denúncias de fraude dos clientes. Um servidor de VPN pode ser conhecido por uma e ainda não por outra. Por isso contamos quantas concordam em vez de confiar em uma só.</p></article><article data-hqb="5" hidden><h3>Minha nota é baixa. O que faço?</h3><p>Se é sua conexão de casa: uma denúncia ou lista negra geralmente indica que um aparelho da rede foi infectado ou usado como proxy. Limpe-o e peça a remoção à lista (cada uma leva à sua página). Se é VPN ou servidor, a nota reflete principalmente o tipo de rede e não muda: escolha um provedor com endereços residenciais ou menos usados.</p></article><article data-hqb="6" hidden><h3>Algo é guardado?</h3><p>Os resultados ficam em cache por seis horas por endereço, para não consultar as fontes gratuitas a cada visita. Nada mais é guardado, e a detecção IPv4/IPv6 roda no seu navegador.</p></article></div>
     </div>
@@ -137,7 +137,7 @@
 
 
 <script type="application/json" id="data">{"lang":"pt","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.pt.ab52f6f91c.js"></script>
+<script src="/assets/l.pt.f90d4fdb6f.js"></script>
 <script src="/assets/app.1dfd457dc4.js"></script>
 </body>
 </html>

@@ -55,7 +55,7 @@
       <button class="icon-btn" id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="help"><span class="sr" data-i="faq_h">Hilfe</span>
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4M8 11.3v.1"/></svg>
       </button>
-      <button class="icon-btn" id="theme" type="button" aria-label="Theme">
+      <button class="icon-btn" id="theme" type="button" aria-label="Design">
         <svg class="i-sys" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/></svg>
         <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg>
         <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>
@@ -122,13 +122,13 @@
 <div class="scrim" id="help" hidden>
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpT">
     <div class="dlg-h"><h2 id="helpT" data-i="faq_h">Hilfe</h2>
-      <button class="icon-btn" data-close type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      <button class="icon-btn" data-close type="button" aria-label="Schließen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
     <div class="help-b">
       <nav class="help-nav" id="helpNav" role="tablist"><button type="button" role="tab" data-hq="0" aria-selected="true">Wie wird der Score berechnet?</button><button type="button" role="tab" data-hq="1" aria-selected="false">Welche Quellen werden genutzt?</button><button type="button" role="tab" data-hq="2" aria-selected="false">Was sind native IP und Broadcast-IP?</button><button type="button" role="tab" data-hq="3" aria-selected="false">Privatanschluss oder Rechenzentrum: Warum ist das wichtig?</button><button type="button" role="tab" data-hq="4" aria-selected="false">Warum sind sich die Quellen uneinig?</button><button type="button" role="tab" data-hq="5" aria-selected="false">Mein Score ist niedrig. Was tun?</button><button type="button" role="tab" data-hq="6" aria-selected="false">Wird etwas gespeichert?</button></nav>
       <div class="help-pick">
-        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Previous"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Zurück"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
         <select id="helpSel" aria-labelledby="helpT"></select>
-        <button class="icon-btn" type="button" data-hstep="1" aria-label="Next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="1" aria-label="Weiter"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
       </div>
       <div class="help-c" id="helpC"><article data-hqb="0"><h3>Wie wird der Score berechnet?</h3><p>Jede Adresse startet bei 100 und verliert Punkte für das, was die Quellen finden: bis zu 20 für ein Rechenzentrumsnetz, 20 für Proxy- und 15 für VPN-Markierungen, 40 für Tor, 10 für Missbrauchsmeldungen, bis zu 35 für den durchschnittlichen Fraud-Score und 6 je Mail-Blockliste (höchstens 24). Markierungen zählen nach Anteil der zustimmenden Quellen, eine einzelne zieht also nur einen Teil ab.</p><p>Noten: A ab 85, B ab 70, C ab 50, D ab 30, F darunter. Die Aufschlüsselung unter der Tabelle zeigt jeden Abzug.</p></article><article data-hqb="1" hidden><h3>Welche Quellen werden genutzt?</h3><p>Ohne Schlüssel: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (die regionalen Registries), ip.guide, Shodan InternetDB, die Exit-Liste des Tor Project und Cloudflare (nur Ihre eigene Adresse). Mit kostenlosen API-Schlüsseln kann der Betreiber IPQualityScore, AbuseIPDB, Scamalytics und ipdata ergänzen. Jede Zeile verlinkt auf die Seite der Quelle zum Gegenprüfen.</p></article><article data-hqb="2" hidden><h3>Was sind native IP und Broadcast-IP?</h3><p>Eine native IP wird in dem Land genutzt, in dem sie registriert ist. Eine Broadcast-IP ist in einem Land registriert (oft von einem Hoster) und wird aus einem anderen angekündigt. Die meisten Geodatenbanken folgen dem echten Standort, manche Dienste aber der Registrierung, sodass Sie mit einer Broadcast-IP in einem anderen Land erscheinen können.</p><p>Wir vergleichen den Eintrag der regionalen Registry (RDAP) mit dem Standort, den die meisten Datenbanken angeben. Fehlt das Land im Eintrag (häufig bei ARIN), nehmen wir das Land des Netzes, dem der Block gehört.</p></article><article data-hqb="3" hidden><h3>Privatanschluss oder Rechenzentrum: Warum ist das wichtig?</h3><p>Websites sehen Rechenzentrums-Adressen als Server, VPNs und Proxys, nicht als Menschen. Streaming, Ticketverkauf, Banken und Anmeldeformulare sperren sie oder verlangen mehr Prüfung. Privat- und Mobilfunkadressen wirken wie normale Nutzer; Mobilfunkadressen werden zudem von vielen geteilt (CGNAT) und kaum gesperrt.</p></article><article data-hqb="4" hidden><h3>Warum sind sich die Quellen uneinig?</h3><p>Jede hat eigene Daten: Manche wissen nur, welche Netze Hostern gehören, andere betreiben Honeypots oder sammeln Betrugsmeldungen ihrer Kunden. Ein VPN-Server ist der einen schon bekannt, der anderen noch nicht. Deshalb zählen wir, wie viele zustimmen, statt einer einzigen zu vertrauen.</p></article><article data-hqb="5" hidden><h3>Mein Score ist niedrig. Was tun?</h3><p>Bei Ihrem Heimanschluss: Eine Missbrauchsmeldung oder ein Blocklisten-Eintrag heißt oft, dass ein Gerät im Netz infiziert war oder als Proxy diente. Bereinigen Sie es und beantragen Sie die Austragung (jede Liste verlinkt ihre Seite). Bei einem VPN oder Server spiegelt der Score vor allem den Netztyp und lässt sich nicht ändern: Wählen Sie einen Anbieter mit privaten oder wenig genutzten Adressen.</p></article><article data-hqb="6" hidden><h3>Wird etwas gespeichert?</h3><p>Ergebnisse werden pro Adresse sechs Stunden zwischengespeichert, damit die kostenlosen Quellen nicht bei jedem Besuch erneut gefragt werden. Sonst wird nichts gespeichert; die IPv4/IPv6-Erkennung läuft in Ihrem Browser.</p></article></div>
     </div>
@@ -137,7 +137,7 @@
 
 
 <script type="application/json" id="data">{"lang":"de","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.de.0c03909e25.js"></script>
+<script src="/assets/l.de.ff0556a3f3.js"></script>
 <script src="/assets/app.1dfd457dc4.js"></script>
 </body>
 </html>

@@ -55,7 +55,7 @@
       <button class="icon-btn" id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="help"><span class="sr" data-i="faq_h">說明</span>
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4M8 11.3v.1"/></svg>
       </button>
-      <button class="icon-btn" id="theme" type="button" aria-label="Theme">
+      <button class="icon-btn" id="theme" type="button" aria-label="主題">
         <svg class="i-sys" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/></svg>
         <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg>
         <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>
@@ -122,13 +122,13 @@
 <div class="scrim" id="help" hidden>
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpT">
     <div class="dlg-h"><h2 id="helpT" data-i="faq_h">說明</h2>
-      <button class="icon-btn" data-close type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      <button class="icon-btn" data-close type="button" aria-label="關閉"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
     <div class="help-b">
       <nav class="help-nav" id="helpNav" role="tablist"><button type="button" role="tab" data-hq="0" aria-selected="true">分數怎麼算？</button><button type="button" role="tab" data-hq="1" aria-selected="false">用了哪些資料來源？</button><button type="button" role="tab" data-hq="2" aria-selected="false">什麼是原生 IP、廣播 IP？</button><button type="button" role="tab" data-hq="3" aria-selected="false">家用寬頻和機房差在哪？</button><button type="button" role="tab" data-hq="4" aria-selected="false">為什麼各來源的結果不一樣？</button><button type="button" role="tab" data-hq="5" aria-selected="false">分數很低怎麼辦？</button><button type="button" role="tab" data-hq="6" aria-selected="false">會保存什麼嗎？</button></nav>
       <div class="help-pick">
-        <button class="icon-btn" type="button" data-hstep="-1" aria-label="Previous"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="-1" aria-label="上一則"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
         <select id="helpSel" aria-labelledby="helpT"></select>
-        <button class="icon-btn" type="button" data-hstep="1" aria-label="Next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+        <button class="icon-btn" type="button" data-hstep="1" aria-label="下一則"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
       </div>
       <div class="help-c" id="helpC"><article data-hqb="0"><h3>分數怎麼算？</h3><p>每個位址從 100 分開始，依各來源的發現扣分：機房網路最多扣 20，代理標記扣 20，VPN 標記扣 15，Tor 扣 40，濫用回報扣 10，平均詐騙分數最多扣 35，每個郵件黑名單扣 6（最多 24）。標記依同意的來源數折算，只有一個來源標記時只扣一部分。</p><p>等級：A 85 分以上，B 70 以上，C 50 以上，D 30 以上，F 低於 30。來源表格下方的明細列出每一項扣了多少。</p></article><article data-hqb="1" hidden><h3>用了哪些資料來源？</h3><p>不需要金鑰的：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各區域的位址註冊機構）、ip.guide、Shodan InternetDB、Tor 專案的出口清單，以及 Cloudflare（只查本機位址）。站長設定免費 API 金鑰後，還會加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。每一列都連到該來源自己的查詢頁，可以去核對。</p></article><article data-hqb="2" hidden><h3>什麼是原生 IP、廣播 IP？</h3><p>原生 IP 在它註冊的國家使用。廣播 IP 在一個國家註冊（通常是某家機房公司），卻在另一個國家宣告使用。多數定位資料庫依實際位置判斷，但有些服務依註冊地判斷，所以廣播 IP 可能讓你看起來在另一個國家。</p><p>這裡比較位址註冊機構的紀錄（RDAP）和多數資料庫給出的位置。註冊紀錄沒有國家時（ARIN 常見），改用該位址段所屬網路的註冊國家。</p></article><article data-hqb="3" hidden><h3>家用寬頻和機房差在哪？</h3><p>網站把機房位址視為伺服器、VPN 和代理，而不是真人。串流、售票、銀行和註冊頁面會封鎖它們或要求更多驗證。家用寬頻和行動網路的位址像一般使用者。行動網路的位址還由許多人同時共用（CGNAT），網站很少封鎖。</p></article><article data-hqb="4" hidden><h3>為什麼各來源的結果不一樣？</h3><p>每家的資料不同：有的只知道哪些網段屬於機房，有的經營蜜罐或收集客戶的詐騙回報。一台 VPN 伺服器可能已被一家發現，另一家還不知道。所以這裡看有多少來源同意，而不是只信一家。</p></article><article data-hqb="5" hidden><h3>分數很低怎麼辦？</h3><p>如果是家裡的寬頻：濫用回報或黑名單紀錄，常代表網路裡有裝置中毒或被當成代理。清理後，向黑名單申請移除（每個黑名單都連到它的查詢和移除頁面）。如果是 VPN 或伺服器，分數主要反映網路類型，無法改變，可以換成提供家用或較少人用位址的業者。</p></article><article data-hqb="6" hidden><h3>會保存什麼嗎？</h3><p>每個位址的結果快取 6 小時，避免每次造訪都重複查詢免費的資料來源。除此之外不保存任何東西，IPv4/IPv6 偵測在你的瀏覽器裡完成。</p></article></div>
     </div>
@@ -137,7 +137,7 @@
 
 
 <script type="application/json" id="data">{"lang":"zh-TW","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.zh-tw.58e69f407c.js"></script>
+<script src="/assets/l.zh-tw.d9c5d1029b.js"></script>
 <script src="/assets/app.1dfd457dc4.js"></script>
 </body>
 </html>
