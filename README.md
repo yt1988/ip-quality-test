@@ -25,11 +25,13 @@ Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are ask
 |---|---|---|
 | Cloudflare | – | what Cloudflare's edge sees (your own address only) |
 | ip-api.com | – | proxy, hosting, mobile, reverse DNS |
-| proxycheck.io | optional `PROXYCHECK_KEY` | proxy, VPN, Tor, network type, risk 0–100, operator |
 | IPQuery | – | proxy, VPN, Tor, data center, risk |
 | ipapi.is | optional `IPAPI_IS_KEY` | network; with a key, VPN/proxy/abuser flags and network abuse level |
-| IP2Location | optional `IP2LOCATION_KEY` | proxy |
-| IPinfo | optional `IPINFO_TOKEN` | location, network, anycast |
+| IPinfo | optional `IPINFO_TOKEN` | location, network, anycast (asked from the browser without a token) |
+| ipwho.is | – | location, network (asked from the browser) |
+| IP.SB | – | location, network |
+| iplocation.net | – | location, ISP |
+| GeoJS | – | location, network |
 | RDAP (RIR) | – | registration country, net name, range |
 | ip.guide | – | the network's registered country and RIR |
 | Shodan InternetDB | – | open ports, tags such as `vpn`, `proxy`, `tor` (IPv4) |
@@ -38,8 +40,10 @@ Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are ask
 | AbuseIPDB | `ABUSEIPDB_KEY` | abuse confidence, reports, usage type |
 | Scamalytics | `SCAMALYTICS_USER`, `SCAMALYTICS_KEY` | fraud score |
 | ipdata | `IPDATA_KEY` | threat flags and score |
+| proxycheck.io | `PROXYCHECK_KEY` | proxy, VPN, Tor, network type, risk 0–100, operator |
+| IP2Location | `IP2LOCATION_KEY` | proxy |
 
-Sources without their keys are shown as not enabled. All the keyed ones have free plans. Spamhaus and SORBS aren't in the blocklists: they refuse queries that come through public DNS resolvers.
+Sources without their keys are left out. All the keyed ones have free plans; proxycheck.io and IP2Location answer without a key too, but not to Cloudflare's shared addresses. Sources that limit those addresses are asked from the visitor's browser instead, and a source the server got no answer from is asked again from the browser when it allows that (CORS). Spamhaus and SORBS aren't in the blocklists: they refuse queries that come through public DNS resolvers.
 
 ## How the score works
 

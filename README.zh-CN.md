@@ -25,11 +25,13 @@
 |---|---|---|
 | Cloudflare | 否 | Cloudflare 边缘看到的信息（只查本机地址） |
 | ip-api.com | 否 | 代理、机房、移动网络、反向解析 |
-| proxycheck.io | 可选 `PROXYCHECK_KEY` | 代理、VPN、Tor、网络类型、0–100 风险值、运营方 |
 | IPQuery | 否 | 代理、VPN、Tor、机房、风险值 |
 | ipapi.is | 可选 `IPAPI_IS_KEY` | 网络信息；有密钥时加上 VPN/代理/滥用标记和网段滥用等级 |
-| IP2Location | 可选 `IP2LOCATION_KEY` | 代理 |
-| IPinfo | 可选 `IPINFO_TOKEN` | 位置、网络、任播 |
+| IPinfo | 可选 `IPINFO_TOKEN` | 位置、网络、任播（没有密钥时由浏览器查询） |
+| ipwho.is | 否 | 位置、网络（由浏览器查询） |
+| IP.SB | 否 | 位置、网络 |
+| iplocation.net | 否 | 位置、运营商 |
+| GeoJS | 否 | 位置、网络 |
 | RDAP（各 RIR） | 否 | 注册国家、网络名、地址段 |
 | ip.guide | 否 | 所属网络的注册国家和 RIR |
 | Shodan InternetDB | 否 | 开放端口，`vpn`、`proxy`、`tor` 等标签（IPv4） |
@@ -38,8 +40,10 @@
 | AbuseIPDB | `ABUSEIPDB_KEY` | 滥用置信度、举报数、使用类型 |
 | Scamalytics | `SCAMALYTICS_USER`、`SCAMALYTICS_KEY` | 欺诈分数 |
 | ipdata | `IPDATA_KEY` | 威胁标记和分数 |
+| proxycheck.io | `PROXYCHECK_KEY` | 代理、VPN、Tor、网络类型、0–100 风险值、运营方 |
+| IP2Location | `IP2LOCATION_KEY` | 代理 |
 
-没有配置密钥的来源显示为「本站未启用」。需要密钥的几家都有免费套餐。黑名单里没有 Spamhaus 和 SORBS：它们拒绝经由公共 DNS 解析器的查询。
+没有配置密钥的来源不显示。需要密钥的几家都有免费套餐；proxycheck.io 和 IP2Location 不带密钥也能查，但会拒绝 Cloudflare 的共享地址。会限流这些地址的来源改由访问者的浏览器查询；服务器没查到的来源，如果允许跨域，也会由浏览器再查一次。黑名单里没有 Spamhaus 和 SORBS：它们拒绝经由公共 DNS 解析器的查询。
 
 ## 评分规则
 
