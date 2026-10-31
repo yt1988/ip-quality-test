@@ -22,15 +22,18 @@ dd.sk-l { width: min(220px, 60%); }
 .ask input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: 15px var(--f-num); outline: none; }
 .ask input:focus { border-color: var(--ink); }
 .ask input.bad { border-color: var(--bad); }
-.mine { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; min-height: 30px; font-size: 13px; }
+.mine { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 30px; font-size: 13px; }
 .mine > span { margin-right: 2px; flex: none; }
-.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; min-width: 0; flex: 1 1 0; max-width: max-content; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); cursor: pointer; font-size: 12.5px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; min-width: 0; max-width: 100%; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); cursor: pointer; font-size: 12.5px; }
 .chip em { font-style: normal; color: var(--muted); font-size: 11px; font-weight: 600; }
 .chip b { font: 500 12.5px var(--f-num); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink-soft); }
 .chip:disabled { cursor: default; }
 .chip.sk b { color: var(--muted); }
-.chip.none { opacity: .5; }
+.chip .flag { width: 16px; height: 12px; border-radius: 2px; }
+.mine .eg { flex: none; margin-left: auto; font-size: 12.5px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+.mine .eg:hover { color: var(--ink); }
+.mine.masked .chip b { filter: blur(5px); }
 
 .hero-r { display: flex; align-items: center; gap: 18px; min-height: 132px; }
 .gauge { position: relative; width: 132px; height: 132px; flex: none; --gc: var(--line); }
@@ -84,21 +87,26 @@ dd.sk-l { width: min(220px, 60%); }
 .src-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .src-h span { font-size: 12px; text-align: right; }
 .tbl-wrap { overflow-x: auto; margin: 0 -18px; padding: 0 18px; }
-.src { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
+.src { width: 100%; border-collapse: collapse; font-size: 13px; }
 .src th { text-align: left; font-size: 11.5px; font-weight: 500; color: var(--muted); padding: 0 8px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .src td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; height: 37px; }
 .src tr:last-child td { border-bottom: 0; }
-.src th:first-child, .src td:first-child { padding-left: 0; width: 46%; }
+.src th:first-child, .src td:first-child { padding-left: 0; width: 38%; }
 .src td:first-child { white-space: normal; }
 .src td:first-child a { font-weight: 600; text-decoration: none; }
 .src td:first-child a:hover { text-decoration: underline; }
 .src .x { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 .src .fail td { color: var(--muted); }
-.src td:nth-child(4) { white-space: normal; }
+.src td:nth-child(2) { white-space: normal; line-height: 22px; }
+.src td:nth-child(2) > * { margin-right: 12px; }
+.src .pl { display: inline-flex; align-items: center; gap: 5px; }
 .no { color: var(--muted); } .na { color: var(--line); }
 .ft { display: inline-block; margin: 0 4px 2px 0; padding: 0 6px; border-radius: 5px; font-size: 11.5px; font-weight: 600; line-height: 20px; text-decoration: none; }
+.ft { background: var(--soft); color: var(--muted); }
+.ft.warn { background: color-mix(in srgb, var(--t3) 16%, transparent); color: var(--t3); }
 .ft.bad { background: color-mix(in srgb, var(--t5) 14%, transparent); color: var(--t5); }
 .bar { display: inline-flex; align-items: center; gap: 6px; }
+.bar em { font-style: normal; color: var(--muted); font-size: 12px; }
 .bar i { display: inline-block; width: 46px; height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; position: relative; }
 .bar i::after { content: ""; position: absolute; inset: 0; background: var(--c); transform: scaleX(var(--v)); transform-origin: left; }
 .src-foot { font-size: 12px; line-height: 1.7; }

@@ -37,6 +37,22 @@ const asnOf = v => { const m = /(\d+)/.exec(String(v ?? "")); return m ? +m[1] :
 const bool = v => v === true || v === "yes" || v === 1 ? true : v === false || v === "no" || v === 0 ? false : undefined;
 const num = v => Number.isFinite(+v) && v !== null && v !== "" ? Math.max(0, Math.min(100, Math.round(+v))) : undefined;
 const upper = s => /^[a-z]{2}$/i.test(s || "") ? s.toUpperCase() : undefined;
+// English country name → code, for sources that only give the name (ipapi.is without a key)
+let CC_OF;
+export function ccOfName(name) {
+  if (!name) return undefined;
+  if (!CC_OF) {
+    CC_OF = new Map();
+    try {
+      const dn = new Intl.DisplayNames(["en"], { type: "region" }), A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      for (const a of A) for (const b of A) { const n = dn.of(a + b); if (n && n !== a + b) CC_OF.set(n.toLowerCase(), a + b); }
+    } catch (e) {}
+    // names the sources use that differ from the standard short names
+    for (const [n, c] of [["hong kong", "HK"], ["macau", "MO"], ["macao", "MO"], ["taiwan", "TW"], ["czech republic", "CZ"], ["turkey", "TR"],
+      ["united states of america", "US"], ["russian federation", "RU"], ["republic of korea", "KR"], ["viet nam", "VN"]]) CC_OF.set(n, c);
+  }
+  return CC_OF.get(String(name).toLowerCase());
+}
 
 export const SOURCES = [
   {
@@ -101,7 +117,7 @@ export const SOURCES = [
       const label = String(c.abuser_score || a.abuser_score || "");
       const LV = { "very low": 3, "low": 10, "elevated": 40, "high": 70, "very high": 90 };
       const lv = (/\(([^)]+)\)/.exec(label) || [])[1];
-      return { cc: upper(loc.country_code), city: loc.city || j.city, asn: a.asn || asnOf(j.asn),
+      return { cc: upper(loc.country_code) || ccOfName(j.country), city: loc.city || j.city, asn: a.asn || asnOf(j.asn),
         org: c.name || (typeof j.company === "string" ? j.company : undefined) || a.org,
         type: j.is_datacenter ? "hosting" : j.is_mobile ? "mobile" : mapType(c.type || a.type),
         proxy: bool(j.is_proxy), vpn: bool(j.is_vpn), tor: bool(j.is_tor), abuser: bool(j.is_abuser),

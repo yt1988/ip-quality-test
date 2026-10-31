@@ -9,7 +9,7 @@ export default {
   h1: "あなたの IP はどれだけクリーン？",
 
   lang_label: "言語", faq_h: "ヘルプ", th_system: "テーマ：システム", th_light: "テーマ：ライト", th_dark: "テーマ：ダーク",
-  ph: "IPv4 または IPv6 アドレス", go: "チェック", mine_h: "自分：", none: "なし",
+  ph: "IPv4 または IPv6 アドレス", go: "チェック", mine_h: "あなたの出口：", none: "なし",
   checking: "チェック中…", progress: "{of} 件中 {n} 件が応答",
   err_h: "チェックできませんでした", err_net: "サーバーから応答がありません。少し待ってからもう一度お試しください。", err_bad_ip: "IP アドレスではありません。",
   err_private: "プライベートまたは予約済みのアドレスです。どのデータベースにも情報がありません。", err_rate: "1 分間の照会が多すぎます。少し待ってからお試しください。",
@@ -110,6 +110,8 @@ export default {
   pp_abuser: "不正報告",
   pp_risk: "不正スコア",
   pp_dnsbl: "ブラックリスト",
+  ex_wait: "出口を検出中 {n}/{of}", ex_more: "サイトごとの出口 →", src_down: "{list} は応答がありませんでした。",
+  col_result: "結果", f_clean: "プロキシ・VPN 判定なし",
   docs: [
     ["スコアの計算方法は？", "どのアドレスも 100 点から始まり、ソースの結果に応じて減点します。データセンターは最大 20、プロキシ 20、VPN 15、Tor 40、不正報告 10、平均不正スコアで最大 35、メールブラックリスト 1 件につき 6（最大 24）。フラグは同意したソースの割合で数えるので、1 つだけなら一部しか減りません。\nランク：A 85 以上、B 70 以上、C 50 以上、D 30 以上、F 30 未満。ソース表の下に内訳が出ます。"],
     ["どのソースを使っていますか？", "キー不要：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（地域インターネットレジストリ）、ip.guide、Shodan InternetDB、Tor Project の出口リスト、Cloudflare（自分のアドレスのみ）。サイト運営者が無料 API キーを設定すると IPQualityScore、AbuseIPDB、Scamalytics、ipdata も加わります。各行はそのソース自身のページにリンクしています。"],

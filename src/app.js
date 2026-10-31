@@ -1,6 +1,7 @@
 // ipqs page: asks /api/check for an address, fills each source's row the moment it answers (the rows are in the
 // HTML from the start), then shows the score, notes and verdicts once every source is in. Strings: window.L1MS.
 import { family, canon, isPublic } from "./ip.mjs";
+import { assess } from "./score.mjs";
 
 (function () {
   "use strict";
@@ -52,22 +53,15 @@ import { family, canon, isPublic } from "./ip.mjs";
 
   /* ---------- hide the address (for screenshots) ---------- */
   const eye = $("#eye"), masked = () => store.get(K.mask) === "1";
-  const applyMask = () => { $("#facts").classList.toggle("masked", masked()); eye.textContent = t(masked() ? "show" : "hide"); };
+  const applyMask = () => { $("#facts").classList.toggle("masked", masked()); $("#mine").classList.toggle("masked", masked()); eye.textContent = t(masked() ? "show" : "hide"); };
   eye.onclick = () => { store.set(K.mask, masked() ? "0" : "1"); applyMask(); };
   applyMask();
 
   /* ---------- rendering pieces ---------- */
   const NA = '<span class="na">–</span>';
   const riskColor = v => v >= 70 ? "var(--t5)" : v >= 35 ? "var(--t3)" : "var(--t1)";
-  const bar = v => typeof v === "number" ? `<span class="bar" style="--v:${v / 100};--c:${riskColor(v)}"><i></i><b class="num">${v}</b></span>` : NA;
+  const bar = v => `<span class="bar" style="--v:${v / 100};--c:${riskColor(v)}"><em>${esc(t("col_risk"))}</em><i></i><b class="num">${v}</b></span>`;
   const typeName = ty => ty ? t("t_" + ty) : "–";
-  const flagTag = (lv, x) => `<span class="ft ${lv}">${esc(x)}</span>`;
-  // what a source flags, as small tags: only the yeses; "none" when it answered every question it asks with no
-  const flagsOf = d => {
-    const on = [["tor", "Tor"], ["vpn", "VPN"], ["proxy", t("tag_proxy")], ["abuser", t("f_abuse")]].filter(([k]) => d[k] === true);
-    if (on.length) return on.map(([, x]) => flagTag("bad", x)).join("");
-    return ["tor", "vpn", "proxy", "abuser"].some(k => d[k] === false) ? `<span class="no">${esc(t("f_none"))}</span>` : NA;
-  };
   const rows = Object.fromEntries($$("#src tr[data-s]").map(r => [r.dataset.s, r]));
 
   function srcRow(id, cells, cls = "") {
@@ -82,17 +76,28 @@ import { family, canon, isPublic } from "./ip.mjs";
   }
   const SK = '<span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span>';
 
+  // A source's answer as one line of what it actually said: place, network type, flags, risk. Sources answer
+  // different questions (a registry only knows where the block is registered, the Tor list only whether it's an exit),
+  // so one summary cell reads better than columns that would be mostly empty.
   function fillSource(m) {
-    if (!m.ok) { srcName(m.id, m.site, esc(t("src_fail"))); srcRow(m.id, [NA, NA, NA, NA], "fail"); return; }
+    if (!m.ok) { srcName(m.id, m.site, ""); srcRow(m.id, [`<span class="m">${esc(t("src_fail"))}</span>`], "fail"); return; }
     const d = m.d, extra = (d.extra || []).map(([k, v]) => `${esc(t(k))} ${esc(v)}`);
-    if (!d.cc && d.org && !d.regCc && !d.asCc) extra.unshift(esc((d.asn ? "AS" + d.asn + " " : "") + d.org));
-    if (d.regCc) extra.unshift(esc(t("x_reg", { c: country(d.regCc) })) + (d.rir ? " · " + esc(d.rir) : ""));
-    if (d.asCc) extra.unshift(esc(t("x_as_cc", { c: country(d.asCc) })));
-    if (d.ports) extra.push(d.ports.length ? esc(t("x_ports")) + " " + esc(d.ports.slice(0, 10).join(", ")) : esc(t("x_no_ports")));
+    if (d.org && (d.cc || !d.regCc)) extra.unshift(esc((d.asn ? "AS" + d.asn + " " : "") + d.org));
     if (d.tags && d.tags.length) extra.push(esc(d.tags.join(", ")));
     srcName(m.id, m.site, extra.join(" · "));
-    const loc = d.cc ? `${flag(d.cc)} ${esc(d.cc)}` : NA;
-    srcRow(m.id, [loc, d.type ? esc(typeName(d.type)) : NA, flagsOf(d), bar(d.risk)]);
+    const out = [];
+    if (d.cc) out.push(`<span class="pl">${flag(d.cc)} ${esc(country(d.cc))}${d.city ? ` <span class="m">${esc(d.city)}</span>` : ""}</span>`);
+    const reg = d.regCc || d.asCc;
+    if (reg && !d.cc) out.push(`<span class="pl">${flag(reg)} ${esc(t(d.regCc ? "x_reg" : "x_as_cc", { c: country(reg) }))}${d.rir ? ` <span class="m">${esc(d.rir)}</span>` : ""}</span>`);
+    else if (!d.cc && d.rir) out.push(`<span class="m">${esc(d.rir)}</span>`);
+    if (d.type) out.push(`<span class="ft ${d.type === "hosting" ? "warn" : ""}">${esc(typeName(d.type))}</span>`);
+    const on = [["tor", "Tor"], ["vpn", "VPN"], ["proxy", t("tag_proxy")], ["abuser", t("f_abuse")]].filter(([k]) => d[k] === true);
+    if (on.length) out.push(on.map(([, x]) => `<span class="ft bad">${esc(x)}</span>`).join(""));
+    else if (m.id === "tor") out.push(`<span class="no">${esc(t("x_tor_no"))}</span>`);
+    else if (["tor", "vpn", "proxy"].some(k => d[k] === false)) out.push(`<span class="no">${esc(t("f_clean"))}</span>`);
+    if (typeof d.risk === "number") out.push(bar(d.risk));
+    if (d.ports) out.push(`<span class="m">${esc(d.ports.length ? t("x_ports") + " " + d.ports.slice(0, 10).join(", ") : t("x_no_ports"))}</span>`);
+    srcRow(m.id, [out.join("") || NA]);
   }
 
   // the blocklists: one row, counting as they answer; the lists that carry the address are named and linked
@@ -101,7 +106,7 @@ import { family, canon, isPublic } from "./ip.mjs";
     const hits = BL.hits.map(b => `<a class="ft bad" href="${esc(b.site)}" target="_blank" rel="noopener noreferrer">${esc(b.name)}</a>`).join("");
     const cell = !BL.of ? `<span class="m">${esc(t("bl_v6"))}</span>`
       : hits || (final || BL.done === BL.of ? `<span class="no">${esc(t("bl_clean"))}</span>` : `<span class="m num">${BL.done}/${BL.of}</span>`);
-    srcRow("dnsbl", [NA, NA, cell, NA], BL.of ? "" : "fail");
+    srcRow("dnsbl", [cell], BL.of ? "" : "fail");
   }
 
   /* ---------- the check ---------- */
@@ -121,9 +126,9 @@ import { family, canon, isPublic } from "./ip.mjs";
     $("#facts dd").classList.add("ipv");
     $("#notes").innerHTML = '<li class="sk-l"></li>'.repeat(2);
     $$("#uses li").forEach(li => { li.className = ""; li.querySelector(".lv").innerHTML = SK; li.querySelector(".why").innerHTML = "&nbsp;"; });
-    for (const id in rows) { rows[id].hidden = false; srcName(id, null, ""); srcRow(id, [SK, SK, SK, SK]); }
+    for (const id in rows) { rows[id].hidden = false; srcName(id, null, ""); srcRow(id, [SK]); }
     $("#srcN").textContent = ""; $("#srcFoot").innerHTML = "&nbsp;";
-    $$(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.ip === ip));
+    $$(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.ip === (ip || selfIp)));
   }
   function fail(key) {
     gauge.classList.remove("busy"); $("#gNum").textContent = "–";
@@ -168,10 +173,17 @@ import { family, canon, isPublic } from "./ip.mjs";
     if (ctl === RUN && !done) fail("err_net");
   }
 
-  let CUR = null, keyless = 0;
+  let CUR = null, keyless = 0, RES = [], BLR = [], PEND = [];
+  // IPinfo limits the shared Cloudflare addresses the server asks from; the browser asks it directly instead
+  const ipinfo = ip => getJ(`https://ipinfo.io/${encodeURIComponent(ip)}/json`).then(j => {
+    if (j.bogon || !j.country) throw 0;
+    const d = { cc: j.country, city: j.city, org: String(j.org || "").replace(/^ASd+s*/, "") || undefined, host: j.hostname || undefined };
+    const asn = /^AS(d+)/.exec(j.org || ""); if (asn) d.asn = +asn[1]; if (j.anycast === true) d.anycast = true;
+    return d;
+  });
   function handle(m) {
     if (m.t === "start") {
-      CUR = m;
+      CUR = m; RES = []; BLR = []; PEND = [];
       const dd = $("#facts dd"); dd.className = "ipv"; dd.innerHTML = `${esc(m.ip)} <span class="m">IPv${m.v}</span>`;
       // sources this check can't use leave the table before any answer arrives; the ones needing keys get a footnote
       for (const id in m.skip) if (rows[id]) rows[id].hidden = true;
@@ -179,13 +191,26 @@ import { family, canon, isPublic } from "./ip.mjs";
       BL.of = m.bl.length; BL.done = 0; BL.hits = [];
       blRow(false);
       total = Object.keys(rows).length - 1 - Object.keys(m.skip).length + m.bl.length;
-      if (m.self) { selfIp = m.ip; noteMine(m.ip, m.v); }
+      if (m.self) noteMine(m.ip);
       progress();
-    } else if (m.t === "src") { fillSource(m); got++; progress(); }
+    } else if (m.t === "src") {
+      if (!m.ok && m.id === "ipinfo") {
+        const cur = CUR;
+        PEND.push(ipinfo(cur.ip).then(d => { if (CUR !== cur) return; RES.push({ id: m.id, data: d }); fillSource({ ...m, ok: true, d }); },
+          () => { if (CUR === cur) fillSource(m); }).finally(() => { if (CUR === cur) { got++; progress(); } }));
+        return;
+      }
+      if (m.ok) RES.push({ id: m.id, data: m.d });
+      fillSource(m); got++; progress();
+    }
     else if (m.t === "bl") {
-      BL.done++; if (m.listed === true) BL.hits.push(m);
+      BL.done++; BLR.push(m); if (m.listed === true) BL.hits.push(m);
       blRow(false); got++; progress();
-    } else if (m.t === "done") finish(m);
+    } else if (m.t === "done") {
+      // scored here, once the browser's own lookups are in too (same rules as the API: src/score.mjs)
+      const cur = CUR;
+      Promise.allSettled(PEND).then(() => { if (CUR === cur) finish({ ...m, ...assess(RES, BLR) }); });
+    }
     else if (m.t === "error") fail("err_net");
   }
 
@@ -226,31 +251,64 @@ import { family, canon, isPublic } from "./ip.mjs";
       li.querySelector(".why").textContent = t(u.why);
     }
     blRow(true);
+    // the checked address, when it is one of the visitor's exits that no check placed, takes the country found here
+    const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
+    // sources that didn't answer leave the table now that everything is in, named in the footnote instead
+    const down = Object.keys(rows).filter(id => id !== "dnsbl" && !rows[id].hidden && rows[id].className === "fail");
+    for (const id of down) rows[id].hidden = true;
     const ok = Object.keys(rows).filter(id => !rows[id].hidden && rows[id].className === "" && id !== "dnsbl").length;
     $("#srcN").textContent = t("src_n", { ok, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
-    $("#srcFoot").innerHTML = (keyless ? esc(t("skip_n", { n: keyless })) + " " : "") +
+    $("#srcFoot").innerHTML = (down.length ? esc(t("src_down", { list: list(down.map(id => rows[id].dataset.name)) })) + " " : "") +
+      (keyless ? esc(t("skip_n", { n: keyless })) + " " : "") +
       `${esc(t("more_l"))} ` + r.elsewhere.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join(" · ");
   }
 
-  /* ---------- the visitor's own addresses: the one the check sees, plus the other family ---------- */
-  const mine = { 4: null, 6: null };
-  function chip(f) {
-    const c = $("#m" + f), ip = mine[f];
-    c.classList.remove("sk");
-    if (ip) { c.disabled = false; c.dataset.ip = ip; c.querySelector("b").textContent = ip; c.classList.remove("none"); c.setAttribute("aria-pressed", CUR && CUR.ip === ip); }
-    else { c.disabled = true; c.querySelector("b").textContent = t("none"); c.classList.add("none"); }
-  }
-  function noteMine(ip, f) { if (!mine[f]) { mine[f] = ip; chip(f); } }
-  // the address the check itself sees stays out of the URL (a shared link then checks whoever opens it)
-  let selfIp = null;
-  $$(".chip").forEach(c => { c.onclick = () => { if (c.dataset.ip) { input.value = ""; run(c.dataset.ip === selfIp ? null : c.dataset.ip, true); } }; });
+  /* ---------- the visitor's exits ---------- */
+  // A rule-based proxy picks the route by destination, so one "what is my IP" only shows one exit. As on EgressLens,
+  // the browser asks checks at different kinds of destination at once (sites in mainland China, IP services abroad, AI
+  // services, IPv4-only and IPv6-only hosts) and lists every address they saw, each with its country. The list draws
+  // once every check is in; until then the row holds its place with a counter.
   const getJ = (u, ms = 5000) => fetch(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.json() : Promise.reject());
-  const firstIp = (urls, f) => Promise.any(urls.map(([u, k]) => getJ(u).then(j => family(j[k]) === f ? canon(j[k]) : Promise.reject())));
-  const FAM = {
-    4: [["https://ipv4-check-perf.radar.cloudflare.com/", "ip_address"], ["https://api4.ipify.org/?format=json", "ip"]],
-    6: [["https://ipv6-check-perf.radar.cloudflare.com/", "ip_address"], ["https://api6.ipify.org/?format=json", "ip"]],
-  };
-  for (const f of [4, 6]) firstIp(FAM[f], f).then(ip => { if (!mine[f]) { mine[f] = ip; } chip(f); }, () => chip(f));
+  const getT = (u, ms = 5000) => fetch(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.text() : Promise.reject());
+  const trace = host => () => getT(`https://${host}/cdn-cgi/trace`).then(x => { const ip = (/^ip=(.+)$/m.exec(x) || [])[1], cc = (/^loc=(\w\w)$/m.exec(x) || [])[1]; return { ip, cc }; });
+  const PROBES = [
+    () => getJ("https://myip.ipip.net/json").then(j => ({ ip: j.data && j.data.ip })),
+    () => getT("https://api.ipify.cn").then(x => ({ ip: x.trim() })),
+    () => getJ("https://api.ip.sb/geoip").then(j => ({ ip: j.ip, cc: j.country_code })),
+    () => getJ("https://ipinfo.io/json").then(j => ({ ip: j.ip, cc: j.country })),
+    trace("chatgpt.com"), trace("claude.ai"),
+    () => getJ("https://ipv4-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })),
+    () => getJ("https://ipv6-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })),
+  ];
+  const EX = new Map();               // ip → { ip, cc, n: how many checks saw it }
+  let exDone = 0, exFinished = false, selfIp = null;
+  const egress = (document.querySelector('meta[name="egress"]') || {}).content || "";
+  function renderExits() {
+    const el = $("#mine");
+    if (!exFinished) { el.innerHTML = `<span class="m">${esc(t("mine_h"))}</span><span class="m num">${esc(t("ex_wait", { n: exDone, of: PROBES.length }))}</span>`; return; }
+    // the address the check itself sees first, then by how many checks saw it; IPv4 before IPv6
+    const list = [...EX.values()].sort((a, b) => (b.ip === selfIp) - (a.ip === selfIp) || b.n - a.n || family(a.ip) - family(b.ip));
+    el.innerHTML = `<span class="m">${esc(t("mine_h"))}</span>` + (list.length ? list.map(x =>
+      `<button type="button" class="chip" data-ip="${esc(x.ip)}" aria-pressed="${CUR && CUR.ip === x.ip}">${flag(x.cc)}<b>${esc(x.ip)}</b></button>`).join("")
+      : `<span class="m">${esc(t("none"))}</span>`) +
+      (egress ? `<a class="eg" href="${esc(egress)}${D.paths[LANG]}" target="_blank" rel="noopener">${esc(t("ex_more"))}</a>` : "");
+    el.querySelectorAll(".chip").forEach(c => { c.onclick = () => { input.value = ""; run(c.dataset.ip === selfIp ? null : c.dataset.ip, true); }; });
+  }
+  function noteMine(ip) { selfIp = ip; if (!EX.has(ip)) EX.set(ip, { ip, cc: null, n: 1 }); if (exFinished) renderExits(); }
+  (async () => {
+    renderExits();
+    await Promise.allSettled(PROBES.map(p => p().then(r => {
+      const ip = canon(r.ip || "");
+      if (!ip || !isPublic(ip)) return;
+      const x = EX.get(ip) || { ip, cc: null, n: 0 };
+      x.n++; if (r.cc && /^[A-Z]{2}$/i.test(r.cc) && r.cc.toUpperCase() !== "XX") x.cc = x.cc || r.cc.toUpperCase();
+      EX.set(ip, x);
+    }).finally(() => { exDone++; if (!exFinished) renderExits(); })));
+    // an address no check placed gets its country from ip.sb
+    await Promise.allSettled([...EX.values()].filter(x => !x.cc).slice(0, 6).map(x =>
+      getJ("https://api.ip.sb/geoip/" + encodeURIComponent(x.ip)).then(j => { if (j.country_code) x.cc = j.country_code.toUpperCase(); })));
+    exFinished = true; renderExits();
+  })();
 
   /* ---------- the form ---------- */
   $("#ask").onsubmit = e => {
