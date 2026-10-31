@@ -21,10 +21,9 @@ test("every language page keeps the shell contract", async () => {
   }
 });
 
-test("every source and blocklist has its row before any answer", async () => {
+test("every source, and the blocklists, have their row before any answer", async () => {
   const h = await page("");
-  assert.equal((h.match(/<tr data-s="/g) || []).length, SOURCES.length);
-  assert.equal((h.match(/<li data-b="/g) || []).length, DNSBL.length);
+  assert.equal((h.match(/<tr data-s="/g) || []).length, SOURCES.length + 1);   // + the blocklists row
   assert.equal((h.match(/<li data-u="/g) || []).length, 5);
 });
 

@@ -34,60 +34,50 @@
 
   <main>
     <section class="hero card">
-      <div class="hero-l">
-        <h1>{{h1}}</h1>
-        <form class="ask" id="ask" autocomplete="off">
-          <label class="sr" for="ipIn" data-i="ph"></label>
-          <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45" data-ph="ph">
-          <button class="btn pri" id="go" type="submit" data-i="go"></button>
-        </form>
-        <div class="mine" id="mine"><span class="m" data-i="mine_h"></span><button type="button" class="chip sk" id="m4" disabled><em>IPv4</em><b>…</b></button><button type="button" class="chip sk" id="m6" disabled><em>IPv6</em><b>…</b></button></div>
-      </div>
-      <div class="hero-r">
-        <div class="gauge" id="gauge" data-g="">
-          <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/></svg>
-          <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
+      <div class="hero-top">
+        <div class="hero-l">
+          <h1>{{h1}}</h1>
+          <form class="ask" id="ask" autocomplete="off">
+            <label class="sr" for="ipIn" data-i="ph"></label>
+            <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
+            <button class="btn pri" id="go" type="submit" data-i="go"></button>
+          </form>
+          <div class="mine" id="mine"><span class="m" data-i="mine_h"></span><button type="button" class="chip sk" id="m4" disabled><em>IPv4</em><b>…</b></button><button type="button" class="chip sk" id="m6" disabled><em>IPv6</em><b>…</b></button></div>
         </div>
-        <div class="verdict">
-          <p class="v-h" id="vHead" data-i="checking"></p>
-          <p class="v-d" id="vText">&nbsp;</p>
+        <div class="hero-r">
+          <div class="gauge" id="gauge" data-g="">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="gArc" cx="60" cy="60" r="52" pathLength="100"/></svg>
+            <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
+          </div>
+          <div class="verdict">
+            <p class="v-h" id="vHead" data-i="checking"></p>
+            <p class="v-d" id="vText">&nbsp;</p>
+            <p class="parts" id="parts">&nbsp;</p>
+          </div>
         </div>
       </div>
-    </section>
-
-    <section class="card idcard" id="idcard">
-      <div class="id-head"><h2 data-i="h_id"></h2><button class="mini" id="eye" type="button" data-i="hide"></button></div>
       <dl class="facts" id="facts">
-        <div><dt data-i="r_ip"></dt><dd class="ipv sk-l"></dd></div>
+        <div><dt><span data-i="r_ip"></span><button class="mini" id="eye" type="button" data-i="hide"></button></dt><dd class="ipv sk-l"></dd></div>
         <div><dt data-i="r_loc"></dt><dd class="sk-l"></dd></div>
         <div><dt data-i="r_net"></dt><dd class="sk-l"></dd></div>
         <div><dt data-i="r_type"></dt><dd class="sk-l"></dd></div>
         <div><dt data-i="r_reg"></dt><dd class="sk-l"></dd></div>
         <div><dt data-i="r_host"></dt><dd class="sk-l"></dd></div>
       </dl>
-      <div class="tags" id="tags"></div>
     </section>
 
-    <div class="two">
-      <section class="card pad"><h2 data-i="h_notes"></h2><ul class="notes" id="notes"><li class="sk-l"></li><li class="sk-l"></li><li class="sk-l"></li><li class="sk-l"></li></ul></section>
-      <section class="card pad"><h2 data-i="h_uses"></h2><ul class="uses" id="uses">{{uses}}</ul></section>
-    </div>
+    <section class="card pad"><h2 data-i="h_uses"></h2><ul class="uses" id="uses">{{uses}}</ul></section>
+
+    <section class="card pad"><h2 data-i="h_notes"></h2><ul class="notes" id="notes"><li class="sk-l"></li><li class="sk-l"></li></ul></section>
 
     <section class="card pad">
-      <h2 data-i="h_src"></h2>
+      <div class="src-h"><h2 data-i="h_src"></h2><span class="m num" id="srcN"></span></div>
       <div class="tbl-wrap"><table class="src" id="src">
-        <thead><tr><th data-i="col_source"></th><th data-i="col_cc"></th><th data-i="col_type"></th><th data-i="col_proxy"></th><th data-i="col_vpn"></th><th data-i="col_tor"></th><th data-i="col_risk"></th></tr></thead>
+        <thead><tr><th data-i="col_source"></th><th data-i="col_cc"></th><th data-i="col_type"></th><th data-i="col_flags"></th><th data-i="col_risk"></th></tr></thead>
         <tbody>{{srcRows}}</tbody>
       </table></div>
-      <p class="foot-n m" id="srcN">&nbsp;</p>
-      <div class="parts" id="parts" hidden><h3 data-i="h_parts"></h3><ul id="partList"></ul></div>
+      <p class="src-foot m" id="srcFoot">&nbsp;</p>
     </section>
-
-    <div class="two">
-      <section class="card pad"><h2 data-i="h_bl"></h2><ul class="bl" id="bl">{{blRows}}</ul><p class="bl-note m" id="blNote">&nbsp;</p></section>
-      <section class="card pad"><h2 data-i="h_more"></h2><div class="more" id="more"></div></section>
-    </div>
-
 
     <section class="tools-sec">
       <h2 data-i="tools_h"></h2>

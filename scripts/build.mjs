@@ -36,6 +36,7 @@ const USES = ["stream", "ai", "captcha", "account", "mail"];
 const PREPAINT = `(function(){var d=document.documentElement,th=null,s=null;try{th=localStorage.getItem("ipqs:theme");s=localStorage.getItem("ipqs:lang")}catch(e){}if(th==="light"||th==="dark")d.setAttribute("data-theme",th);if(!d.hasAttribute("data-root"))return;var P=JSON.parse(d.getAttribute("data-paths")||"{}"),l=null;try{var q=new URLSearchParams(location.search).get("lang");if(P[q])l=q}catch(e){}if(!l&&P[s])l=s;for(var ls=navigator.languages||[navigator.language||"en"],i=0;!l&&!s&&i<ls.length;i++){var x=String(ls[i]).toLowerCase(),b=x.split("-")[0];l=b==="zh"?(/tw|hk|mo|hant/.test(x)?"zh-TW":"zh-CN"):P[b]?b:null}if(l&&l!=="en")location.replace(P[l]+location.search+location.hash)})();`;
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const fill = (s, v) => { for (const k in v) s = s.split("{" + k + "}").join(v[k]); return s; };
 const hash = s => createHash("sha256").update(s).digest("hex").slice(0, 10);
 const sha = s => createHash("sha256").update(s).digest("base64");
 
@@ -99,8 +100,8 @@ export async function build({ check = false } = {}) {
 
     // every source and blocklist has its row from the start; answers fill them in place
     const skel = '<span class="sk-l" style="display:inline-block;width:38px;min-height:12px"></span>';
-    const srcRows = SOURCES.map(s => `<tr data-s="${s.id}" data-name="${esc(s.name)}"><td><b>${esc(s.name)}</b></td>${`<td>${skel}</td>`.repeat(6)}</tr>`).join("");
-    const blRows = DNSBL.map(b => `<li data-b="${b.id}"><a href="${esc(b.site(""))}" target="_blank" rel="noopener noreferrer">${esc(b.name)}</a></li>`).join("");
+    // the blocklists share one row: their verdict is a count, and each list is linked from it
+    const srcRows = [...SOURCES.map(s => [s.id, s.name]), ["dnsbl", fill(T("bl_row"), { n: DNSBL.length })]].map(([id, name]) => `<tr data-s="${id}" data-name="${esc(name)}"><td><b>${esc(name)}</b></td>${`<td>${skel}</td>`.repeat(4)}</tr>`).join("");
     const uses = USES.map(k => `<li data-u="${k}"><b>${esc(T("use_" + k))}</b><span class="lv">${skel}</span><span class="why">&nbsp;</span></li>`).join("");
     const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(typeof x.name === "string" ? x.name : x.name[lang] || x.name.en)}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
     const helpNav = docs.map(([q], i) => `<button type="button" role="tab" data-hq="${i}" aria-selected="${i === 0}">${esc(q)}</button>`).join("");
@@ -114,7 +115,7 @@ export async function build({ check = false } = {}) {
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
       .replace("{{prepaint}}", PREPAINT).replace("{{head}}", head).replace("{{css}}", cssName).replace("{{js}}", jsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("h1")))
-      .replace("{{uses}}", uses).replace("{{srcRows}}", srcRows).replace("{{blRows}}", blRows).replace("{{tools}}", tools)
+      .replace("{{uses}}", uses).replace("{{srcRows}}", srcRows).replace("{{tools}}", tools)
       .replace("{{helpNav}}", helpNav).replace("{{helpC}}", helpC).replace("{{data}}", JSON.stringify(data).replace(/</g, "\\u003c"));
     if (/\{\{\w+\}\}/.test(html)) throw new Error("unfilled placeholder in " + path(slug) + ": " + /\{\{\w+\}\}/.exec(html)[0]);
     files[(slug ? slug + "/" : "") + "index.html"] = html;
