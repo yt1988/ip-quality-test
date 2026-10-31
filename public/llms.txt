@@ -1,0 +1,17 @@
+# IPQS · 1ms.dog
+
+> Free IP quality check. Asks up to 15 IP intelligence sources (Cloudflare, ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (RIR), ip.guide, Shodan InternetDB, Tor Project, IPQualityScore, AbuseIPDB, Scamalytics, ipdata) and
+> 8 DNS blocklists about an address, then gives a 0–100 score (A–F), whether it is residential or data
+> center, native or broadcast (registered country vs. location), VPN/proxy/Tor flags, and what that means for
+> streaming, AI services, CAPTCHAs, sign-ups and sending mail. Each source's answer is shown with a link to check it.
+
+- Page: https://ipqs.1ms.dog/ (also /zh-cn/, /zh-tw/, /ja/, /ko/, /es/, /fr/, /de/, /pt/, /ru/)
+- Any address: https://ipqs.1ms.dog/?ip=8.8.8.8
+- API (NDJSON stream, one line per source, then the score): https://ipqs.1ms.dog/api/check?ip=8.8.8.8
+- Source code: https://github.com/yt1988/ipqs
+
+## Other 1ms.dog tools
+- 1ms.dog: https://1ms.dog/ (Your exit IPs and latency to 40 services)
+- Me2Cloud: https://m2c.1ms.dog/ (Latency to 360+ cloud regions)
+- VPS2Cloud: https://v2c.1ms.dog/ (Latency from your server to the clouds)
+- Lightsail Cost Saver: https://ls.1ms.dog/ (AWS Lightsail transfer calculator)

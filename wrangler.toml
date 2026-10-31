@@ -1,0 +1,22 @@
+# Cloudflare Worker: static pages from ./public (served without running the script: free, unmetered) plus src/worker.js
+# for /api/check. No routes or custom domain here: on 1ms.dog the site routes the domain to this Worker. To self-host,
+# bind your own domain in the dashboard (see README).
+name = "ipqs"
+main = "src/worker.js"
+compatibility_date = "2025-10-01"
+workers_dev = false
+preview_urls = false
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Fresh lookups per visitor address and minute (cached answers don't count). Remove the block to turn the limit off.
+[[ratelimits]]
+name = "LIMIT"
+namespace_id = "4711"
+simple = { limit = 20, period = 60 }
+
+# Optional API keys, each turns on a source (set with `npx wrangler secret put <NAME>`):
+#   IPQS_KEY  ABUSEIPDB_KEY  SCAMALYTICS_USER + SCAMALYTICS_KEY (+ SCAMALYTICS_URL)  IPDATA_KEY
+#   PROXYCHECK_KEY  IPAPI_IS_KEY  IP2LOCATION_KEY  IPINFO_TOKEN   (raise those sources' free quotas or add fields)
