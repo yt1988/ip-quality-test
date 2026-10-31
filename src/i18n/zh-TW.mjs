@@ -1,8 +1,8 @@
 // 繁體中文（台灣、香港）。常搜詞：「IP 品質檢測」「IP 純淨度」「原生 IP」。
 export default {
   name: "繁體中文",
-  app_name: "IP 健檢",
-  seo_title: "IP 品質檢測 · IP 純淨度、詐騙分數、原生 IP / 廣播 IP、家用寬頻還是機房 · IPQS",
+  app_name: "IP 品質測試",
+  seo_title: "IP 品質測試 · IP 純淨度、詐騙分數、原生 IP / 廣播 IP、家用寬頻還是機房 · 1ms.dog",
   seo_desc: "一次查詢十幾個 IP 情報庫和 8 個黑名單：給出 0–100 的 IP 品質分數，判斷家用寬頻還是機房、原生 IP 還是廣播 IP、是否被標記為 VPN/代理/Tor，以及能否看 Netflix、用 ChatGPT、會不會常跳驗證碼。免費，免註冊。",
   seo_kw: "IP品質檢測, IP純淨度, IP詐騙分數, 原生IP, 廣播IP, 家用IP, 機房IP, 代理偵測, VPN偵測, IP黑名單查詢",
   og_sub: "十幾個情報庫和 8 個黑名單，一個分數",

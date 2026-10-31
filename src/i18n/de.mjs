@@ -1,8 +1,8 @@
 // Deutsch.
 export default {
   name: "Deutsch",
-  app_name: "IP-Check",
-  seo_title: "IP-Qualität prüfen: Fraud-Score, VPN- und Proxy-Erkennung, Privatanschluss oder Rechenzentrum · IPQS",
+  app_name: "IP-Qualitätstest",
+  seo_title: "IP-Qualität prüfen: Fraud-Score, VPN- und Proxy-Erkennung, Privatanschluss oder Rechenzentrum · IP-Qualitätstest",
   seo_desc: "Prüfen Sie den Ruf Ihrer IP bei einem Dutzend IP-Datenbanken und 8 Blocklisten auf einmal: ein Score von 0 bis 100, Privatanschluss oder Rechenzentrum, native IP oder Broadcast-IP, VPN-, Proxy- und Tor-Erkennung und was das für Streaming, ChatGPT, CAPTCHAs und Anmeldungen heißt. Kostenlos.",
   seo_kw: "IP-Qualität, IP-Reputation, Fraud-Score, Proxy-Erkennung, VPN-Erkennung, Residential IP, Rechenzentrums-IP, native IP, IP-Blacklist",
   og_sub: "Ein Dutzend Quellen und 8 Blocklisten, ein Score",

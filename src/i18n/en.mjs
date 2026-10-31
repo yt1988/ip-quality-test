@@ -1,8 +1,8 @@
 // English. Also the fallback for any key another language leaves out (the build requires every key, though).
 export default {
   name: "English",
-  app_name: "IP Checkup",
-  seo_title: "IP Quality Check: fraud score, VPN/proxy detection, residential or data center · IPQS",
+  app_name: "IP Quality Test",
+  seo_title: "IP Quality Check: fraud score, VPN/proxy detection, residential or data center · IP Quality Test",
   seo_desc: "Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.",
   seo_kw: "IP quality, IP reputation, IP fraud score, proxy detection, VPN detection, residential IP check, data center IP, native IP, IP blacklist check",
   og_sub: "A dozen sources and 8 blocklists, one score",

@@ -1,8 +1,8 @@
 // 简体中文。SEO 面向百度和 Google 中文：「IP 质量检测」「IP 纯净度」「原生 IP」「欺诈分数」是常搜词。
 export default {
   name: "简体中文",
-  app_name: "IP 体检",
-  seo_title: "IP 质量检测 · IP 纯净度、欺诈分数、原生 IP / 广播 IP、家宽还是机房 · IPQS",
+  app_name: "IP 质量测试",
+  seo_title: "IP 质量测试 · IP 纯净度、欺诈分数、原生 IP / 广播 IP、家宽还是机房 · 1ms.dog",
   seo_desc: "一次查询十几个 IP 情报库和 8 个黑名单：给出 0–100 的 IP 质量评分，判断家宽还是机房、原生 IP 还是广播 IP、是否被标记为 VPN/代理/Tor，以及能否看 Netflix、用 ChatGPT、会不会频繁弹验证码。免费，无需注册。",
   seo_kw: "IP质量检测, IP纯净度, IP欺诈分数, 原生IP检测, 广播IP, 家宽IP, 机房IP, 代理检测, VPN检测, IP黑名单查询, Scamalytics, IPQS",
   og_sub: "十几个情报库和 8 个黑名单，一个评分",

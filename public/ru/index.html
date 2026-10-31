@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <script>(function(){var d=document.documentElement,th=null,s=null;try{th=localStorage.getItem("ipqs:theme");s=localStorage.getItem("ipqs:lang")}catch(e){}if(th==="light"||th==="dark")d.setAttribute("data-theme",th);if(!d.hasAttribute("data-root"))return;var P=JSON.parse(d.getAttribute("data-paths")||"{}"),l=null;try{var q=new URLSearchParams(location.search).get("lang");if(P[q])l=q}catch(e){}if(!l&&P[s])l=s;for(var ls=navigator.languages||[navigator.language||"en"],i=0;!l&&!s&&i<ls.length;i++){var x=String(ls[i]).toLowerCase(),b=x.split("-")[0];l=b==="zh"?(/tw|hk|mo|hant/.test(x)?"zh-TW":"zh-CN"):P[b]?b:null}if(l&&l!=="en")location.replace(P[l]+location.search+location.hash)})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Проверка качества IP: фрод-скор, определение VPN и прокси, домашний или дата-центр · IPQS</title>
+<title>Проверка качества IP: фрод-скор, определение VPN и прокси, домашний или дата-центр · Тест качества IP</title>
 <meta name="description" content="Проверьте репутацию IP сразу в десятке баз IP-аналитики и 8 чёрных списках: оценка от 0 до 100, домашний или дата-центр, нативный или «вещательный» IP, метки VPN, прокси и Tor, и что это значит для стриминга, ChatGPT, капчи и регистраций. Бесплатно.">
 <meta name="keywords" content="качество IP, репутация IP, фрод скор, проверка прокси, определение VPN, резидентный IP, IP дата-центра, нативный IP, чёрный список IP">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="application-name" content="Проверка IP">
+<meta name="application-name" content="Тест качества IP">
 <meta name="theme-color" content="#f6f6f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1c1c1c" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://ipqs.1ms.dog/ru/">
@@ -28,12 +28,12 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="1ms.dog">
-<meta property="og:title" content="Проверка качества IP: фрод-скор, определение VPN и прокси, домашний или дата-центр · IPQS">
+<meta property="og:title" content="Проверка качества IP: фрод-скор, определение VPN и прокси, домашний или дата-центр · Тест качества IP">
 <meta property="og:description" content="Десяток источников и 8 чёрных списков — одна оценка">
 <meta property="og:url" content="https://ipqs.1ms.dog/ru/">
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Проверка качества IP: фрод-скор, определение VPN и прокси, домашний или дата-центр · IPQS">
+<meta name="twitter:title" content="Проверка качества IP: фрод-скор, определение VPN и прокси, домашний или дата-центр · Тест качества IP">
 <meta name="twitter:description" content="Десяток источников и 8 чёрных списков — одна оценка">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IPQS · 1ms.dog","url":"https://ipqs.1ms.dog/ru/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Проверьте репутацию IP сразу в десятке баз IP-аналитики и 8 чёрных списках: оценка от 0 до 100, домашний или дата-центр, нативный или «вещательный» IP, метки VPN, прокси и Tor, и что это значит для стриминга, ChatGPT, капчи и регистраций. Бесплатно.","inLanguage":"ru","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Как считается оценка?","acceptedAnswer":{"@type":"Answer","text":"Каждый адрес начинает со 100 и теряет баллы за то, что нашли источники: до 20 за сеть дата-центра, 20 за метку прокси и 15 за VPN, 40 за Tor, 10 за жалобы на злоупотребления, до 35 за средний фрод-скор и по 6 за каждый почтовый чёрный список (не больше 24). Метки учитываются по доле согласных источников, поэтому один источник снимает лишь часть. Классы: A от 85, B от 70, C от 50, D от 30, F ниже 30. Разбивка под таблицей показывает каждое снятие."}},{"@type":"Question","name":"Какие источники используются?","acceptedAnswer":{"@type":"Answer","text":"Без ключей: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (региональные регистратуры), ip.guide, Shodan InternetDB, список выходов Tor Project и Cloudflare (только ваш адрес). С бесплатными API-ключами владелец сайта может добавить IPQualityScore, AbuseIPDB, Scamalytics и ipdata. Каждая строка ведёт на страницу источника для проверки."}},{"@type":"Question","name":"Что такое нативный и вещательный IP?","acceptedAnswer":{"@type":"Answer","text":"Нативный IP используется в стране, где он зарегистрирован. Вещательный зарегистрирован в одной стране (часто хостинг-компанией), а анонсируется из другой. Большинство геобаз смотрят на реальное местоположение, но некоторые сервисы — на регистрацию, поэтому с вещательным IP вы можете выглядеть так, будто находитесь в другой стране. Мы сравниваем запись региональной регистратуры (RDAP) с местоположением, которое дают большинство баз. Если в записи нет страны (часто у ARIN), берём страну сети, которой принадлежит блок."}},{"@type":"Question","name":"Домашний или дата-центр: в чём разница?","acceptedAnswer":{"@type":"Answer","text":"Сайты считают адреса дата-центров серверами, VPN и прокси, а не людьми. Стриминг, билетные сервисы, банки и формы регистрации их блокируют или требуют доп. проверку. Домашние и мобильные адреса выглядят как обычные пользователи; мобильные к тому же делят многие (CGNAT), поэтому их почти не блокируют."}},{"@type":"Question","name":"Почему источники расходятся?","acceptedAnswer":{"@type":"Answer","text":"У каждого свои данные: одни знают только, какие сети принадлежат хостингам, другие держат ханипоты или собирают жалобы на мошенничество от клиентов. VPN-сервер может быть известен одному и ещё неизвестен другому. Поэтому мы считаем, сколько источников согласны, а не верим одному."}},{"@type":"Question","name":"Оценка низкая. Что делать?","acceptedAnswer":{"@type":"Answer","text":"Если это домашний интернет: жалоба или запись в чёрном списке часто значит, что устройство в сети было заражено или работало как прокси. Почистите его и подайте запрос на удаление (у каждого списка есть ссылка). Если это VPN или сервер, оценка в основном отражает тип сети и не изменится — выберите провайдера с домашними или менее используемыми адресами."}},{"@type":"Question","name":"Что-нибудь сохраняется?","acceptedAnswer":{"@type":"Answer","text":"Результаты кэшируются на шесть часов для каждого адреса, чтобы не опрашивать бесплатные источники при каждом визите. Больше ничего не хранится, а определение IPv4/IPv6 идёт в вашем браузере."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -44,7 +44,7 @@
   <header class="top">
     <a class="brand" href="/ru/" aria-current="page">
       <span class="logo"><img class="logo-light" src="/assets/logo-light.svg" width="90" height="36" alt="1ms"><img class="logo-dark" src="/assets/logo-dark.svg" width="90" height="36" alt="1ms"></span>
-      <span class="brand-name" data-i="app_name">Проверка IP</span>
+      <span class="brand-name" data-i="app_name">Тест качества IP</span>
     </a>
     <div class="top-acts">
       <label class="sel"><span class="sr" data-i="lang_label">Язык</span>

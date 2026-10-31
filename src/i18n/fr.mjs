@@ -1,8 +1,8 @@
 // Français.
 export default {
   name: "Français",
-  app_name: "Bilan IP",
-  seo_title: "Qualité d’IP : score de fraude, détection VPN et proxy, résidentielle ou datacenter · IPQS",
+  app_name: "Test qualité IP",
+  seo_title: "Qualité d’IP : score de fraude, détection VPN et proxy, résidentielle ou datacenter · Test qualité IP",
   seo_desc: "Vérifiez la réputation de votre IP auprès d’une douzaine de sources de renseignement et de 8 listes noires d’un coup : un score de 0 à 100, résidentielle ou datacenter, IP native ou de diffusion, détection VPN, proxy et Tor, et ce que cela change pour le streaming, ChatGPT, les CAPTCHA et les inscriptions. Gratuit.",
   seo_kw: "qualité IP, réputation IP, score de fraude, détection proxy, détection VPN, IP résidentielle, IP datacenter, IP native, liste noire IP",
   og_sub: "Une douzaine de sources et 8 listes noires, un score",

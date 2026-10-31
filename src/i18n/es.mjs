@@ -1,8 +1,8 @@
 // Español (España y Latinoamérica).
 export default {
   name: "Español",
-  app_name: "Chequeo IP",
-  seo_title: "Calidad de IP: puntuación de fraude, detección de VPN y proxy, residencial o centro de datos · IPQS",
+  app_name: "Test de calidad IP",
+  seo_title: "Calidad de IP: puntuación de fraude, detección de VPN y proxy, residencial o centro de datos · Test de calidad IP",
   seo_desc: "Comprueba la reputación de tu IP en una docena de fuentes de inteligencia y 8 listas negras a la vez: una puntuación de 0 a 100, residencial o centro de datos, IP nativa o de difusión, marcas de VPN, proxy y Tor, y qué significa para streaming, ChatGPT, CAPTCHAs y registros. Gratis.",
   seo_kw: "calidad de IP, reputación de IP, puntuación de fraude, detectar proxy, detectar VPN, IP residencial, IP de centro de datos, lista negra IP",
   og_sub: "Una docena de fuentes y 8 listas negras, una puntuación",
