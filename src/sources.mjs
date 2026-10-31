@@ -135,7 +135,10 @@ export const SOURCES = [
     id: "rdap", name: "RDAP (RIR)",
     site: ip => "https://client.rdap.org/?type=ip&object=" + ip,
     async run(ip) {
-      const j = await getJSON(`https://rdap.org/ip/${ip}`, { headers: { Accept: "application/rdap+json, application/json" }, ms: 5000 });
+      // ARIN's server redirects to the registry that holds the block; rdap.org (behind Cloudflare, which a Worker
+      // can't always reach) is the fallback
+      const opt = { headers: { Accept: "application/rdap+json, application/json" }, ms: 5000 };
+      const j = await getJSON(`https://rdap.arin.net/registry/ip/${ip}`, opt).catch(() => getJSON(`https://rdap.org/ip/${ip}`, opt));
       const rir = ((j.port43 || "").match(/whois\.(\w+)\./) || [])[1] ||
         ((j.notices || []).flatMap(n => n.description || []).join(" ").match(/\b(APNIC|RIPE|ARIN|LACNIC|AFRINIC)\b/i) || [])[1];
       const reg = (j.events || []).find(e => e.eventAction === "registration");
