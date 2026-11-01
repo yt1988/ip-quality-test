@@ -282,7 +282,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     const hid = `<span class="m">${esc(t("r_hidden"))}</span>`, open = !SHARED || SHARED.i;
     set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` : "–");
     // the AS number opens the ASN lookup when the shell names it
-    const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" target="_blank" rel="noopener">AS${s.asn}${XL}</a> ` : "AS" + s.asn + " ") : "";
+    const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
     set(2, !open ? hid : s.asn || s.org ? `${asTxt}<span class="m">${esc(s.org || "")}</span>` : "–");
     set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
 
@@ -360,8 +360,8 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
   // links to the other tools, each only when the shell names its host (<meta name="...">)
   const meta = n => (document.querySelector(`meta[name="${n}"]`) || {}).content || "";
-  // the external-link mark every link to another 1ms.dog tool ends with (tool contract, rule 4)
-  const XL = '<svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg>';
+  // the address and the AS number open the ASN lookup: values themselves, so a dotted underline and a title instead of
+  // the external-link mark (tool contract, rule 4)
   const asnHost = meta("asn"), who = meta("who"), v6 = meta("ipv6");
   // the browser check: an address that scores clean can still be told apart by the browser (fingerprint, time zone),
   // so its link sits under a clean verdict for the visitor's own exit
@@ -369,7 +369,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   // the IPv6 test: under the exits when the address checked is IPv6, or when no check found an IPv6 exit
   if (v6) $("#v6Link").href = v6 + D.paths[LANG];
   // the address opens its page in the ASN lookup (public addresses only)
-  const ipHtml = (ip, v) => (asnHost && isPublic(ip) ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "ip/" + ip)}" target="_blank" rel="noopener">${esc(ip)}${XL}</a>` : esc(ip)) + ` <span class="m">IPv${v}</span>`;
+  const ipHtml = (ip, v) => (asnHost && isPublic(ip) ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "ip/" + ip)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">${esc(ip)}</a>` : esc(ip)) + ` <span class="m">IPv${v}</span>`;
   function showLinks() {
     const mine = SNAP && EX.has(SNAP.ip);
     $("#whoLink").hidden = !(who && mine && /^[AB]$/.test(SNAP.r.grade));

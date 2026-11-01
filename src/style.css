@@ -35,9 +35,8 @@ h2 { font-size: 15px; font-weight: 700; }
 .verdict .ul:hover, .col > .ul:hover { color: var(--ink); }
 .ul[hidden], .eg[hidden] { display: none !important; }
 #facts .asl { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
-.verdict .ul, .col > .ul, .sec-h .eg, #facts .asl { display: inline-flex; align-items: center; gap: 3px; align-self: flex-start; }
+.verdict .ul, .col > .ul, .sec-h .eg { display: inline-flex; align-items: center; gap: 3px; align-self: flex-start; }
 .xl { width: .95em; height: .95em; flex: none; }
-#facts .asl .xl { opacity: .7; }
 #facts .asl:hover { color: var(--ink); }
 
 /* the score: ring, verdict, and the deductions in their colors */

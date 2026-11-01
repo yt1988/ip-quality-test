@@ -116,7 +116,7 @@ export default {
   pp_abuser: "不正報告",
   pp_risk: "不正スコア",
   pp_dnsbl: "ブラックリスト",
-  ex_wait: "出口を検出中 {n}/{of}", ex_more: "サイトごとの出口", who_more: "IP はきれいなのに見破られる？ブラウザ指紋やタイムゾーンが原因かも", v6_more: "IPv6 の接続性をテスト", v6_none: "IPv6 の出口が見つかりません。IPv6 をテスト", src_down: "{list} は応答がありませんでした。",
+  ex_wait: "出口を検出中 {n}/{of}", ex_more: "サイトごとの出口", asn_go: "ASN 検索で見る", who_more: "IP はきれいなのに見破られる？ブラウザ指紋やタイムゾーンが原因かも", v6_more: "IPv6 の接続性をテスト", v6_none: "IPv6 の出口が見つかりません。IPv6 をテスト", src_down: "{list} は応答がありませんでした。",
   col_result: "結果", f_clean: "プロキシ・VPN 判定なし",
   p_why: "{why}：−{n} 点",
   col_item: "項目", col_by: "ソース", q_loc: "場所", q_type: "ネットワーク種別", q_anon: "プロキシ / VPN", q_tor: "Tor 出口", q_risk: "リスクスコア", q_abuse: "不正報告", q_reg: "登録情報", q_ports: "開いているポート", q_dnsbl: "メールブラックリスト", q_nodata: "データなし", q_clean: "{n} 個のソースすべて判定なし", q_tor_yes: "Tor 出口", q_tor_no: "出口ではない（{n} 個）", q_abuse_yes: "不正報告あり", q_abuse_no: "報告なし", q_by_asn: "（ネットワーク）", q_bl_clean: "{n} 個すべて未掲載",
