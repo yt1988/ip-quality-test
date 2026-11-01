@@ -282,7 +282,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     const hid = `<span class="m">${esc(t("r_hidden"))}</span>`, open = !SHARED || SHARED.i;
     set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` : "–");
     // the AS number opens the ASN lookup when the shell names it
-    const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
+    const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
     set(2, !open ? hid : s.asn || s.org ? `${asTxt}<span class="m">${esc(s.org || "")}</span>` : "–");
     set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
 
@@ -360,6 +360,8 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
   // links to the other tools, each only when the shell names its host (<meta name="...">)
   const meta = n => (document.querySelector(`meta[name="${n}"]`) || {}).content || "";
+  // the address and the AS number open the ASN lookup: values themselves, so a dotted underline and a title instead of
+  // the external-link mark (tool contract, rule 4)
   const asnHost = meta("asn"), who = meta("who"), v6 = meta("ipv6");
   // the browser check: an address that scores clean can still be told apart by the browser (fingerprint, time zone),
   // so its link sits under a clean verdict for the visitor's own exit
@@ -370,14 +372,14 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   const unlock = meta("unlock");
   if (unlock) $("#ulLink").href = unlock + D.paths[LANG];
   // the address opens its page in the ASN lookup (public addresses only)
-  const ipHtml = (ip, v) => (asnHost && isPublic(ip) ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "ip/" + ip)}" target="_blank" rel="noopener">${esc(ip)}</a>` : esc(ip)) + ` <span class="m">IPv${v}</span>`;
+  const ipHtml = (ip, v) => (asnHost && isPublic(ip) ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "ip/" + ip)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">${esc(ip)}</a>` : esc(ip)) + ` <span class="m">IPv${v}</span>`;
   function showLinks() {
     const mine = SNAP && EX.has(SNAP.ip);
     $("#whoLink").hidden = !(who && mine && /^[AB]$/.test(SNAP.r.grade));
     $("#ulLink").hidden = !(unlock && mine);
     const checked = SNAP && SNAP.v === 6, none = exFinished && ![...EX.keys()].some(ip => family(ip) === 6);
     const l = $("#v6Link"); l.hidden = !(v6 && (checked || none));
-    if (!l.hidden) l.textContent = t(checked ? "v6_more" : "v6_none");
+    if (!l.hidden) $("#v6T").textContent = t(checked ? "v6_more" : "v6_none");
   }
   function markExit(ip) { $$("#exList .xr").forEach(li => li.classList.toggle("on", li.dataset.ip === ip)); }
   function renderExits() {

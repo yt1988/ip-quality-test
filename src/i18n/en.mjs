@@ -116,7 +116,7 @@ export default {
   pp_abuser: "abuse",
   pp_risk: "fraud score",
   pp_dnsbl: "blocklists",
-  ex_wait: "Finding your exits {n}/{of}", ex_more: "Which IP each site sees →", ul_more: "What streaming and AI this IP unlocks →", who_more: "Clean IP but still flagged? Your browser fingerprint or time zone may give you away →", v6_more: "Test IPv6 connectivity →", v6_none: "No IPv6 exit found: test your IPv6 →", src_down: "{list} didn’t answer.",
+  ex_wait: "Finding your exits {n}/{of}", ex_more: "Which IP each site sees", ul_more: "What streaming and AI this IP unlocks", asn_go: "Look up in ASN lookup", who_more: "Clean IP but still flagged? Your browser fingerprint or time zone may give you away", v6_more: "Test IPv6 connectivity", v6_none: "No IPv6 exit found: test your IPv6", src_down: "{list} didn’t answer.",
   col_result: "Answer", f_clean: "No proxy or VPN flag",
   p_why: "{why}: −{n} points",
   col_item: "Question", col_by: "Sources", q_loc: "Location", q_type: "Network type", q_anon: "Proxy / VPN", q_tor: "Tor exit", q_risk: "Risk scores", q_abuse: "Abuse reports", q_reg: "Registry", q_ports: "Open ports", q_dnsbl: "Mail blocklists", q_nodata: "No data", q_clean: "No flag from {n} sources", q_tor_yes: "Tor exit", q_tor_no: "Not an exit ({n} sources)", q_abuse_yes: "Abuse reported", q_abuse_no: "None reported", q_by_asn: "(network)", q_bl_clean: "Not on any of {n}",
