@@ -88,8 +88,6 @@ export default {
 
   h_bl: "Listes noires de messagerie", bl_v6: "Ces listes ne couvrent que l’IPv4.", bl_ok: "Propre sur les {of}.", bl_hit: "Présente sur {n} des {of}.",
   h_more: "Vérifier ailleurs",
-  tools_h: "Autres outils 1ms.dog",
-  tool_home: "Vos IP de sortie et la latence vers 40 services", tool_egress: "L’IP que voit chaque site : routage partagé, proxys, fuites WebRTC et IPv6", tool_m2c: "Latence vers 360+ régions cloud", tool_v2c: "Latence de votre serveur vers les clouds", tool_ls: "Calculateur de transfert AWS Lightsail",
   v_join: ", ",
 
   h_notes: "À savoir",

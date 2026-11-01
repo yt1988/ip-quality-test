@@ -88,8 +88,6 @@ export default {
 
   h_bl: "邮件黑名单", bl_v6: "这些黑名单只收录 IPv4。", bl_ok: "{of} 个都没有收录。", bl_hit: "{of} 个中 {n} 个收录了它。",
   h_more: "去其他网站查",
-  tools_h: "更多 1ms.dog 工具",
-  tool_home: "出口 IP 与 40 个服务的延迟", tool_egress: "每个网站看到的出口 IP：分流、代理、WebRTC 和 IPv6 泄露", tool_m2c: "到 360+ 个云区域的延迟", tool_v2c: "从服务器到各家云的延迟", tool_ls: "AWS Lightsail 流量计算器",
   v_join: "、",
 
   h_notes: "值得注意",

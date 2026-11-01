@@ -88,8 +88,6 @@ export default {
 
   h_bl: "Mail-Blocklisten", bl_v6: "Diese Listen decken nur IPv4 ab.", bl_ok: "Auf allen {of} sauber.", bl_hit: "Auf {n} von {of} gelistet.",
   h_more: "Anderswo prüfen",
-  tools_h: "Weitere 1ms.dog-Tools",
-  tool_home: "Ihre Ausgangs-IPs und die Latenz zu 40 Diensten", tool_egress: "Welche IP jede Website sieht: Split-Routing, Proxys, WebRTC- und IPv6-Lecks", tool_m2c: "Latenz zu über 360 Cloud-Regionen", tool_v2c: "Latenz von Ihrem Server zu den Clouds", tool_ls: "AWS-Lightsail-Transferrechner",
   v_join: ", ",
 
   h_notes: "Gut zu wissen",

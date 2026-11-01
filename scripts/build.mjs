@@ -18,24 +18,6 @@ const pub = new URL("../public/", import.meta.url), src = new URL("../src/", imp
 // language, URL folder, og:locale; the first is the root
 export const LANGS = [["en", "", "en_US"], ["zh-CN", "zh-cn", "zh_CN"], ["zh-TW", "zh-tw", "zh_TW"], ["ja", "ja", "ja_JP"], ["ko", "ko", "ko_KR"],
   ["es", "es", "es_ES"], ["fr", "fr", "fr_FR"], ["de", "de", "de_DE"], ["pt", "pt", "pt_BR"], ["ru", "ru", "ru_RU"]];
-// the other 1ms.dog tools (names, icons and tints as the site's top bar shows them)
-const TOOLS = [
-  { id: "home", host: "1ms.dog", name: "1ms.dog", tint: "#ffb63f", icon: '<circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4 2.8 6.5S10 12.5 8 14.5C6 12.5 5.2 10.5 5.2 8S6 3.5 8 1.5z"/>' },
-  { id: "egress", host: "egress.1ms.dog", name: { en: "EgressLens", "zh-CN": "出口照妖镜", "zh-TW": "出口照妖鏡", ja: "出口照魔鏡", ko: "출구 IP 돋보기", es: "Lupa IP", fr: "Loupe IP", de: "IP-Lupe", pt: "Lupa de IP", ru: "IP-лупа" }, tint: "#06b6d4", icon: '<circle cx="7" cy="7" r="5"/><path d="M10.6 10.6 14.5 14.5M7 4.5v5M4.5 7h5"/>' },
-  { id: "m2c", host: "m2c.1ms.dog", name: "Me2Cloud", tint: "#3b82f6", icon: '<path d="M1.5 8.5h2.8l1.6-4.5 3.2 8 1.6-3.5h3.8"/>' },
-  { id: "v2c", host: "v2c.1ms.dog", name: "VPS2Cloud", tint: "#10b981", icon: '<rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6.5l2 1.5-2 1.5M8.5 10h3"/>' },
-  { id: "ls", host: "ls.1ms.dog", name: "Lightsail Cost Saver", tint: "#f59e0b", icon: '<rect x="3" y="1.5" width="10" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 8h0M8 8h0M10.5 8h0M5.5 11h0M8 11h0M10.5 11h0"/>' },
-];
-// each tool's page per language, where it differs from this site's folders
-const TOOL_PATH = { ls: { "zh-CN": "/zh/" } };
-const toolHome = (id, lang, slug) => (TOOL_PATH[id] || {})[lang] || (slug ? "/" + slug + "/" : "/");
-// a tool's name in a language: one brand string for every language, or one per language; a gap fails the build
-// instead of showing English
-const toolName = (x, lang) => {
-  const n = typeof x.name === "string" ? x.name : x.name[lang];
-  if (!n) throw new Error(`no ${lang} name for tool ${x.id}`);
-  return n;
-};
 // the questions the sources table answers, one row each (src/app.js fills them)
 // the findings column: what the address is, then what it is good for (src/score.mjs decides each)
 export const PROFILE = ["type", "native", "geo", "anon", "tor", "risk", "abuse", "dnsbl"];
@@ -66,7 +48,7 @@ async function loadI18n() {
 }
 
 // Strings only the build uses (the page already shows them); everything else goes to the browser
-const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "app_name", "docs", "tools_h", "lang_label", "faq_h"]);
+const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "app_name", "docs", "lang_label", "faq_h"]);
 
 export async function build({ check = false } = {}) {
   const I = await loadI18n(), en = I.en;
@@ -128,7 +110,6 @@ export async function build({ check = false } = {}) {
     const group = ([g, ids]) => `<div class="pg" data-g="${g}"><h3>${esc(T("g_" + g))}<span class="pg-n" id="n-${g}"></span></h3>` +
       ids.map(([id, name]) => `<div class="pr wait" data-s="${id}"><span class="pn">${esc(name)}</span><span class="pa">…</span><span class="pk"></span><span class="pms"></span></div>`).join("") + "</div>";
     const groups = `<div class="pcol">${group(GROUPS[0])}</div><div class="pcol">${GROUPS.slice(1).map(group).join("")}</div>`;
-    const tools = TOOLS.map(x => `<a class="tool" href="https://${x.host}${toolHome(x.id, lang, slug)}" style="--tint:${x.tint}"><b><svg viewBox="0 0 16 16" aria-hidden="true">${x.icon}</svg>${esc(toolName(x, lang))}</b><span>${esc(T("tool_" + x.id))}</span></a>`).join("");
     const helpNav = docs.map(([q], i) => `<button type="button" role="tab" data-hq="${i}" aria-selected="${i === 0}">${esc(q)}</button>`).join("");
     const helpC = docs.map(([q, a], i) => `<article data-hqb="${i}"${i ? " hidden" : ""}><h3>${esc(q)}</h3>${a.split(/\n+/).map(p => `<p>${esc(p)}</p>`).join("")}</article>`).join("");
     const langOpts = langs.map(([l]) => `<option value="${l}"${l === lang ? " selected" : ""}>${esc(I[l].name)}</option>`).join("");
@@ -141,7 +122,7 @@ export async function build({ check = false } = {}) {
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
       .replace("{{prepaint}}", PREPAINT).replace("{{head}}", head).replace("{{css}}", cssName).replace("{{js}}", jsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("h1")))
-      .replace("{{finds}}", finds).replace("{{groups}}", groups).replace("{{tools}}", tools)
+      .replace("{{finds}}", finds).replace("{{groups}}", groups)
       .replace("{{helpNav}}", helpNav).replace("{{helpC}}", helpC).replace("{{data}}", JSON.stringify(data).replace(/</g, "\\u003c"));
     if (/\{\{\w+\}\}/.test(html)) throw new Error("unfilled placeholder in " + path(slug) + ": " + /\{\{\w+\}\}/.exec(html)[0]);
     files[(slug ? slug + "/" : "") + "index.html"] = html;
@@ -163,8 +144,7 @@ export async function build({ check = false } = {}) {
 - API (NDJSON stream, one line per source, then the score): ${SITE}/api/check?ip=8.8.8.8
 - Source code: https://github.com/yt1988/ip-quality-test
 
-## Other 1ms.dog tools
-${TOOLS.map(x => `- ${typeof x.name === "string" ? x.name : x.name.en}: https://${x.host}/ (${en["tool_" + x.id]})`).join("\n")}
+- More 1ms.dog tools: https://1ms.dog/
 `;
   // The only inline script is the pre-paint snippet, identical on every page: one hash covers the site.
   const csp = ["default-src 'self'", `script-src 'self' 'sha256-${sha(PREPAINT)}'`, "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data:",

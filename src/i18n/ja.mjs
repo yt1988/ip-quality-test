@@ -88,8 +88,6 @@ export default {
 
   h_bl: "メールブラックリスト", bl_v6: "これらのリストは IPv4 のみです。", bl_ok: "{of} 個すべてクリーン。", bl_hit: "{of} 個中 {n} 個に掲載。",
   h_more: "ほかのサイトで調べる",
-  tools_h: "1ms.dog のほかのツール",
-  tool_home: "出口 IP と 40 サービスの遅延", tool_egress: "サイトごとに見える出口 IP：分流、プロキシ、WebRTC、IPv6 漏れ", tool_m2c: "360 以上のクラウドリージョンへの遅延", tool_v2c: "サーバーからクラウドへの遅延", tool_ls: "AWS Lightsail 転送量計算",
   v_join: "、",
 
   h_notes: "注意点",

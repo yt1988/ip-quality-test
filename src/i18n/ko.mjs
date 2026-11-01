@@ -88,8 +88,6 @@ export default {
 
   h_bl: "메일 블랙리스트", bl_v6: "이 목록들은 IPv4만 다룹니다.", bl_ok: "{of}개 모두 깨끗함.", bl_hit: "{of}개 중 {n}개에 등재.",
   h_more: "다른 사이트에서 확인",
-  tools_h: "1ms.dog의 다른 도구",
-  tool_home: "출구 IP와 서비스 40개의 지연", tool_egress: "사이트마다 보이는 출구 IP: 분할 라우팅, 프록시, WebRTC, IPv6 누출", tool_m2c: "클라우드 리전 360곳 이상의 지연", tool_v2c: "서버에서 클라우드까지의 지연", tool_ls: "AWS Lightsail 전송량 계산기",
   v_join: ", ",
 
   h_notes: "알아둘 점",
