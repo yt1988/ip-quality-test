@@ -7,13 +7,13 @@ export default {
   seo_kw: "qualité IP, réputation IP, score de fraude, détection proxy, détection VPN, IP résidentielle, IP datacenter, IP native, liste noire IP",
   og_sub: "Une douzaine de sources et 8 listes noires, un score",
   h1: "Qualité d’IP : votre IP est-elle propre ?",
-  share_btn: "Partager", share_h: "Partager le résultat", share_sub: "L’image et le lien sont créés dans votre navigateur ; le résultat n’est pas envoyé.",
-  share_loc: "Afficher l’IP, la ville et le FAI", share_link: "Lien", share_copyLink: "Copier le lien",
-  share_copyImg: "Copier l’image", share_dl: "Télécharger l’image", share_native: "Partager…",
-  share_len: "Le résultat tient dans le lien ({n} caractères).", share_shortNote: "Le lien est enregistré sur {host} pour le raccourcir.", share_shortFail: "Impossible de raccourcir ; voici le lien complet.",
-  share_copied: "Copié", share_failed: "Le navigateur ne l’a pas permis", shared_t: "Un résultat partagé · {d}",
+  share_btn: "Partager",
+ 
+ 
+ 
+  shared_t: "Un résultat partagé · {d}",
   shared_mine: "Tester mon IP", shared_bad: "Ce lien partagé est illisible", r_hidden: "masqué",
-  card_title: "La qualité de mon IP", card_cta: "Votre IP est-elle propre ?", card_local: "créé dans le navigateur",
+  card_title: "La qualité de mon IP", card_cta: "Votre IP est-elle propre ?",
   og_r_title: "La qualité de mon IP : note {g}, {s}/100 ({v})",
 
   lang_label: "Langue", faq_h: "Aide", th_system: "Thème : système", th_light: "Thème : clair", th_dark: "Thème : sombre",

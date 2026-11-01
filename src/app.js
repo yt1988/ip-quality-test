@@ -445,35 +445,29 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $("#rerun").hidden = true;
   }
 
-  /* ---------- share: an image card and a link, both made in this browser ---------- */
-  // optional short links: the 1ms.dog shell announces its shortener (POST {"url"} → {"url"}); without it, the full link
-  const shortener = () => (document.querySelector('meta[name="shortener"]') || {}).content || "";
-  const shortCache = new Map();
-  function shorten(url) {
-    if (!shortCache.has(url)) shortCache.set(url, fetch(shortener(), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url }) })
-      .then(r => r.ok ? r.json() : null).then(j => j && j.url ? j.url : null).catch(() => null).then(u => { if (!u) shortCache.delete(url); return u; }));
-    return shortCache.get(url);
-  }
+  /* ---------- share: the 1ms.dog dialog (/assets/share/, copied from 1ms-shell) with this result's card and link ---------- */
   const shareLink = async withLoc => location.origin + D.paths[LANG] + "r/" + await encode(pack({ ...SNAP, details: withLoc }));
   const shareTitle = () => t("og_r_title", { g: SNAP.r.grade, s: SNAP.r.score, v: t("g_" + SNAP.r.grade) });
   const stamp = () => new Date(SNAP.at).toISOString().slice(0, 16).replace(/[-:T]/g, "");
-
-  let qrLib = null;
-  const loadQR = () => qrLib || (qrLib = new Promise((res, rej) => { const el = document.createElement("script"); el.src = "/vendor/qrcode.min.js"; el.onload = () => res(window.qrcode); el.onerror = rej; document.head.appendChild(el); }));
   const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const loadImg = src => new Promise(res => { const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null); img.src = src; });
-  const darkNow = () => { const th = document.documentElement.getAttribute("data-theme"); return th ? th === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; };
-  // the card, 1080 × 1350 in the page's theme: the grade and score lead, then where the points went, what the address
-  // is and what it is good for (read off the page's own cells); the address, city and network only when asked
-  async function drawCard(withLoc) {
-    const W = 1080, H = 1350, P = 72, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-    const g = cv.getContext("2d"), r = SNAP.r, s = r.summary;
-    const C = { bg: cssVar("--panel"), fg: cssVar("--fg"), mu: cssVar("--muted"), line: cssVar("--line"), soft: cssVar("--soft"), ok: cssVar("--t1"), warn: cssVar("--t3"), bad: cssVar("--t5") };
+  // where the card's parts sit, from kit.top: the title and where the address is (with the address and network when
+  // the box is ticked), the score ring beside the verdict, the findings in two columns, the five uses
+  const R = 130, CELLS = ["type", "native", "anon", "tor", "risk", "abuse", "dnsbl", "geo"];
+  function layout(kit) {
+    const my = kit.top + 94 + (kit.show ? 42 : 0), cy = my + 40 + R, cells = cy + R + 96;
+    const uses = cells + Math.ceil(CELLS.length / 2) * 58 - 10;
+    return { my, cy, cells, uses, end: uses + 108 + 36 };
+  }
+  // the result between kit.top and kit.bottom, in the page's theme; the findings and uses are read off the page's cells
+  async function drawCard(g, kit) {
+    const { W, P } = kit, r = SNAP.r, s = r.summary, L = layout(kit), withLoc = kit.show;
+    const C = { fg: cssVar("--fg"), mu: cssVar("--muted"), line: cssVar("--line"), soft: cssVar("--soft"), ok: cssVar("--t1"), warn: cssVar("--t3"), bad: cssVar("--t5") };
     const GC = { A: cssVar("--t1"), B: cssVar("--t2"), C: cssVar("--t3"), D: cssVar("--t4"), F: cssVar("--t5") }[r.grade];
-    const FF = cssVar("--f-ui"), FN = cssVar("--f-num");
+    const FF = cssVar("--f-ui") || kit.F, FN = cssVar("--f-num") || kit.M;
     const font = (wt, sz, mono) => { g.font = `${wt} ${sz}px ${mono ? FN : FF}`; };
     const text = (str, x, y, color, align) => { g.fillStyle = color; g.textAlign = align || "left"; g.fillText(str, x, y); };
-    const fit = (str, max) => { str = String(str); if (g.measureText(str).width <= max) return str; while (str.length > 1 && g.measureText(str + "…").width > max) str = str.slice(0, -1); return str + "…"; };
+    const fit = (str, max) => kit.clip(g, str, max);
     // wraps at spaces, or anywhere in scripts written without them
     const wrap = (str, max, lines) => {
       const out = []; let cur = "";
@@ -485,17 +479,13 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       if (cur.trim()) out.push(cur.trim());
       return out.length > lines ? [...out.slice(0, lines - 1), fit(out.slice(lines - 1).join(" "), max)] : out;
     };
-    const rr = (x, y, w, h, rad) => { g.beginPath(); g.roundRect(x, y, w, h, rad); };
     const pc = k => cssVar("--p-" + k.slice(2));
     try { await document.fonts.ready; } catch (e) {}
-    g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
-    const logo = await loadImg(darkNow() ? "/assets/logo-dark.svg" : "/assets/logo-light.svg");
-    if (logo) g.drawImage(logo, P, P - 8, 200, 80);
-    g.textBaseline = "middle"; font(500, 26, true); text(new Date(SNAP.at).toLocaleString(LANG, { dateStyle: "medium", timeStyle: "short" }), W - P, P + 32, C.mu, "right"); g.textBaseline = "alphabetic";
+    g.textBaseline = "alphabetic";
 
     // title, then the country (and, when asked, the city, address and network)
-    font(700, 54); text(fit(t("card_title"), W - 2 * P), P, 222, C.fg);
-    let my = 274;
+    font(700, 50); text(fit(t("card_title"), W - 2 * P), P, kit.top + 44, C.fg);
+    let my = kit.top + 94;
     const fl = s.cc ? await loadImg(`/flags/${s.cc.toLowerCase()}.svg`) : null;
     font(500, 28);
     const where = [withLoc && s.city, s.cc && country(s.cc)].filter(Boolean).join(", ") + "  ·  IPv" + SNAP.v;
@@ -503,20 +493,20 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     if (withLoc) { my += 42; text(fit([SNAP.ip, s.asn && "AS" + s.asn, s.org].filter(Boolean).join("  ·  "), W - 2 * P), P, my, C.mu); }
 
     // the ring: the score in the grade's color, each deduction after it in its own color, as on the page
-    const cx = P + 160, cy = my + 236, R = 140;
+    const cx = P + R + 10, cy = L.cy;
     const arc = (from, len, color) => { g.beginPath(); g.arc(cx, cy, R, -Math.PI / 2 + from / 50 * Math.PI, -Math.PI / 2 + (from + len) / 50 * Math.PI); g.strokeStyle = color; g.stroke(); };
     g.lineWidth = 26; g.lineCap = "butt"; arc(0, 100, C.soft);
     let at = r.score;
     for (const p of r.parts) { const len = Math.min(p.pts, 100 - at); if (len <= 0) continue; arc(at + .6, Math.max(0, len - 1.2), pc(p.k)); at += len; }
     if (r.score > 0) arc(0, r.score, GC);
-    g.textBaseline = "middle"; font(700, 104, true); text(String(r.score), cx, cy - 10, C.fg, "center");
-    font(700, 30); text(t("grade", { g: r.grade }), cx, cy + 60, GC, "center"); g.textBaseline = "alphabetic";
+    g.textBaseline = "middle"; font(700, 100, true); text(String(r.score), cx, cy - 10, C.fg, "center");
+    font(700, 30); text(t("grade", { g: r.grade }), cx, cy + 58, GC, "center"); g.textBaseline = "alphabetic";
 
     // the verdict and where the points went
     const vx = cx + R + 64, vw = W - P - vx;
-    font(800, 52); text(fit(t("g_" + r.grade), vw), vx, cy - 76, GC);
-    font(500, 26); const dl = wrap(t("d_" + r.grade), vw, 3); dl.forEach((l, i) => text(l, vx, cy - 28 + i * 38, C.mu));
-    let px = vx, py = cy - 28 + dl.length * 38 + 30;
+    font(800, 52); text(fit(t("g_" + r.grade), vw), vx, cy - 70, GC);
+    font(500, 26); const dl = wrap(t("d_" + r.grade), vw, 3); dl.forEach((l, i) => text(l, vx, cy - 22 + i * 38, C.mu));
+    let px = vx, py = cy - 22 + dl.length * 38 + 30;
     font(600, 24);
     for (const p of r.parts) {
       const label = "−" + p.pts + " " + t("pp_" + p.k.slice(2)), w = g.measureText(label).width + 28;
@@ -529,9 +519,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     // what the address is and what it is good for, read off the page's cells
     const LV = { "st-ok": C.ok, "st-warn": C.warn, "st-bad": C.bad };
     const lvOf = el => LV[[...el.classList].find(c => c in LV)] || C.mu;
-    let y = cy + R + 96;
+    const y = L.cells;
     g.strokeStyle = C.line; g.lineWidth = 2; g.beginPath(); g.moveTo(P, y - 48); g.lineTo(W - P, y - 48); g.stroke();
-    const cells = ["type", "native", "anon", "tor", "risk", "abuse", "dnsbl", "geo"].map(f => $(`.fc[data-f="${f}"]`)).filter(Boolean);
+    const cells = CELLS.map(f => $(`.fc[data-f="${f}"]`)).filter(Boolean);
     const colW = (W - 2 * P - 48) / 2;
     cells.forEach((c, i) => {
       const x = P + (i % 2) * (colW + 48), yy = y + Math.floor(i / 2) * 58, col = lvOf(c);
@@ -539,68 +529,32 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       font(500, 25); const lab = fit(c.querySelector(".fc-l").lastChild.textContent.trim(), colW * .5); text(lab, x + 28, yy, C.mu);
       font(600, 25); text(fit(c.querySelector(".fc-v").textContent.replace(/\s+/g, " ").trim(), colW - 48 - g.measureText(lab).width), x + colW, yy, col === C.mu ? C.fg : col, "right");
     });
-    y += Math.ceil(cells.length / 2) * 58 + 28;
     const uses = $$(".uc[data-f]"), uw = (W - 2 * P - 4 * 14) / 5;
     uses.forEach((u, i) => {
       const x = P + i * (uw + 14), col = lvOf(u);
-      rr(x, y, uw, 108, 16); g.fillStyle = C.soft; g.fill();
-      g.fillStyle = col; rr(x + 18, y + 18, 30, 6, 3); g.fill();
-      font(500, 22); text(fit(u.querySelector(".uc-l").textContent.trim(), uw - 36), x + 18, y + 58, C.mu);
-      font(700, 26); text(fit(u.querySelector(".uc-v").textContent.trim(), uw - 36), x + 18, y + 92, col);
+      kit.roundRect(g, x, L.uses, uw, 108, 16); g.fillStyle = C.soft; g.fill();
+      g.fillStyle = col; kit.roundRect(g, x + 18, L.uses + 18, 30, 6, 3); g.fill();
+      font(500, 22); text(fit(u.querySelector(".uc-l").textContent.trim(), uw - 36), x + 18, L.uses + 58, C.mu);
+      font(700, 26); text(fit(u.querySelector(".uc-v").textContent.trim(), uw - 36), x + 18, L.uses + 92, col);
     });
-
-    // footer: invitation, address and a QR code to the site
-    const fy = H - P - 150;
-    g.strokeStyle = C.line; g.lineWidth = 2; g.beginPath(); g.moveTo(P, fy); g.lineTo(W - P, fy); g.stroke();
-    font(700, 38); text(fit(t("card_cta"), W - 2 * P - 200), P, fy + 74, C.fg);
-    font(500, 26); text(fit(location.host + "  ·  " + t("card_local"), W - 2 * P - 200), P, fy + 120, C.mu);
-    try {
-      const q = (await loadQR())(0, "M"); q.addData(location.origin + D.paths[LANG]); q.make();
-      const n = q.getModuleCount(), size = 130, m = size / n, qx = W - P - size, qy = fy + 20;
-      g.fillStyle = "#ffffff"; rr(qx - 10, qy - 10, size + 20, size + 20, 12); g.fill(); g.fillStyle = "#000000";
-      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (q.isDark(i, j)) g.fillRect(qx + j * m, qy + i * m, m + .5, m + .5);
-    } catch (e) {}
-    return cv;
   }
-  let shareCur = null, shareGen = 0;
-  async function refreshShare() {
-    const withLoc = $("#shareLoc").checked, gen = ++shareGen;
-    $("#shareImg").classList.add("busy");
-    let link = await shareLink(withLoc), note = t("share_len", { n: link.length });
-    if (shortener()) {
-      $("#shareLink").value = "…";
-      const u = await shorten(link);
-      if (u) { link = u; note = t("share_shortNote", { host: new URL(u).host }); } else note = t("share_shortFail");
-    }
-    if (gen !== shareGen) return;
-    $("#shareLink").value = link; $("#shareNote").textContent = note;
-    const cv = await drawCard(withLoc), blob = await new Promise(res => cv.toBlob(res, "image/png"));
-    if (gen !== shareGen) return;
-    if (shareCur) URL.revokeObjectURL(shareCur.url);
-    shareCur = { blob, link, url: URL.createObjectURL(blob), file: new File([blob], `ipqs-${stamp()}.png`, { type: "image/png" }) };
-    const img = $("#shareImg"); img.src = shareCur.url; img.alt = shareTitle(); img.classList.remove("busy");
-    $("#shareCopyImg").hidden = !(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write);
-    $("#shareNative").hidden = !navigator.share;
-  }
-  $("#shareBtn").onclick = () => {
+  $("#shareBtn").onclick = async () => {
     if (!SNAP) return;
-    // the address, city and network stay out unless asked for; a shared result without them can't add them
-    const loc = $("#shareLoc"); loc.checked = !!SHARED && !!SHARED.i; loc.closest(".tgl").hidden = !!SHARED && !SHARED.i;
-    openDlg("share"); refreshShare();
-  };
-  $("#shareLoc").onchange = refreshShare;
-  $("#shareDl").onclick = () => { if (!shareCur) return; const a = document.createElement("a"); a.href = shareCur.url; a.download = shareCur.file.name; document.body.appendChild(a); a.click(); a.remove(); };
-  $("#shareCopyImg").onclick = async () => { try { await navigator.clipboard.write([new ClipboardItem({ "image/png": shareCur.blob })]); toast(t("share_copied")); } catch (e) { toast(t("share_failed")); } };
-  $("#shareCopyLink").onclick = async () => {
-    const v = $("#shareLink").value; if (!v || v === "…") return;
-    try { await navigator.clipboard.writeText(v); toast(t("share_copied")); } catch (e) { $("#shareLink").select(); toast(t("share_failed")); }
-  };
-  $("#shareLink").onfocus = e => e.target.select();
-  $("#shareNative").onclick = async () => {
-    if (!shareCur) return;
-    const title = shareTitle(), withFile = navigator.canShare && navigator.canShare({ files: [shareCur.file] });
-    try { await navigator.share(withFile ? { title, text: title + " " + shareCur.link, files: [shareCur.file] } : { title, text: title, url: shareCur.link }); }
-    catch (e) { if (e && e.name !== "AbortError") toast(t("share_failed")); }
+    const snap = SNAP, { share } = await import("/assets/share/share.js");
+    // the link is packed (deflated) ahead, both ways, as the dialog asks for it without waiting
+    const can = !SHARED || !!SHARED.i, links = { false: await shareLink(false), true: can ? await shareLink(true) : "" };
+    if (snap !== SNAP) return;
+    share({
+      lang: LANG, name: t("app_name"), file: `ipqs-${stamp()}`,
+      // the address, city and network stay out unless asked for; a shared result without them can't add them
+      show: ["ip", "city", "isp"], canShow: can,
+      link: show => links[show && can], home: location.origin + D.paths[LANG],
+      text: () => shareTitle(),
+      height: (m, kit) => layout(kit).end + 70,
+      draw: drawCard,
+      foot: () => [t("card_cta")],
+      ts: Date.parse(snap.at),
+    }).open();
   };
   let toastEl, toastT = 0;
   function toast(msg) {

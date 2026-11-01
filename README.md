@@ -61,7 +61,7 @@ GET /api/check?ip=<addr>  any public IPv4 or IPv6 address
 
 The answer is NDJSON: a `start` line listing the rows, one `src` line per source and one `bl` line per blocklist as they answer, then a `done` line with `score`, `grade`, `parts`, `notes`, `uses` and `summary`. Answers are cached for six hours per address. Fresh lookups are limited to 20 a minute per visitor.
 
-Shared results live at `/r/<code>` (or `/<lang>/r/<code>`): the code is the answers, deflated and base64url-encoded, behind a format number (`src/share.mjs`). The Worker puts the grade and score into that page's link preview.
+Shared results live at `/r/<code>` (or `/<lang>/r/<code>`): the code is the answers, deflated and base64url-encoded, behind a format number (`src/share.mjs`). The Worker puts the grade and score into that page's link preview. The share dialog itself is the one every 1ms.dog tool uses, copied verbatim from [1ms-shell](https://github.com/yt1988/1ms-shell) into `public/assets/share/`; this page only draws its result on the card.
 
 ## Self-hosting
 

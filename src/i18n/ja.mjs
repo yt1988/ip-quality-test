@@ -7,13 +7,13 @@ export default {
   seo_kw: "IP品質, IP評判, 不正スコア, プロキシ判定, VPN判定, 住宅用IP, データセンターIP, ネイティブIP, IPブラックリスト",
   og_sub: "十数個のソースと 8 つのブラックリスト、ひとつのスコア",
   h1: "IP 品質チェック：あなたの IP はどれだけクリーン？",
-  share_btn: "共有", share_h: "結果を共有", share_sub: "画像とリンクはブラウザ内で作られ、結果はアップロードされません。",
-  share_loc: "IP・都市・プロバイダを表示", share_link: "リンク", share_copyLink: "リンクをコピー",
-  share_copyImg: "画像をコピー", share_dl: "画像を保存", share_native: "共有…",
-  share_len: "結果はリンクそのものに入っています（{n} 文字）。", share_shortNote: "短縮のため、リンクを {host} に保存します。", share_shortFail: "短縮リンクを作れませんでした。元のリンクです。",
-  share_copied: "コピーしました", share_failed: "ブラウザが許可しませんでした", shared_t: "共有された結果 · {d}",
+  share_btn: "共有",
+ 
+ 
+ 
+  shared_t: "共有された結果 · {d}",
   shared_mine: "自分の IP をチェック", shared_bad: "この共有リンクは読み取れません", r_hidden: "非表示",
-  card_title: "私の IP 品質", card_cta: "あなたの IP はどれだけクリーン？", card_local: "ブラウザ内で作成",
+  card_title: "私の IP 品質", card_cta: "あなたの IP はどれだけクリーン？",
   og_r_title: "私の IP 品質：{g} ランク、{s} 点（{v}）",
 
   lang_label: "言語", faq_h: "ヘルプ", th_system: "テーマ：システム", th_light: "テーマ：ライト", th_dark: "テーマ：ダーク",

@@ -49,7 +49,7 @@ async function loadI18n() {
 }
 
 // Strings only the build uses (the page already shows them); everything else goes to the browser
-const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "app_name", "docs", "lang_label", "faq_h"]);
+const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "docs", "lang_label", "faq_h"]);
 
 export async function build({ check = false } = {}) {
   const I = await loadI18n(), en = I.en;
@@ -59,7 +59,8 @@ export async function build({ check = false } = {}) {
 
   const root = fileURLToPath(new URL("..", import.meta.url));
   const js = (await bundle({ entryPoints: [fileURLToPath(new URL("app.js", src))], bundle: true, minify: true, format: "iife", target: "es2020",
-    legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
+    // the share dialog stays its own file, loaded from /assets/share/ when someone shares (copied from 1ms-shell)
+    external: ["/assets/share/*"], legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
   const cssFull = (await Promise.all(["fonts.css", "base.css", "style.css"].map(f => readFile(new URL(f, src), "utf8")))).join("\n");
   const css = (await transform(cssFull, { loader: "css", minify: true, legalComments: "none" })).code;
   const jsName = `app.${hash(js)}.js`, cssName = `app.${hash(css)}.css`;
@@ -172,13 +173,14 @@ export async function build({ check = false } = {}) {
 /assets/l.*
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable
+/assets/share/*
+  ! Cache-Control
+  Cache-Control: public, max-age=86400
 /assets/fonts/*
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable
 /og/*
   Cache-Control: public, max-age=86400
-/vendor/*
-  Cache-Control: public, max-age=2592000
 /flags/*
   Cache-Control: public, max-age=2592000
 /llms.txt

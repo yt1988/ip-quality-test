@@ -7,13 +7,13 @@ export default {
   seo_kw: "IP quality, IP reputation, IP fraud score, proxy detection, VPN detection, residential IP check, data center IP, native IP, IP blacklist check",
   og_sub: "A dozen sources and 8 blocklists, one score",
   h1: "IP quality check: how clean is your IP?",
-  share_btn: "Share", share_h: "Share the result", share_sub: "The image and the link are made in your browser; the result isn't uploaded.",
-  share_loc: "Show IP, city and ISP", share_link: "Link", share_copyLink: "Copy link",
-  share_copyImg: "Copy image", share_dl: "Download image", share_native: "Share…",
-  share_len: "The result is in the link itself ({n} characters).", share_shortNote: "The link is stored on {host} to make it short.", share_shortFail: "Couldn't make a short link; here is the full one.",
-  share_copied: "Copied", share_failed: "The browser didn't allow that", shared_t: "A shared result · {d}",
+  share_btn: "Share",
+ 
+ 
+ 
+  shared_t: "A shared result · {d}",
   shared_mine: "Check my IP", shared_bad: "This shared link can't be read", r_hidden: "hidden",
-  card_title: "My IP quality", card_cta: "How clean is your IP?", card_local: "made in the browser",
+  card_title: "My IP quality", card_cta: "How clean is your IP?",
   og_r_title: "My IP quality: grade {g}, {s}/100 ({v})",
 
   lang_label: "Language", faq_h: "Help", th_system: "Theme: system", th_light: "Theme: light", th_dark: "Theme: dark",

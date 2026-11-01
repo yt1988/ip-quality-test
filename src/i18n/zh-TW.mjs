@@ -7,13 +7,13 @@ export default {
   seo_kw: "IP品質檢測, IP純淨度, IP詐騙分數, 原生IP, 廣播IP, 家用IP, 機房IP, 代理偵測, VPN偵測, IP黑名單查詢",
   og_sub: "十幾個情報庫和 8 個黑名單，一個分數",
   h1: "IP 純淨度檢測：你的 IP 有多乾淨？",
-  share_btn: "分享", share_h: "分享檢測結果", share_sub: "圖片和連結都在你的瀏覽器裡產生，結果不會上傳。",
-  share_loc: "顯示 IP、城市和電信業者", share_link: "連結", share_copyLink: "複製連結",
-  share_copyImg: "複製圖片", share_dl: "下載圖片", share_native: "分享到…",
-  share_len: "結果直接寫在連結裡（{n} 個字元）。", share_shortNote: "連結儲存在 {host} 上，用來產生短網址。", share_shortFail: "短網址產生失敗，這裡是完整連結。",
-  share_copied: "已複製", share_failed: "瀏覽器不允許這個操作", shared_t: "這是一份分享的檢測結果 · {d}",
+  share_btn: "分享",
+ 
+ 
+ 
+  shared_t: "這是一份分享的檢測結果 · {d}",
   shared_mine: "檢測我的 IP", shared_bad: "這個分享連結無法解析", r_hidden: "已隱藏",
-  card_title: "我的 IP 品質", card_cta: "測測你的 IP 有多乾淨", card_local: "瀏覽器本機產生",
+  card_title: "我的 IP 品質", card_cta: "測測你的 IP 有多乾淨",
   og_r_title: "我的 IP 品質：{g} 級，{s} 分（{v}）",
 
   lang_label: "語言", faq_h: "說明", th_system: "主題：跟隨系統", th_light: "主題：淺色", th_dark: "主題：深色",

@@ -61,7 +61,7 @@ GET /api/check?ip=<地址>  任意公网 IPv4 或 IPv6 地址
 
 返回 NDJSON：先是一行 `start`（列出所有行），每个来源返回时一行 `src`，每个黑名单一行 `bl`，最后一行 `done`，包含 `score`、`grade`、`parts`、`notes`、`uses` 和 `summary`。每个地址的结果缓存 6 小时。每个访问者每分钟最多 20 次新查询。
 
-分享的结果在 `/r/<code>`（或 `/<语言>/r/<code>`）：code 是各来源的回答，压缩后用 base64url 编码，前面带格式版本号（`src/share.mjs`）。Worker 会把等级和分数写进这个页面的链接预览。
+分享的结果在 `/r/<code>`（或 `/<语言>/r/<code>`）：code 是各来源的回答，压缩后用 base64url 编码，前面带格式版本号（`src/share.mjs`）。Worker 会把等级和分数写进这个页面的链接预览。分享弹窗本身是 1ms.dog 各工具共用的组件，原样复制自 [1ms-shell](https://github.com/yt1988/1ms-shell) 到 `public/assets/share/`，本页只负责在卡片上画出结果。
 
 ## 自己部署
 

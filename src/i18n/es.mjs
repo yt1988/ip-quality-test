@@ -7,13 +7,13 @@ export default {
   seo_kw: "calidad de IP, reputación de IP, puntuación de fraude, detectar proxy, detectar VPN, IP residencial, IP de centro de datos, lista negra IP",
   og_sub: "Una docena de fuentes y 8 listas negras, una puntuación",
   h1: "Calidad de IP: ¿qué tan limpia está tu IP?",
-  share_btn: "Compartir", share_h: "Compartir el resultado", share_sub: "La imagen y el enlace se crean en tu navegador; el resultado no se sube.",
-  share_loc: "Mostrar IP, ciudad y proveedor", share_link: "Enlace", share_copyLink: "Copiar enlace",
-  share_copyImg: "Copiar imagen", share_dl: "Descargar imagen", share_native: "Compartir…",
-  share_len: "El resultado va dentro del enlace ({n} caracteres).", share_shortNote: "El enlace se guarda en {host} para acortarlo.", share_shortFail: "No se pudo acortar; este es el enlace completo.",
-  share_copied: "Copiado", share_failed: "El navegador no lo permitió", shared_t: "Un resultado compartido · {d}",
+  share_btn: "Compartir",
+ 
+ 
+ 
+  shared_t: "Un resultado compartido · {d}",
   shared_mine: "Comprobar mi IP", shared_bad: "Este enlace compartido no se puede leer", r_hidden: "oculto",
-  card_title: "La calidad de mi IP", card_cta: "¿Qué tan limpia está tu IP?", card_local: "hecho en el navegador",
+  card_title: "La calidad de mi IP", card_cta: "¿Qué tan limpia está tu IP?",
   og_r_title: "La calidad de mi IP: nota {g}, {s}/100 ({v})",
 
   lang_label: "Idioma", faq_h: "Ayuda", th_system: "Tema: sistema", th_light: "Tema: claro", th_dark: "Tema: oscuro",

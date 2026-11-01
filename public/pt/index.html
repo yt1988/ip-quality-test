@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="Uma dúzia de fontes e 8 listas negras, uma nota">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Teste de qualidade IP · 1ms.dog","url":"https://ipqs.1ms.dog/pt/","image":"https://ipqs.1ms.dog/og/pt.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Verifique a reputação do seu IP em uma dúzia de fontes de inteligência e 8 listas negras de uma vez: uma nota de 0 a 100, residencial ou datacenter, IP nativo ou de broadcast, sinais de VPN, proxy e Tor, e o que isso significa para streaming, ChatGPT, CAPTCHAs e cadastros. Grátis.","inLanguage":"pt","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Como a nota é calculada?","acceptedAnswer":{"@type":"Answer","text":"Todo endereço começa com 100 e perde pontos pelo que as fontes encontram: até 20 por rede de datacenter, 20 por sinal de proxy e 15 de VPN, 40 por Tor, 10 por denúncias de abuso, até 35 pela pontuação de fraude média e 6 por lista negra de e-mail (no máximo 24). Os sinais contam pela proporção de fontes que concordam, então uma só tira apenas parte. Notas: A 85+, B 70+, C 50+, D 30+, F abaixo de 30. O detalhamento sob a tabela mostra cada desconto."}},{"@type":"Question","name":"Quais fontes são usadas?","acceptedAnswer":{"@type":"Answer","text":"Sem chaves: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (os registros regionais), ip.guide, Shodan InternetDB, a lista de saída do Tor Project e Cloudflare (só o seu próprio endereço). Com chaves de API gratuitas, o dono do site pode somar IPQualityScore, AbuseIPDB, Scamalytics e ipdata. Cada linha leva à página da fonte para conferir."}},{"@type":"Question","name":"O que é IP nativo e IP de broadcast?","acceptedAnswer":{"@type":"Answer","text":"Um IP nativo é usado no país onde está registrado. Um IP de broadcast é registrado em um país (muitas vezes por uma empresa de hospedagem) e anunciado de outro. A maioria das bases de geolocalização segue o local real, mas alguns serviços seguem o registro, então um IP de broadcast pode fazer você parecer em outro país. Comparamos o registro regional (RDAP) com onde a maioria das bases coloca o endereço. Se o registro não tem país (comum na ARIN), usamos o país da rede dona do bloco."}},{"@type":"Question","name":"Residencial ou datacenter: por que importa?","acceptedAnswer":{"@type":"Answer","text":"Os sites veem endereços de datacenter como servidores, VPNs e proxies, não pessoas. Streaming, venda de ingressos, bancos e formulários de cadastro os bloqueiam ou pedem mais verificação. Endereços residenciais e móveis parecem usuários comuns; os móveis ainda são compartilhados por muitos (CGNAT), então raramente são bloqueados."}},{"@type":"Question","name":"Por que as fontes discordam?","acceptedAnswer":{"@type":"Answer","text":"Cada uma tem seus próprios dados: umas só sabem quais redes são de hospedagem, outras mantêm honeypots ou coletam denúncias de fraude dos clientes. Um servidor de VPN pode ser conhecido por uma e ainda não por outra. Por isso contamos quantas concordam em vez de confiar em uma só."}},{"@type":"Question","name":"Minha nota é baixa. O que faço?","acceptedAnswer":{"@type":"Answer","text":"Se é sua conexão de casa: uma denúncia ou lista negra geralmente indica que um aparelho da rede foi infectado ou usado como proxy. Limpe-o e peça a remoção à lista (cada uma leva à sua página). Se é VPN ou servidor, a nota reflete principalmente o tipo de rede e não muda: escolha um provedor com endereços residenciais ou menos usados."}},{"@type":"Question","name":"Algo é guardado?","acceptedAnswer":{"@type":"Answer","text":"Os resultados ficam em cache por seis horas por endereço, para não consultar as fontes gratuitas a cada visita. Nada mais é guardado, e a detecção IPv4/IPv6 roda no seu navegador."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.1a4f86f107.css">
+<link rel="stylesheet" href="/assets/app.966362a40e.css">
 </head>
 <body>
 <div class="app">
@@ -146,28 +146,8 @@
 </div>
 
 
-<div class="scrim" id="share" hidden>
-  <div class="dialog share" role="dialog" aria-modal="true" aria-labelledby="shareT">
-    <div class="dlg-h"><div><h2 id="shareT" data-i="share_h">Compartilhar o resultado</h2><p class="dlg-sub" data-i="share_sub">A imagem e o link são feitos no seu navegador; o resultado não é enviado.</p></div>
-      <button class="icon-btn" data-close type="button" aria-label="Fechar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
-    <div class="share-b">
-      <div class="share-img"><img id="shareImg" alt="" width="1080" height="1350"></div>
-      <div class="share-side">
-        <label class="tgl"><input type="checkbox" id="shareLoc"><span class="sw"></span><span data-i="share_loc">Mostrar IP, cidade e provedor</span></label>
-        <button class="btn pri" type="button" id="shareNative" hidden data-i="share_native">Compartilhar…</button>
-        <button class="btn" type="button" id="shareDl" data-i="share_dl">Baixar imagem</button>
-        <button class="btn" type="button" id="shareCopyImg" hidden data-i="share_copyImg">Copiar imagem</button>
-        <label class="lbl" for="shareLink" data-i="share_link">Link</label>
-        <input class="inp" id="shareLink" readonly>
-        <button class="btn" type="button" id="shareCopyLink" data-i="share_copyLink">Copiar link</button>
-        <p class="dlg-sub" id="shareNote">&nbsp;</p>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script type="application/json" id="data">{"lang":"pt","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.pt.85e2aab831.js"></script>
-<script src="/assets/app.1912514344.js"></script>
+<script src="/assets/l.pt.48fada9d0f.js"></script>
+<script src="/assets/app.599d911266.js"></script>
 </body>
 </html>

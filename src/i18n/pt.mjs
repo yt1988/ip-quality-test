@@ -7,13 +7,13 @@ export default {
   seo_kw: "qualidade de IP, reputação de IP, pontuação de fraude, detectar proxy, detectar VPN, IP residencial, IP de datacenter, IP nativo, lista negra de IP",
   og_sub: "Uma dúzia de fontes e 8 listas negras, uma nota",
   h1: "Qualidade de IP: quão limpo é o seu IP?",
-  share_btn: "Compartilhar", share_h: "Compartilhar o resultado", share_sub: "A imagem e o link são feitos no seu navegador; o resultado não é enviado.",
-  share_loc: "Mostrar IP, cidade e provedor", share_link: "Link", share_copyLink: "Copiar link",
-  share_copyImg: "Copiar imagem", share_dl: "Baixar imagem", share_native: "Compartilhar…",
-  share_len: "O resultado vai dentro do link ({n} caracteres).", share_shortNote: "O link é salvo em {host} para encurtá-lo.", share_shortFail: "Não deu para encurtar; este é o link completo.",
-  share_copied: "Copiado", share_failed: "O navegador não permitiu", shared_t: "Um resultado compartilhado · {d}",
+  share_btn: "Compartilhar",
+ 
+ 
+ 
+  shared_t: "Um resultado compartilhado · {d}",
   shared_mine: "Testar meu IP", shared_bad: "Este link compartilhado não pode ser lido", r_hidden: "oculto",
-  card_title: "A qualidade do meu IP", card_cta: "Quão limpo é o seu IP?", card_local: "feito no navegador",
+  card_title: "A qualidade do meu IP", card_cta: "Quão limpo é o seu IP?",
   og_r_title: "A qualidade do meu IP: nota {g}, {s}/100 ({v})",
 
   lang_label: "Idioma", faq_h: "Ajuda", th_system: "Tema: sistema", th_light: "Tema: claro", th_dark: "Tema: escuro",

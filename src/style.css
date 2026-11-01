@@ -184,25 +184,6 @@ h2 { font-size: 15px; font-weight: 700; }
 .btn.sm { height: 30px; padding: 0 12px; font-size: 13px; text-decoration: none; }
 .btn:disabled { opacity: .45; cursor: default; }
 
-/* the share dialog: the image card on the left, what to do with it on the right */
-.dialog.share { width: 820px; }
-.dlg-sub { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
-.share-b { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 18px; padding: 18px; overflow: auto; min-height: 0; }
-.share-img { min-width: 0; display: flex; justify-content: center; align-items: flex-start; background: var(--soft); border-radius: 12px; padding: 12px; }
-.share-img img { display: block; width: auto; height: auto; max-width: 100%; max-height: min(62vh, 560px); aspect-ratio: 1080 / 1350; border-radius: 8px; box-shadow: 0 4px 16px var(--shadow); transition: opacity .2s; }
-.share-img img.busy { opacity: .35; }
-.share-side { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.share-side .btn { width: 100%; }
-.lbl { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
-.inp { height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--fg); font: 13px var(--f-num); width: 100%; min-width: 0; outline: none; }
-.inp:focus { border-color: var(--ink); }
-.tgl { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
-.tgl input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.tgl .sw { position: relative; width: 34px; height: 20px; flex: none; border-radius: 20px; background: var(--line); transition: background .2s; }
-.tgl .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px #0003; transition: transform .2s; }
-.tgl input:checked + .sw { background: var(--ink); }
-.tgl input:checked + .sw::after { transform: translateX(14px); }
-.tgl input:focus-visible + .sw { outline: 2px solid var(--ink); outline-offset: 2px; }
 .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom, 0px)); z-index: 60; transform: translate(-50%, 8px); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 9px; font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
@@ -213,7 +194,6 @@ h2 { font-size: 15px; font-weight: 700; }
   .hero-b > .col + .col > .sec-h:first-child { margin-top: 14px; }
 }
 @media (max-width: 720px) {
-  .share-b { grid-template-columns: minmax(0, 1fr); } .share-img img { max-height: 46vh; }
   .hero { padding: 16px 16px 0; gap: 14px; }
   .bar { margin: 0 -16px; padding: 12px 16px 14px; flex-wrap: wrap; }
   .bar .acts { margin-left: 0; width: 100%; } .bar .acts .btn { flex: 1; }

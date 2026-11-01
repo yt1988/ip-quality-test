@@ -7,13 +7,13 @@ export default {
   seo_kw: "IP 품질, IP 평판, 사기 점수, 프록시 감지, VPN 감지, 가정용 IP, 데이터센터 IP, 네이티브 IP, IP 블랙리스트",
   og_sub: "십여 곳의 소스와 블랙리스트 8개, 점수 하나",
   h1: "IP 품질 검사: 내 IP는 얼마나 깨끗할까?",
-  share_btn: "공유", share_h: "결과 공유", share_sub: "이미지와 링크는 브라우저에서 만들어지며 결과는 업로드되지 않습니다.",
-  share_loc: "IP·도시·통신사 표시", share_link: "링크", share_copyLink: "링크 복사",
-  share_copyImg: "이미지 복사", share_dl: "이미지 저장", share_native: "공유…",
-  share_len: "결과가 링크 안에 들어 있습니다({n}자).", share_shortNote: "짧은 링크를 만들기 위해 링크를 {host}에 저장합니다.", share_shortFail: "짧은 링크를 만들지 못했습니다. 전체 링크입니다.",
-  share_copied: "복사됨", share_failed: "브라우저가 허용하지 않았습니다", shared_t: "공유된 결과 · {d}",
+  share_btn: "공유",
+ 
+ 
+ 
+  shared_t: "공유된 결과 · {d}",
   shared_mine: "내 IP 검사", shared_bad: "이 공유 링크를 읽을 수 없습니다", r_hidden: "숨김",
-  card_title: "내 IP 품질", card_cta: "내 IP는 얼마나 깨끗할까?", card_local: "브라우저에서 생성",
+  card_title: "내 IP 품질", card_cta: "내 IP는 얼마나 깨끗할까?",
   og_r_title: "내 IP 품질: {g}등급, {s}점 ({v})",
 
   lang_label: "언어", faq_h: "도움말", th_system: "테마: 시스템", th_light: "테마: 라이트", th_dark: "테마: 다크",
