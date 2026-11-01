@@ -8,7 +8,7 @@
 - Page: https://ipqs.1ms.dog/ (also /zh-cn/, /zh-tw/, /ja/, /ko/, /es/, /fr/, /de/, /pt/, /ru/)
 - Any address: https://ipqs.1ms.dog/?ip=8.8.8.8
 - API (NDJSON stream, one line per source, then the score): https://ipqs.1ms.dog/api/check?ip=8.8.8.8
-- Source code: https://github.com/yt1988/ipqs
+- Source code: https://github.com/yt1988/ip-quality-test
 
 ## Other 1ms.dog tools
 - 1ms.dog: https://1ms.dog/ (Your exit IPs and latency to 40 services)

@@ -63,8 +63,8 @@ The answer is NDJSON: a `start` line listing the rows, one `src` line per source
 ## Self-hosting
 
 ```bash
-git clone https://github.com/yt1988/ipqs
-cd ipqs
+git clone https://github.com/yt1988/ip-quality-test
+cd ip-quality-test
 npx wrangler login
 npx wrangler deploy
 ```

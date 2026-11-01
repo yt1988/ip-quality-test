@@ -63,8 +63,8 @@ GET /api/check?ip=<地址>  任意公网 IPv4 或 IPv6 地址
 ## 自己部署
 
 ```bash
-git clone https://github.com/yt1988/ipqs
-cd ipqs
+git clone https://github.com/yt1988/ip-quality-test
+cd ip-quality-test
 npx wrangler login
 npx wrangler deploy
 ```

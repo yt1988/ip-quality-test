@@ -16,7 +16,7 @@
 //       got no answer. Both need the source to answer CORS.
 // site: the source's own page for the address, so a visitor can check the answer at the source
 
-const UA = "ipqs (+https://github.com/yt1988/ipqs)";
+const UA = "ipqs (+https://github.com/yt1988/ip-quality-test)";
 
 export async function getJSON(url, { headers = {}, ms = 4500 } = {}) {
   // a browser sends its own User-Agent (setting one would also make the request need a CORS preflight)

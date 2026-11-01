@@ -161,7 +161,7 @@ export async function build({ check = false } = {}) {
 - Page: ${SITE}/ (also ${langs.slice(1).map(([, s]) => "/" + s + "/").join(", ")})
 - Any address: ${SITE}/?ip=8.8.8.8
 - API (NDJSON stream, one line per source, then the score): ${SITE}/api/check?ip=8.8.8.8
-- Source code: https://github.com/yt1988/ipqs
+- Source code: https://github.com/yt1988/ip-quality-test
 
 ## Other 1ms.dog tools
 ${TOOLS.map(x => `- ${typeof x.name === "string" ? x.name : x.name.en}: https://${x.host}/ (${en["tool_" + x.id]})`).join("\n")}
