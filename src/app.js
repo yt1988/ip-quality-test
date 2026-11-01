@@ -207,7 +207,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   function handle(m) {
     if (m.t === "start") {
       CUR = m; RES = []; BLR = []; PEND = []; FAILS = []; SKIP = {};
-      const b = $("#facts b"); b.className = "ipv"; b.innerHTML = `${esc(m.ip)} <span class="m">IPv${m.v}</span>`;
+      const b = $("#facts b"); b.className = "ipv"; b.innerHTML = ipHtml(m.ip, m.v);
       // sources this deployment has no keys for stay out of the list (the same for every address); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
       const cur = m, mine = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
       for (const id in m.skip) {
@@ -281,7 +281,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     // a shared result without the address has no network or reverse DNS name either
     const hid = `<span class="m">${esc(t("r_hidden"))}</span>`, open = !SHARED || SHARED.i;
     set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` : "–");
-    set(2, !open ? hid : s.asn || s.org ? `${s.asn ? "AS" + s.asn + " " : ""}<span class="m">${esc(s.org || "")}</span>` : "–");
+    // the AS number opens the ASN lookup when the shell names it
+    const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
+    set(2, !open ? hid : s.asn || s.org ? `${asTxt}<span class="m">${esc(s.org || "")}</span>` : "–");
     set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
 
     // what the address is: a short answer per cell, the sentence behind it on hover
@@ -331,7 +333,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
 
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
-    showUnlock();
+    showLinks();
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").disabled = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
@@ -356,10 +358,27 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   let EX = new Map(), exFinished = false, selfIp = null, exGen = 0;
   const egress = (document.querySelector('meta[name="egress"]') || {}).content || "";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
+  // links to the other tools, each only when the shell names its host (<meta name="...">)
+  const meta = n => (document.querySelector(`meta[name="${n}"]`) || {}).content || "";
+  const asnHost = meta("asn"), who = meta("who"), v6 = meta("ipv6");
+  // the browser check: an address that scores clean can still be told apart by the browser (fingerprint, time zone),
+  // so its link sits under a clean verdict for the visitor's own exit
+  if (who) $("#whoLink").href = who + D.paths[LANG];
+  // the IPv6 test: under the exits when the address checked is IPv6, or when no check found an IPv6 exit
+  if (v6) $("#v6Link").href = v6 + D.paths[LANG];
   // the unlock check tests the visitor's own route, so its link sits under the verdict only when the address checked is one of their exits
-  const unlock = (document.querySelector('meta[name="unlock"]') || {}).content || "";
+  const unlock = meta("unlock");
   if (unlock) $("#ulLink").href = unlock + D.paths[LANG];
-  function showUnlock() { $("#ulLink").hidden = !(unlock && SNAP && EX.has(SNAP.ip)); }
+  // the address opens its page in the ASN lookup (public addresses only)
+  const ipHtml = (ip, v) => (asnHost && isPublic(ip) ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "ip/" + ip)}" target="_blank" rel="noopener">${esc(ip)}</a>` : esc(ip)) + ` <span class="m">IPv${v}</span>`;
+  function showLinks() {
+    const mine = SNAP && EX.has(SNAP.ip);
+    $("#whoLink").hidden = !(who && mine && /^[AB]$/.test(SNAP.r.grade));
+    $("#ulLink").hidden = !(unlock && mine);
+    const checked = SNAP && SNAP.v === 6, none = exFinished && ![...EX.keys()].some(ip => family(ip) === 6);
+    const l = $("#v6Link"); l.hidden = !(v6 && (checked || none));
+    if (!l.hidden) l.textContent = t(checked ? "v6_more" : "v6_none");
+  }
   function markExit(ip) { $$("#exList .xr").forEach(li => li.classList.toggle("on", li.dataset.ip === ip)); }
   function renderExits() {
     // addresses of the same country together, the visitor's own (the one the check sees) country first, then the
@@ -373,7 +392,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       const go = () => { input.value = ""; run(li.dataset.ip === selfIp ? null : li.dataset.ip, true); };
       li.onclick = go; li.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
     });
-    markExit(CUR ? CUR.ip : null); showUnlock();
+    markExit(CUR ? CUR.ip : null); showLinks();
   }
   function noteMine(ip) { selfIp = ip; if (!EX.has(ip)) EX.set(ip, { ip, cc: null, n: 1 }); if (exFinished) renderExits(); }
   async function findExits() {
@@ -406,7 +425,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     const { res, bl } = unpackResults(P);
     CUR = { ip: P.i || null, v: P.f }; RES = []; BLR = []; FAILS = (P.x || []).slice(); SKIP = { ...(P.k || {}) };
     const b = $("#facts b"); b.className = "ipv";
-    b.innerHTML = P.i ? `${esc(P.i)} <span class="m">IPv${P.f}</span>` : `<span class="m">${esc(t("r_hidden"))} · IPv${P.f}</span>`;
+    b.innerHTML = P.i ? ipHtml(P.i, P.f) : `<span class="m">${esc(t("r_hidden"))} · IPv${P.f}</span>`;
     for (const id in PR) {
       if (PR[id].closest('[data-g="dnsbl"]')) {
         const m = bl.find(x => x.id === id);
