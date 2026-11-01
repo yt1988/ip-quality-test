@@ -116,7 +116,7 @@ export default {
   pp_abuser: "Missbrauch",
   pp_risk: "Fraud-Score",
   pp_dnsbl: "Blocklisten",
-  ex_wait: "Ausgänge werden gesucht {n}/{of}", ex_more: "Welche IP jede Website sieht →", src_down: "{list} hat nicht geantwortet.",
+  ex_wait: "Ausgänge werden gesucht {n}/{of}", ex_more: "Welche IP jede Website sieht →", ul_more: "Welche Streaming- und KI-Dienste diese IP freischaltet →", src_down: "{list} hat nicht geantwortet.",
   col_result: "Antwort", f_clean: "Keine Proxy- oder VPN-Markierung",
   p_why: "{why}: −{n} Punkte",
   col_item: "Frage", col_by: "Quellen", q_loc: "Standort", q_type: "Netztyp", q_anon: "Proxy / VPN", q_tor: "Tor-Exit", q_risk: "Risiko-Scores", q_abuse: "Missbrauchsmeldungen", q_reg: "Registrierung", q_ports: "Offene Ports", q_dnsbl: "Mail-Blocklisten", q_nodata: "Keine Daten", q_clean: "Keine Markierung von {n} Quellen", q_tor_yes: "Tor-Exit", q_tor_no: "Kein Exit ({n} Quellen)", q_abuse_yes: "Missbrauch gemeldet", q_abuse_no: "Nichts gemeldet", q_by_asn: "(Netz)", q_bl_clean: "Auf keiner der {n}",

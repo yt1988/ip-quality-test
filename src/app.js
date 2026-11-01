@@ -139,7 +139,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $$("#facts b").forEach((b, i) => { b.className = i ? "" : "ipv"; b.innerHTML = SKL; });
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
-    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").disabled = true; SNAP = null;
+    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").disabled = true; SNAP = null; $("#ulLink").hidden = true;
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -331,6 +331,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
 
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
+    showUnlock();
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").disabled = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
@@ -355,6 +356,10 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   let EX = new Map(), exFinished = false, selfIp = null, exGen = 0;
   const egress = (document.querySelector('meta[name="egress"]') || {}).content || "";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
+  // the unlock check tests the visitor's own route, so its link sits under the verdict only when the address checked is one of their exits
+  const unlock = (document.querySelector('meta[name="unlock"]') || {}).content || "";
+  if (unlock) $("#ulLink").href = unlock + D.paths[LANG];
+  function showUnlock() { $("#ulLink").hidden = !(unlock && SNAP && EX.has(SNAP.ip)); }
   function markExit(ip) { $$("#exList .xr").forEach(li => li.classList.toggle("on", li.dataset.ip === ip)); }
   function renderExits() {
     // addresses of the same country together, the visitor's own (the one the check sees) country first, then the
@@ -368,7 +373,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       const go = () => { input.value = ""; run(li.dataset.ip === selfIp ? null : li.dataset.ip, true); };
       li.onclick = go; li.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
     });
-    markExit(CUR ? CUR.ip : null);
+    markExit(CUR ? CUR.ip : null); showUnlock();
   }
   function noteMine(ip) { selfIp = ip; if (!EX.has(ip)) EX.set(ip, { ip, cc: null, n: 1 }); if (exFinished) renderExits(); }
   async function findExits() {
