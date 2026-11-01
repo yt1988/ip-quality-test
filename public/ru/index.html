@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="Десяток источников и 8 чёрных списков — одна оценка">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Тест качества IP · 1ms.dog","url":"https://ipqs.1ms.dog/ru/","image":"https://ipqs.1ms.dog/og/ru.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Проверьте репутацию IP сразу в десятке баз IP-аналитики и 8 чёрных списках: оценка от 0 до 100, домашний или дата-центр, нативный или «вещательный» IP, метки VPN, прокси и Tor, и что это значит для стриминга, ChatGPT, капчи и регистраций. Бесплатно.","inLanguage":"ru","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Как считается оценка?","acceptedAnswer":{"@type":"Answer","text":"Каждый адрес начинает со 100 и теряет баллы за то, что нашли источники: до 20 за сеть дата-центра, 20 за метку прокси и 15 за VPN, 40 за Tor, 10 за жалобы на злоупотребления, до 35 за средний фрод-скор и по 6 за каждый почтовый чёрный список (не больше 24). Метки учитываются по доле согласных источников, поэтому один источник снимает лишь часть. Классы: A от 85, B от 70, C от 50, D от 30, F ниже 30. Разбивка под таблицей показывает каждое снятие."}},{"@type":"Question","name":"Какие источники используются?","acceptedAnswer":{"@type":"Answer","text":"Без ключей: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (региональные регистратуры), ip.guide, Shodan InternetDB, список выходов Tor Project и Cloudflare (только ваш адрес). С бесплатными API-ключами владелец сайта может добавить IPQualityScore, AbuseIPDB, Scamalytics и ipdata. Каждая строка ведёт на страницу источника для проверки."}},{"@type":"Question","name":"Что такое нативный и вещательный IP?","acceptedAnswer":{"@type":"Answer","text":"Нативный IP используется в стране, где он зарегистрирован. Вещательный зарегистрирован в одной стране (часто хостинг-компанией), а анонсируется из другой. Большинство геобаз смотрят на реальное местоположение, но некоторые сервисы — на регистрацию, поэтому с вещательным IP вы можете выглядеть так, будто находитесь в другой стране. Мы сравниваем запись региональной регистратуры (RDAP) с местоположением, которое дают большинство баз. Если в записи нет страны (часто у ARIN), берём страну сети, которой принадлежит блок."}},{"@type":"Question","name":"Домашний или дата-центр: в чём разница?","acceptedAnswer":{"@type":"Answer","text":"Сайты считают адреса дата-центров серверами, VPN и прокси, а не людьми. Стриминг, билетные сервисы, банки и формы регистрации их блокируют или требуют доп. проверку. Домашние и мобильные адреса выглядят как обычные пользователи; мобильные к тому же делят многие (CGNAT), поэтому их почти не блокируют."}},{"@type":"Question","name":"Почему источники расходятся?","acceptedAnswer":{"@type":"Answer","text":"У каждого свои данные: одни знают только, какие сети принадлежат хостингам, другие держат ханипоты или собирают жалобы на мошенничество от клиентов. VPN-сервер может быть известен одному и ещё неизвестен другому. Поэтому мы считаем, сколько источников согласны, а не верим одному."}},{"@type":"Question","name":"Оценка низкая. Что делать?","acceptedAnswer":{"@type":"Answer","text":"Если это домашний интернет: жалоба или запись в чёрном списке часто значит, что устройство в сети было заражено или работало как прокси. Почистите его и подайте запрос на удаление (у каждого списка есть ссылка). Если это VPN или сервер, оценка в основном отражает тип сети и не изменится — выберите провайдера с домашними или менее используемыми адресами."}},{"@type":"Question","name":"Что-нибудь сохраняется?","acceptedAnswer":{"@type":"Answer","text":"Результаты кэшируются на шесть часов для каждого адреса, чтобы не опрашивать бесплатные источники при каждом визите. Больше ничего не хранится, а определение IPv4/IPv6 идёт в вашем браузере."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.5c01eb31b8.css">
+<link rel="stylesheet" href="/assets/app.54b75b1c12.css">
 </head>
 <body>
 <div class="app">
@@ -95,7 +95,6 @@
               <p class="v-d" id="vText">&nbsp;</p>
               <p class="parts" id="parts">&nbsp;</p>
               <a class="ul mine" id="ulLink" hidden target="_blank" rel="noopener" data-i="ul_more">Какие стримы и ИИ открывает этот IP →</a>
-              <a class="ul mine" id="whoLink" hidden target="_blank" rel="noopener" data-i="who_more">IP чистый, но вас всё равно распознают? Выдать может отпечаток браузера или часовой пояс →</a>
             </div>
           </div>
           <div class="sec-h"><span data-i="h_id">Этот адрес</span><button class="mini" id="eye" type="button" data-i="hide">Скрыть IP</button></div>
@@ -107,7 +106,6 @@
           </ul>
           <div class="sec-h mine"><span data-i="mine_h">Ваши выходы</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">Какой IP видит каждый сайт →</a></div>
           <ul class="exits mine" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
-          <a class="ul mine" id="v6Link" hidden target="_blank" rel="noopener"></a>
         </div>
         <div class="col">
           <div class="sec-h"><span data-i="h_finds">Итоги</span></div>
@@ -167,7 +165,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"ru","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.ru.2029ec6f3e.js"></script>
-<script src="/assets/app.a4bd147018.js"></script>
+<script src="/assets/l.ru.5a7928f57a.js"></script>
+<script src="/assets/app.b7614c23f7.js"></script>
 </body>
 </html>

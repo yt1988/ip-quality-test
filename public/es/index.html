@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="Una docena de fuentes y 8 listas negras, una puntuación">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Test de calidad IP · 1ms.dog","url":"https://ipqs.1ms.dog/es/","image":"https://ipqs.1ms.dog/og/es.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Comprueba la reputación de tu IP en una docena de fuentes de inteligencia y 8 listas negras a la vez: una puntuación de 0 a 100, residencial o centro de datos, IP nativa o de difusión, marcas de VPN, proxy y Tor, y qué significa para streaming, ChatGPT, CAPTCHAs y registros. Gratis.","inLanguage":"es","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Cómo se calcula la puntuación?","acceptedAnswer":{"@type":"Answer","text":"Cada dirección empieza en 100 y pierde puntos según lo que encuentran las fuentes: hasta 20 por red de centro de datos, 20 por marcas de proxy y 15 por VPN, 40 por Tor, 10 por denuncias de abuso, hasta 35 por la puntuación de fraude media y 6 por cada lista negra de correo (máximo 24). Las marcas cuentan según cuántas fuentes coinciden, así que una sola resta solo parte. Notas: A 85+, B 70+, C 50+, D 30+, F menos de 30. El desglose bajo la tabla muestra cada resta."}},{"@type":"Question","name":"¿Qué fuentes se usan?","acceptedAnswer":{"@type":"Answer","text":"Sin claves: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (los registros regionales), ip.guide, Shodan InternetDB, la lista de salidas del Tor Project y Cloudflare (solo tu propia dirección). Con claves API gratuitas el dueño del sitio puede añadir IPQualityScore, AbuseIPDB, Scamalytics e ipdata. Cada fila enlaza a la página de esa fuente para comprobarla allí."}},{"@type":"Question","name":"¿Qué es una IP nativa y una de difusión?","acceptedAnswer":{"@type":"Answer","text":"Una IP nativa se usa en el país donde está registrada. Una de difusión está registrada en un país (a menudo por una empresa de hosting) y se anuncia desde otro. La mayoría de bases de geolocalización siguen la ubicación real, pero algunos servicios se guían por el registro, así que una IP de difusión puede hacerte parecer en otro país. Comparamos el registro regional (RDAP) con donde la ubican la mayoría de bases. Si el registro no tiene país (habitual en ARIN), usamos el país de la red propietaria del bloque."}},{"@type":"Question","name":"Residencial o centro de datos: ¿por qué importa?","acceptedAnswer":{"@type":"Answer","text":"Los sitios ven las direcciones de centro de datos como servidores, VPN y proxies, no personas. Streaming, venta de entradas, bancos y formularios de registro las bloquean o piden más verificación. Las residenciales y móviles parecen usuarios normales; las móviles además se comparten entre muchos (CGNAT), así que rara vez se bloquean."}},{"@type":"Question","name":"¿Por qué no coinciden las fuentes?","acceptedAnswer":{"@type":"Answer","text":"Cada una tiene sus datos: unas solo saben qué redes son de hosting, otras usan honeypots o reúnen denuncias de fraude de sus clientes. Un servidor VPN puede ser conocido por una y todavía no por otra. Por eso contamos cuántas coinciden en vez de fiarnos de una sola."}},{"@type":"Question","name":"Mi puntuación es baja. ¿Qué hago?","acceptedAnswer":{"@type":"Answer","text":"Si es tu conexión de casa: una denuncia o una lista negra suele indicar que un equipo de tu red estaba infectado o se usaba como proxy. Límpialo y pide a la lista que retire la dirección (cada una enlaza a su página). Si es una VPN o un servidor, la puntuación refleja sobre todo el tipo de red y no puedes cambiarla: elige un proveedor con direcciones residenciales o menos usadas."}},{"@type":"Question","name":"¿Se guarda algo?","acceptedAnswer":{"@type":"Answer","text":"Los resultados se guardan en caché seis horas por dirección para no consultar las fuentes gratuitas en cada visita. Nada más se guarda, y la detección IPv4/IPv6 se hace en tu navegador."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.5c01eb31b8.css">
+<link rel="stylesheet" href="/assets/app.54b75b1c12.css">
 </head>
 <body>
 <div class="app">
@@ -95,7 +95,6 @@
               <p class="v-d" id="vText">&nbsp;</p>
               <p class="parts" id="parts">&nbsp;</p>
               <a class="ul mine" id="ulLink" hidden target="_blank" rel="noopener" data-i="ul_more">Qué streaming e IA desbloquea esta IP →</a>
-              <a class="ul mine" id="whoLink" hidden target="_blank" rel="noopener" data-i="who_more">¿IP limpia pero aún te detectan? La huella del navegador o la zona horaria pueden delatarte →</a>
             </div>
           </div>
           <div class="sec-h"><span data-i="h_id">Esta dirección</span><button class="mini" id="eye" type="button" data-i="hide">Ocultar IP</button></div>
@@ -107,7 +106,6 @@
           </ul>
           <div class="sec-h mine"><span data-i="mine_h">Tus salidas</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">Qué IP ve cada sitio →</a></div>
           <ul class="exits mine" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
-          <a class="ul mine" id="v6Link" hidden target="_blank" rel="noopener"></a>
         </div>
         <div class="col">
           <div class="sec-h"><span data-i="h_finds">Resultados</span></div>
@@ -167,7 +165,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"es","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.es.74ec53651f.js"></script>
-<script src="/assets/app.a4bd147018.js"></script>
+<script src="/assets/l.es.3dae2e8009.js"></script>
+<script src="/assets/app.b7614c23f7.js"></script>
 </body>
 </html>

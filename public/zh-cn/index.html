@@ -45,7 +45,7 @@
 <meta name="twitter:description" content="十几个情报库和 8 个黑名单，一个评分">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP 质量测试 · 1ms.dog","url":"https://ipqs.1ms.dog/zh-cn/","image":"https://ipqs.1ms.dog/og/zh-cn.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"一次查询十几个 IP 情报库和 8 个黑名单：给出 0–100 的 IP 质量评分，判断家宽还是机房、原生 IP 还是广播 IP、是否被标记为 VPN/代理/Tor，以及能否看 Netflix、用 ChatGPT、会不会频繁弹验证码。免费，无需注册。","inLanguage":"zh-CN","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"评分是怎么算的？","acceptedAnswer":{"@type":"Answer","text":"每个地址从 100 分开始，按各来源的发现扣分：机房网络最多扣 20，代理标记扣 20，VPN 标记扣 15，Tor 扣 40，滥用报告扣 10，平均欺诈分数最多扣 35，每个邮件黑名单扣 6（最多 24）。标记按多少个来源同意来折算，只有一个来源标记时只扣一部分。 等级：A 85 分以上，B 70 以上，C 50 以上，D 30 以上，F 低于 30。来源表格下方的明细列出了每一项扣了多少。"}},{"@type":"Question","name":"用了哪些数据来源？","acceptedAnswer":{"@type":"Answer","text":"不需要密钥的：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各大洲的地址注册机构）、ip.guide、Shodan InternetDB、Tor 项目的出口列表，以及 Cloudflare（只查本机地址）。站长配置免费 API 密钥后，还会加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。每一行都链接到该来源自己的查询页，可以去核对。"}},{"@type":"Question","name":"什么是原生 IP，什么是广播 IP？","acceptedAnswer":{"@type":"Answer","text":"原生 IP 在它注册的国家使用。广播 IP 在一个国家注册（注册机构的记录里，通常是某家机房公司），却在另一个国家宣告使用。大多数定位数据库按实际位置判断，但有些服务按注册地判断，所以广播 IP 可能让你看起来在另一个国家。 这里比较的是地址注册机构的记录（RDAP）和多数数据库给出的位置。注册记录里没有国家时（ARIN 常见），改用这个地址段所属网络的注册国家。"}},{"@type":"Question","name":"家宽和机房，区别在哪？","acceptedAnswer":{"@type":"Answer","text":"网站把机房地址看作服务器、VPN 和代理，而不是真人。流媒体、票务、银行和注册页面会拦截它们，或者要求更多验证。家宽和移动网络的地址像普通用户。移动网络的地址还由很多人同时共用（CGNAT），网站很少封它。"}},{"@type":"Question","name":"为什么各来源的结果不一样？","acceptedAnswer":{"@type":"Answer","text":"每家的数据不同：有的只知道哪些网段属于机房，有的运营蜜罐或收集客户的欺诈报告。一台 VPN 服务器可能已经被一家发现，另一家还不知道。所以这里看有多少来源同意，而不是只信一家。"}},{"@type":"Question","name":"分数很低怎么办？","acceptedAnswer":{"@type":"Answer","text":"如果是家里的宽带：滥用报告或黑名单记录，往往说明网络里有设备中了病毒或被当作代理。清理之后，向黑名单申请移除（每个黑名单都链接到它的查询和移除页面）。如果是 VPN 或服务器，分数主要反映网络类型，改变不了，可以换提供家宽或较少人用的地址的服务商。"}},{"@type":"Question","name":"会保存什么吗？","acceptedAnswer":{"@type":"Answer","text":"每个地址的结果缓存 6 小时，免得每次访问都重复查询免费的数据来源。除此之外不保存任何东西，IPv4/IPv6 检测在你的浏览器里完成。"}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.5c01eb31b8.css">
+<link rel="stylesheet" href="/assets/app.54b75b1c12.css">
 </head>
 <body>
 <div class="app">
@@ -98,7 +98,6 @@
               <p class="v-d" id="vText">&nbsp;</p>
               <p class="parts" id="parts">&nbsp;</p>
               <a class="ul mine" id="ulLink" hidden target="_blank" rel="noopener" data-i="ul_more">这个 IP 能解锁哪些流媒体和 AI →</a>
-              <a class="ul mine" id="whoLink" hidden target="_blank" rel="noopener" data-i="who_more">IP 干净却仍被识别？可能是浏览器指纹或时区露了馅 →</a>
             </div>
           </div>
           <div class="sec-h"><span data-i="h_id">地址信息</span><button class="mini" id="eye" type="button" data-i="hide">隐藏 IP</button></div>
@@ -110,7 +109,6 @@
           </ul>
           <div class="sec-h mine"><span data-i="mine_h">你的出口</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">每个网站看到的出口 →</a></div>
           <ul class="exits mine" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
-          <a class="ul mine" id="v6Link" hidden target="_blank" rel="noopener"></a>
         </div>
         <div class="col">
           <div class="sec-h"><span data-i="h_finds">检测结论</span></div>
@@ -170,7 +168,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"zh-CN","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.zh-cn.95c456a687.js"></script>
-<script src="/assets/app.a4bd147018.js"></script>
+<script src="/assets/l.zh-cn.f50349b1aa.js"></script>
+<script src="/assets/app.b7614c23f7.js"></script>
 </body>
 </html>
