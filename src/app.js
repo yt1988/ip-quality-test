@@ -139,7 +139,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $$("#facts b").forEach((b, i) => { b.className = i ? "" : "ipv"; b.innerHTML = SKL; });
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
-    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").disabled = true; SNAP = null;
+    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").disabled = true; SNAP = null; $("#ulLink").hidden = true;
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -368,11 +368,15 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   if (who) $("#whoLink").href = who + D.paths[LANG];
   // the IPv6 test: under the exits when the address checked is IPv6, or when no check found an IPv6 exit
   if (v6) $("#v6Link").href = v6 + D.paths[LANG];
+  // the unlock check tests the visitor's own route, so its link sits under the verdict only when the address checked is one of their exits
+  const unlock = meta("unlock");
+  if (unlock) $("#ulLink").href = unlock + D.paths[LANG];
   // the address opens its page in the ASN lookup (public addresses only)
   const ipHtml = (ip, v) => (asnHost && isPublic(ip) ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "ip/" + ip)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">${esc(ip)}</a>` : esc(ip)) + ` <span class="m">IPv${v}</span>`;
   function showLinks() {
     const mine = SNAP && EX.has(SNAP.ip);
     $("#whoLink").hidden = !(who && mine && /^[AB]$/.test(SNAP.r.grade));
+    $("#ulLink").hidden = !(unlock && mine);
     const checked = SNAP && SNAP.v === 6, none = exFinished && ![...EX.keys()].some(ip => family(ip) === 6);
     const l = $("#v6Link"); l.hidden = !(v6 && (checked || none));
     if (!l.hidden) $("#v6T").textContent = t(checked ? "v6_more" : "v6_none");

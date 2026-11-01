@@ -116,7 +116,7 @@ export default {
   pp_abuser: "abuso",
   pp_risk: "fraude",
   pp_dnsbl: "listas negras",
-  ex_wait: "Buscando tus salidas {n}/{of}", ex_more: "Qué IP ve cada sitio", asn_go: "Ver en la consulta ASN", who_more: "¿IP limpia pero aún te detectan? La huella del navegador o la zona horaria pueden delatarte", v6_more: "Probar la conectividad IPv6", v6_none: "No se encontró salida IPv6: prueba tu IPv6", src_down: "{list} no respondió.",
+  ex_wait: "Buscando tus salidas {n}/{of}", ex_more: "Qué IP ve cada sitio", ul_more: "Qué streaming e IA desbloquea esta IP", asn_go: "Ver en la consulta ASN", who_more: "¿IP limpia pero aún te detectan? La huella del navegador o la zona horaria pueden delatarte", v6_more: "Probar la conectividad IPv6", v6_none: "No se encontró salida IPv6: prueba tu IPv6", src_down: "{list} no respondió.",
   col_result: "Respuesta", f_clean: "Sin marca de proxy ni VPN",
   p_why: "{why}: −{n} puntos",
   col_item: "Pregunta", col_by: "Fuentes", q_loc: "Ubicación", q_type: "Tipo de red", q_anon: "Proxy / VPN", q_tor: "Salida Tor", q_risk: "Puntuaciones de riesgo", q_abuse: "Denuncias de abuso", q_reg: "Registro", q_ports: "Puertos abiertos", q_dnsbl: "Listas negras de correo", q_nodata: "Sin datos", q_clean: "Sin marcas en {n} fuentes", q_tor_yes: "Salida Tor", q_tor_no: "No es salida ({n} fuentes)", q_abuse_yes: "Abuso denunciado", q_abuse_no: "Sin denuncias", q_by_asn: "(red)", q_bl_clean: "No está en ninguna de {n}",
