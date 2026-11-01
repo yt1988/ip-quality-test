@@ -281,7 +281,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     // a shared result without the address has no network or reverse DNS name either
     const hid = `<span class="m">${esc(t("r_hidden"))}</span>`, open = !SHARED || SHARED.i;
     set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` : "–");
-    set(2, !open ? hid : s.asn || s.org ? `${s.asn ? "AS" + s.asn + " " : ""}<span class="m">${esc(s.org || "")}</span>` : "–");
+    // the AS number opens the ASN lookup when the shell names it
+    const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
+    set(2, !open ? hid : s.asn || s.org ? `${asTxt}<span class="m">${esc(s.org || "")}</span>` : "–");
     set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
 
     // what the address is: a short answer per cell, the sentence behind it on hover
@@ -354,12 +356,27 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     () => getJ("https://ipv6-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })),
   ];
   let EX = new Map(), exFinished = false, selfIp = null, exGen = 0;
+  const asnHost = (document.querySelector('meta[name="asn"]') || {}).content || "";
   const egress = (document.querySelector('meta[name="egress"]') || {}).content || "";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
   // the unlock check tests the visitor's own route, so its link sits under the verdict only when the address checked is one of their exits
   const unlock = (document.querySelector('meta[name="unlock"]') || {}).content || "";
   if (unlock) $("#ulLink").href = unlock + D.paths[LANG];
-  function showUnlock() { $("#ulLink").hidden = !(unlock && SNAP && EX.has(SNAP.ip)); }
+  // the browser check: an address that scores clean can still be told apart by the browser (fingerprint, time zone), so
+  // its link sits under a clean verdict for the visitor's own exit
+  const who = (document.querySelector('meta[name="who"]') || {}).content || "";
+  if (who) $("#whoLink").href = who + D.paths[LANG];
+  // the IPv6 test: under the exits when the address checked is IPv6, or when no check found an IPv6 exit
+  const v6 = (document.querySelector('meta[name="ipv6"]') || {}).content || "";
+  if (v6) $("#v6Link").href = v6 + D.paths[LANG];
+  function showUnlock() {
+    const mine = SNAP && EX.has(SNAP.ip);
+    $("#ulLink").hidden = !(unlock && mine);
+    $("#whoLink").hidden = !(who && mine && /^[AB]$/.test(SNAP.r.grade));
+    const none = exFinished && ![...EX.keys()].some(ip => family(ip) === 6), checked = SNAP && SNAP.v === 6;
+    const l = $("#v6Link"); l.hidden = !(v6 && (checked || none));
+    if (!l.hidden) l.textContent = t(checked ? "v6_more" : "v6_none");
+  }
   function markExit(ip) { $$("#exList .xr").forEach(li => li.classList.toggle("on", li.dataset.ip === ip)); }
   function renderExits() {
     // addresses of the same country together, the visitor's own (the one the check sees) country first, then the
