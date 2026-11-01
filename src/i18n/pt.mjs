@@ -116,7 +116,7 @@ export default {
   pp_abuser: "abuso",
   pp_risk: "fraude",
   pp_dnsbl: "listas negras",
-  ex_wait: "Procurando suas saídas {n}/{of}", ex_more: "Qual IP cada site vê →", who_more: "IP limpo, mas ainda detectado? A impressão digital do navegador ou o fuso horário podem te entregar →", v6_more: "Testar a conectividade IPv6 →", v6_none: "Nenhuma saída IPv6 encontrada: teste seu IPv6 →", src_down: "{list} não respondeu.",
+  ex_wait: "Procurando suas saídas {n}/{of}", ex_more: "Qual IP cada site vê", who_more: "IP limpo, mas ainda detectado? A impressão digital do navegador ou o fuso horário podem te entregar", v6_more: "Testar a conectividade IPv6", v6_none: "Nenhuma saída IPv6 encontrada: teste seu IPv6", src_down: "{list} não respondeu.",
   col_result: "Resposta", f_clean: "Sem sinal de proxy ou VPN",
   p_why: "{why}: −{n} pontos",
   col_item: "Pergunta", col_by: "Fontes", q_loc: "Local", q_type: "Tipo de rede", q_anon: "Proxy / VPN", q_tor: "Saída Tor", q_risk: "Pontuações de risco", q_abuse: "Denúncias de abuso", q_reg: "Registro", q_ports: "Portas abertas", q_dnsbl: "Listas negras de e-mail", q_nodata: "Sem dados", q_clean: "Sem sinal em {n} fontes", q_tor_yes: "Saída Tor", q_tor_no: "Não é saída ({n} fontes)", q_abuse_yes: "Abuso denunciado", q_abuse_no: "Nenhuma denúncia", q_by_asn: "(rede)", q_bl_clean: "Fora das {n}",

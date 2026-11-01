@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="Ein Dutzend Quellen und 8 Blocklisten, ein Score">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP-Qualitätstest · 1ms.dog","url":"https://ipqs.1ms.dog/de/","image":"https://ipqs.1ms.dog/og/de.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Prüfen Sie den Ruf Ihrer IP bei einem Dutzend IP-Datenbanken und 8 Blocklisten auf einmal: ein Score von 0 bis 100, Privatanschluss oder Rechenzentrum, native IP oder Broadcast-IP, VPN-, Proxy- und Tor-Erkennung und was das für Streaming, ChatGPT, CAPTCHAs und Anmeldungen heißt. Kostenlos.","inLanguage":"de","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Wie wird der Score berechnet?","acceptedAnswer":{"@type":"Answer","text":"Jede Adresse startet bei 100 und verliert Punkte für das, was die Quellen finden: bis zu 20 für ein Rechenzentrumsnetz, 20 für Proxy- und 15 für VPN-Markierungen, 40 für Tor, 10 für Missbrauchsmeldungen, bis zu 35 für den durchschnittlichen Fraud-Score und 6 je Mail-Blockliste (höchstens 24). Markierungen zählen nach Anteil der zustimmenden Quellen, eine einzelne zieht also nur einen Teil ab. Noten: A ab 85, B ab 70, C ab 50, D ab 30, F darunter. Die Aufschlüsselung unter der Tabelle zeigt jeden Abzug."}},{"@type":"Question","name":"Welche Quellen werden genutzt?","acceptedAnswer":{"@type":"Answer","text":"Ohne Schlüssel: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (die regionalen Registries), ip.guide, Shodan InternetDB, die Exit-Liste des Tor Project und Cloudflare (nur Ihre eigene Adresse). Mit kostenlosen API-Schlüsseln kann der Betreiber IPQualityScore, AbuseIPDB, Scamalytics und ipdata ergänzen. Jede Zeile verlinkt auf die Seite der Quelle zum Gegenprüfen."}},{"@type":"Question","name":"Was sind native IP und Broadcast-IP?","acceptedAnswer":{"@type":"Answer","text":"Eine native IP wird in dem Land genutzt, in dem sie registriert ist. Eine Broadcast-IP ist in einem Land registriert (oft von einem Hoster) und wird aus einem anderen angekündigt. Die meisten Geodatenbanken folgen dem echten Standort, manche Dienste aber der Registrierung, sodass Sie mit einer Broadcast-IP in einem anderen Land erscheinen können. Wir vergleichen den Eintrag der regionalen Registry (RDAP) mit dem Standort, den die meisten Datenbanken angeben. Fehlt das Land im Eintrag (häufig bei ARIN), nehmen wir das Land des Netzes, dem der Block gehört."}},{"@type":"Question","name":"Privatanschluss oder Rechenzentrum: Warum ist das wichtig?","acceptedAnswer":{"@type":"Answer","text":"Websites sehen Rechenzentrums-Adressen als Server, VPNs und Proxys, nicht als Menschen. Streaming, Ticketverkauf, Banken und Anmeldeformulare sperren sie oder verlangen mehr Prüfung. Privat- und Mobilfunkadressen wirken wie normale Nutzer; Mobilfunkadressen werden zudem von vielen geteilt (CGNAT) und kaum gesperrt."}},{"@type":"Question","name":"Warum sind sich die Quellen uneinig?","acceptedAnswer":{"@type":"Answer","text":"Jede hat eigene Daten: Manche wissen nur, welche Netze Hostern gehören, andere betreiben Honeypots oder sammeln Betrugsmeldungen ihrer Kunden. Ein VPN-Server ist der einen schon bekannt, der anderen noch nicht. Deshalb zählen wir, wie viele zustimmen, statt einer einzigen zu vertrauen."}},{"@type":"Question","name":"Mein Score ist niedrig. Was tun?","acceptedAnswer":{"@type":"Answer","text":"Bei Ihrem Heimanschluss: Eine Missbrauchsmeldung oder ein Blocklisten-Eintrag heißt oft, dass ein Gerät im Netz infiziert war oder als Proxy diente. Bereinigen Sie es und beantragen Sie die Austragung (jede Liste verlinkt ihre Seite). Bei einem VPN oder Server spiegelt der Score vor allem den Netztyp und lässt sich nicht ändern: Wählen Sie einen Anbieter mit privaten oder wenig genutzten Adressen."}},{"@type":"Question","name":"Wird etwas gespeichert?","acceptedAnswer":{"@type":"Answer","text":"Ergebnisse werden pro Adresse sechs Stunden zwischengespeichert, damit die kostenlosen Quellen nicht bei jedem Besuch erneut gefragt werden. Sonst wird nichts gespeichert; die IPv4/IPv6-Erkennung läuft in Ihrem Browser."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.1a86bfd559.css">
+<link rel="stylesheet" href="/assets/app.56fa40e8e8.css">
 </head>
 <body>
 <div class="app">
@@ -94,7 +94,7 @@
               <p class="v-h" id="vHead" data-i="checking">Wird geprüft…</p>
               <p class="v-d" id="vText">&nbsp;</p>
               <p class="parts" id="parts">&nbsp;</p>
-              <a class="ul mine" id="whoLink" hidden target="_blank" rel="noopener" data-i="who_more">Saubere IP und trotzdem erkannt? Browser-Fingerprint oder Zeitzone können dich verraten →</a>
+              <a class="ul mine" id="whoLink" hidden target="_blank" rel="noopener"><span data-i="who_more">Saubere IP und trotzdem erkannt? Browser-Fingerprint oder Zeitzone können dich verraten</span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
             </div>
           </div>
           <div class="sec-h"><span data-i="h_id">Diese Adresse</span><button class="mini" id="eye" type="button" data-i="hide">IP verbergen</button></div>
@@ -104,9 +104,9 @@
             <li><span data-i="r_net">Netz</span><b><i class="skl"></i></b></li>
             <li><span data-i="r_host">Reverse DNS</span><b><i class="skl"></i></b></li>
           </ul>
-          <div class="sec-h mine"><span data-i="mine_h">Ihre Ausgänge</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">Welche IP jede Website sieht →</a></div>
+          <div class="sec-h mine"><span data-i="mine_h">Ihre Ausgänge</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener"><span data-i="ex_more">Welche IP jede Website sieht</span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a></div>
           <ul class="exits mine" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
-          <a class="ul mine" id="v6Link" hidden target="_blank" rel="noopener"></a>
+          <a class="ul mine" id="v6Link" hidden target="_blank" rel="noopener"><span id="v6T"></span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
         </div>
         <div class="col">
           <div class="sec-h"><span data-i="h_finds">Befunde</span></div>
@@ -166,7 +166,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"de","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.de.3141dab3c4.js"></script>
-<script src="/assets/app.f90124b91d.js"></script>
+<script src="/assets/l.de.96bd8c8948.js"></script>
+<script src="/assets/app.36b98d2108.js"></script>
 </body>
 </html>
