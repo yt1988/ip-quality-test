@@ -116,7 +116,7 @@ export default {
   pp_abuser: "滥用",
   pp_risk: "欺诈分数",
   pp_dnsbl: "黑名单",
-  ex_wait: "正在检测出口 {n}/{of}", ex_more: "每个网站看到的出口 →", src_down: "{list} 没有响应。",
+  ex_wait: "正在检测出口 {n}/{of}", ex_more: "每个网站看到的出口 →", who_more: "IP 干净却仍被识别？可能是浏览器指纹或时区露了馅 →", v6_more: "测测这个 IPv6 地址的连通性 →", v6_none: "没有发现 IPv6 出口，测测你的 IPv6 →", src_down: "{list} 没有响应。",
   col_result: "结果", f_clean: "未标记为代理或 VPN",
   p_why: "{why}：扣 {n} 分",
   col_item: "项目", col_by: "来源", q_loc: "位置", q_type: "网络类型", q_anon: "代理 / VPN", q_tor: "Tor 出口", q_risk: "风险分", q_abuse: "滥用记录", q_reg: "注册信息", q_ports: "开放端口", q_dnsbl: "邮件黑名单", q_nodata: "没有数据", q_clean: "{n} 个来源均未标记", q_tor_yes: "是 Tor 出口", q_tor_no: "不是（{n} 个来源）", q_abuse_yes: "有滥用记录", q_abuse_no: "没有记录", q_by_asn: "（所属网络）", q_bl_clean: "{n} 个都未收录",

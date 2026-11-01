@@ -116,7 +116,7 @@ export default {
   pp_abuser: "악용",
   pp_risk: "사기 점수",
   pp_dnsbl: "블랙리스트",
-  ex_wait: "출구 확인 중 {n}/{of}", ex_more: "사이트마다 보이는 출구 →", src_down: "{list}: 응답 없음.",
+  ex_wait: "출구 확인 중 {n}/{of}", ex_more: "사이트마다 보이는 출구 →", who_more: "IP는 깨끗한데 여전히 걸린다면? 브라우저 지문이나 시간대 때문일 수 있어요 →", v6_more: "IPv6 연결 테스트 →", v6_none: "IPv6 출구가 없어요. IPv6 테스트 →", src_down: "{list}: 응답 없음.",
   col_result: "결과", f_clean: "프록시·VPN 표시 없음",
   p_why: "{why}: −{n}점",
   col_item: "항목", col_by: "소스", q_loc: "위치", q_type: "네트워크 유형", q_anon: "프록시 / VPN", q_tor: "Tor 출구", q_risk: "위험 점수", q_abuse: "악용 신고", q_reg: "등록 정보", q_ports: "열린 포트", q_dnsbl: "메일 블랙리스트", q_nodata: "데이터 없음", q_clean: "소스 {n}개 모두 표시 없음", q_tor_yes: "Tor 출구", q_tor_no: "출구 아님(소스 {n}개)", q_abuse_yes: "악용 신고 있음", q_abuse_no: "신고 없음", q_by_asn: "(네트워크)", q_bl_clean: "{n}개 모두 등재 안 됨",

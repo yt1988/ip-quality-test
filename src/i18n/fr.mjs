@@ -116,7 +116,7 @@ export default {
   pp_abuser: "abus",
   pp_risk: "score de fraude",
   pp_dnsbl: "listes noires",
-  ex_wait: "Recherche de vos sorties {n}/{of}", ex_more: "L’IP que voit chaque site →", src_down: "{list} n’a pas répondu.",
+  ex_wait: "Recherche de vos sorties {n}/{of}", ex_more: "L’IP que voit chaque site →", who_more: "IP propre mais toujours repéré ? L’empreinte du navigateur ou le fuseau horaire peuvent vous trahir →", v6_more: "Tester la connectivité IPv6 →", v6_none: "Aucune sortie IPv6 trouvée : tester votre IPv6 →", src_down: "{list} n’a pas répondu.",
   col_result: "Réponse", f_clean: "Aucun signalement proxy ou VPN",
   p_why: "{why} : −{n} points",
   col_item: "Question", col_by: "Sources", q_loc: "Lieu", q_type: "Type de réseau", q_anon: "Proxy / VPN", q_tor: "Sortie Tor", q_risk: "Scores de risque", q_abuse: "Signalements d’abus", q_reg: "Registre", q_ports: "Ports ouverts", q_dnsbl: "Listes noires de messagerie", q_nodata: "Aucune donnée", q_clean: "Aucun signalement sur {n} sources", q_tor_yes: "Sortie Tor", q_tor_no: "Pas une sortie ({n} sources)", q_abuse_yes: "Abus signalé", q_abuse_no: "Aucun signalement", q_by_asn: "(réseau)", q_bl_clean: "Sur aucune des {n}",
