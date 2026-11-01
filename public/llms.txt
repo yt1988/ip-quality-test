@@ -1,4 +1,4 @@
-# IPQS · 1ms.dog
+# IP Quality Test (IPQS) · 1ms.dog
 
 > Free IP quality check. Asks up to 19 IP intelligence sources (Cloudflare, ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, ipwho.is, IP.SB, iplocation.net, GeoJS, RDAP (RIR), ip.guide, Shodan InternetDB, Tor Project, IPQualityScore, AbuseIPDB, Scamalytics, ipdata) and
 > 8 DNS blocklists about an address, then gives a 0–100 score (A–F), whether it is residential or data

@@ -1,9 +1,11 @@
 // ipqs page, laid out as EgressLens: the hero holds the score, the address, the visitor's exits and the findings; the
 // second card lists every source, each row filled the moment it answers (the rows are in the HTML from the start).
-// The score and findings come once every source is in. Strings: window.L1MS.
+// The score and findings come once every source is in. A shared link (src/share.mjs) draws someone else's answers the
+// same way, without asking anything. Strings: window.L1MS.
 import { family, canon, isPublic } from "./ip.mjs";
 import { assess } from "./score.mjs";
 import { ccOfName, SOURCES } from "./sources.mjs";
+import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
 
 (function () {
   "use strict";
@@ -17,6 +19,8 @@ import { ccOfName, SOURCES } from "./sources.mjs";
   const country = cc => { try { return new Intl.DisplayNames([LANG], { type: "region" }).of(cc); } catch (e) { return cc; } };
   const flag = cc => /^[A-Z]{2}$/.test(cc || "") ? `<img class="flag" src="/flags/${cc.toLowerCase()}.svg" alt="" width="20" height="15">` : "";
   const list = a => a.join(t("v_join"));
+  const SHARE_M = SHARE_PATH.exec(location.pathname), SHARE_CODE = SHARE_M ? SHARE_M[2] : "";
+  let SHARED = null;
 
   /* ---------- theme and language (synced across the 1ms.dog tools) ---------- */
   const thBtn = $("#theme"), TH = ["system", "light", "dark"];
@@ -26,7 +30,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
   };
   applyTheme(TH.includes(store.get(K.theme)) ? store.get(K.theme) : "system");
   thBtn.onclick = () => { const n = TH[(TH.indexOf(thBtn.dataset.th) + 1) % 3]; store.set(K.theme, n); applyTheme(n); };
-  $("#lang").onchange = e => { const l = e.target.value; store.set(K.lang, l); location.href = D.paths[l] + location.search; };
+  $("#lang").onchange = e => { const l = e.target.value; store.set(K.lang, l); location.href = D.paths[l] + (SHARE_CODE ? "r/" + SHARE_CODE : "") + location.search; };
   const input = $("#ipIn");
   input.placeholder = t("ph");
 
@@ -119,7 +123,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
   }
 
   /* ---------- the check ---------- */
-  let RUN = null, total = 0, got = 0, CUR = null, RES = [], BLR = [], PEND = [], lastIp = null;
+  let RUN = null, total = 0, got = 0, CUR = null, RES = [], BLR = [], PEND = [], FAILS = [], SKIP = {}, SNAP = null, lastIp = null;
   const gauge = $("#gauge");
   function progress() {
     $("#prog i").style.transform = `scaleX(${total ? got / total : 0})`;
@@ -135,7 +139,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
     $$("#facts b").forEach((b, i) => { b.className = i ? "" : "ipv"; b.innerHTML = SKL; });
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
-    $("#prog").classList.remove("end"); $("#rerun").disabled = true;
+    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").disabled = true; SNAP = null;
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -146,6 +150,8 @@ import { ccOfName, SOURCES } from "./sources.mjs";
   }
 
   async function run(ip, push) {
+    // a shared result's page checks nothing itself: a check starts on the language page
+    if (SHARE_CODE) { location.href = D.paths[LANG] + (ip ? "?ip=" + encodeURIComponent(ip) : ""); return; }
     if (RUN) RUN.abort();
     const ctl = RUN = new AbortController();
     lastIp = ip;
@@ -195,19 +201,19 @@ import { ccOfName, SOURCES } from "./sources.mjs";
   }
   function accept(m) {
     if (m.ok && !m.d.cc && m.d.cname) { m.d.cc = ccOfName(m.d.cname); delete m.d.cname; }
-    if (m.ok) RES.push({ id: m.id, data: m.d });
+    if (m.ok) RES.push({ id: m.id, data: m.d }); else FAILS.push(m.id);
     fillSource(m); got++; progress();
   }
   function handle(m) {
     if (m.t === "start") {
-      CUR = m; RES = []; BLR = []; PEND = [];
+      CUR = m; RES = []; BLR = []; PEND = []; FAILS = []; SKIP = {};
       const b = $("#facts b"); b.className = "ipv"; b.innerHTML = `${esc(m.ip)} <span class="m">IPv${m.v}</span>`;
       // sources this deployment has no keys for stay out of the list (the same for every address); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
       const cur = m, mine = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
       for (const id in m.skip) {
         if (!PR[id] || m.skip[id] === "browser") continue;
         if (m.skip[id] === "key") PR[id].hidden = true;
-        else prSet(id, "na", `<span class="m">${esc(t("skip_" + m.skip[id]))}</span>`, "", "");
+        else { SKIP[id] = m.skip[id]; prSet(id, "na", `<span class="m">${esc(t("skip_" + m.skip[id]))}</span>`, "", ""); }
       }
       if (!m.bl.length) for (const id in PR) if (PR[id].closest('[data-g="dnsbl"]')) prSet(id, "na", `<span class="m">${esc(t("skip_v4"))}</span>`, "", "");
       total = m.n + m.bl.length + mine.length;
@@ -222,15 +228,18 @@ import { ccOfName, SOURCES } from "./sources.mjs";
       }
       accept(m);
     } else if (m.t === "bl") {
-      BLR.push(m);
-      prSet(m.id, m.listed === true ? "hit-row" : m.listed === null ? "fail" : "",
-        m.listed === true ? `<a class="ft bad" data-p="dnsbl" href="${esc(m.site)}" target="_blank" rel="noopener noreferrer">${esc(t("bl_in"))}</a>` : `<span class="m">${esc(t(m.listed === false ? "bl_clean" : "src_fail"))}</span>`, "", "");
-      got++; progress();
+      blRow(m); got++; progress();
     } else if (m.t === "done") {
       // scored here, once the browser's own lookups are in too (same rules as the API: src/score.mjs)
       const cur = CUR;
       Promise.allSettled(PEND).then(() => { if (CUR === cur) finish({ ...m, ...assess(RES, BLR) }); });
     } else if (m.t === "error") fail("err_net");
+  }
+
+  function blRow(m) {
+    BLR.push(m);
+    const hit = m.site ? `<a class="ft bad" data-p="dnsbl" href="${esc(m.site)}" target="_blank" rel="noopener noreferrer">${esc(t("bl_in"))}</a>` : `<span class="ft bad" data-p="dnsbl">${esc(t("bl_in"))}</span>`;
+    prSet(m.id, m.listed === true ? "hit-row" : m.listed === null ? "fail" : "", m.listed === true ? hit : `<span class="m">${esc(t(m.listed === false ? "bl_clean" : "src_fail"))}</span>`, "", "");
   }
 
   /* ---------- the result ---------- */
@@ -269,9 +278,11 @@ import { ccOfName, SOURCES } from "./sources.mjs";
     // the address
     const fb = $$("#facts b"), set = (i, h) => { fb[i].className = i ? "" : "ipv"; fb[i].innerHTML = h; };
     const where = [s.city, s.cc && country(s.cc)].filter(Boolean).join(", ");
+    // a shared result without the address has no network or reverse DNS name either
+    const hid = `<span class="m">${esc(t("r_hidden"))}</span>`, open = !SHARED || SHARED.i;
     set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` : "–");
-    set(2, s.asn || s.org ? `${s.asn ? "AS" + s.asn + " " : ""}<span class="m">${esc(s.org || "")}</span>` : "–");
-    set(3, s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
+    set(2, !open ? hid : s.asn || s.org ? `${s.asn ? "AS" + s.asn + " " : ""}<span class="m">${esc(s.org || "")}</span>` : "–");
+    set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
 
     // what the address is: a short answer per cell, the sentence behind it on hover
     const F = s.flags, tv = RES.filter(x => x.data.type), geoN = s.ccs.reduce((a, c) => a + c.by.length, 0);
@@ -319,7 +330,8 @@ import { ccOfName, SOURCES } from "./sources.mjs";
     }
 
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
-    $("#prog").classList.add("end"); $("#rerun").disabled = false;
+    SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
+    $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").disabled = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
   }
@@ -374,7 +386,202 @@ import { ccOfName, SOURCES } from "./sources.mjs";
     if (gen !== exGen) return;
     exFinished = true; renderExits(); applyMask();
   }
-  findExits();
+  if (!SHARE_CODE) findExits();
+
+  /* ---------- a shared result ---------- */
+  // the answers in the link fill the rows and the findings as a check would; the address only when it was shared
+  async function replay(code) {
+    const P = await decode(code);
+    if (!P) { toast(t("shared_bad")); history.replaceState(null, "", D.paths[LANG]); setTimeout(() => location.reload(), 1500); return; }
+    SHARED = P;
+    document.documentElement.setAttribute("data-shared", "");
+    const when = new Date(P.t * 60000).toLocaleString(LANG, { dateStyle: "medium", timeStyle: "short" });
+    $("#sharedT").textContent = t("shared_t", { d: when });
+    reset(P.i || null);
+    const { res, bl } = unpackResults(P);
+    CUR = { ip: P.i || null, v: P.f }; RES = []; BLR = []; FAILS = (P.x || []).slice(); SKIP = { ...(P.k || {}) };
+    const b = $("#facts b"); b.className = "ipv";
+    b.innerHTML = P.i ? `${esc(P.i)} <span class="m">IPv${P.f}</span>` : `<span class="m">${esc(t("r_hidden"))} · IPv${P.f}</span>`;
+    for (const id in PR) {
+      if (PR[id].closest('[data-g="dnsbl"]')) {
+        const m = bl.find(x => x.id === id);
+        if (m) blRow(m); else prSet(id, "na", `<span class="m">${esc(t(P.f === 6 ? "skip_v4" : "q_nodata"))}</span>`, "", "");
+      } else if (P.s[id]) {
+        const def = SRCDEF[id], m = { id, ok: true, d: P.s[id], site: P.i && def ? def.site(P.i) : "", ms: null };
+        RES.push({ id, data: m.d }); fillSource(m);
+      } else if (FAILS.includes(id)) prSet(id, "fail", `<span class="m">${esc(t("src_fail"))}</span>`, "", "");
+      else if (SKIP[id]) prSet(id, "na", `<span class="m">${esc(t("skip_" + SKIP[id]))}</span>`, "", "");
+      else PR[id].hidden = true;
+    }
+    total = got = RES.length + BLR.length; progress();
+    finish({ ...assess(res, bl), at: P.t * 60000, cached: false });
+    $("#progTxt").textContent = t("shared_t", { d: when });
+    $("#rerun").hidden = true;
+  }
+
+  /* ---------- share: an image card and a link, both made in this browser ---------- */
+  // optional short links: the 1ms.dog shell announces its shortener (POST {"url"} → {"url"}); without it, the full link
+  const shortener = () => (document.querySelector('meta[name="shortener"]') || {}).content || "";
+  const shortCache = new Map();
+  function shorten(url) {
+    if (!shortCache.has(url)) shortCache.set(url, fetch(shortener(), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url }) })
+      .then(r => r.ok ? r.json() : null).then(j => j && j.url ? j.url : null).catch(() => null).then(u => { if (!u) shortCache.delete(url); return u; }));
+    return shortCache.get(url);
+  }
+  const shareLink = async withLoc => location.origin + D.paths[LANG] + "r/" + await encode(pack({ ...SNAP, details: withLoc }));
+  const shareTitle = () => t("og_r_title", { g: SNAP.r.grade, s: SNAP.r.score, v: t("g_" + SNAP.r.grade) });
+  const stamp = () => new Date(SNAP.at).toISOString().slice(0, 16).replace(/[-:T]/g, "");
+
+  let qrLib = null;
+  const loadQR = () => qrLib || (qrLib = new Promise((res, rej) => { const el = document.createElement("script"); el.src = "/vendor/qrcode.min.js"; el.onload = () => res(window.qrcode); el.onerror = rej; document.head.appendChild(el); }));
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const loadImg = src => new Promise(res => { const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null); img.src = src; });
+  const darkNow = () => { const th = document.documentElement.getAttribute("data-theme"); return th ? th === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; };
+  // the card, 1080 × 1350 in the page's theme: the grade and score lead, then where the points went, what the address
+  // is and what it is good for (read off the page's own cells); the address, city and network only when asked
+  async function drawCard(withLoc) {
+    const W = 1080, H = 1350, P = 72, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const g = cv.getContext("2d"), r = SNAP.r, s = r.summary;
+    const C = { bg: cssVar("--panel"), fg: cssVar("--fg"), mu: cssVar("--muted"), line: cssVar("--line"), soft: cssVar("--soft"), ok: cssVar("--t1"), warn: cssVar("--t3"), bad: cssVar("--t5") };
+    const GC = { A: cssVar("--t1"), B: cssVar("--t2"), C: cssVar("--t3"), D: cssVar("--t4"), F: cssVar("--t5") }[r.grade];
+    const FF = cssVar("--f-ui"), FN = cssVar("--f-num");
+    const font = (wt, sz, mono) => { g.font = `${wt} ${sz}px ${mono ? FN : FF}`; };
+    const text = (str, x, y, color, align) => { g.fillStyle = color; g.textAlign = align || "left"; g.fillText(str, x, y); };
+    const fit = (str, max) => { str = String(str); if (g.measureText(str).width <= max) return str; while (str.length > 1 && g.measureText(str + "…").width > max) str = str.slice(0, -1); return str + "…"; };
+    // wraps at spaces, or anywhere in scripts written without them
+    const wrap = (str, max, lines) => {
+      const out = []; let cur = "";
+      for (const tok of str.match(/\S+\s*|\s+/g) || []) {
+        for (const piece of g.measureText(tok).width > max ? [...tok] : [tok]) {
+          if (g.measureText(cur + piece).width > max && cur.trim()) { out.push(cur.trim()); cur = piece.trimStart(); } else cur += piece;
+        }
+      }
+      if (cur.trim()) out.push(cur.trim());
+      return out.length > lines ? [...out.slice(0, lines - 1), fit(out.slice(lines - 1).join(" "), max)] : out;
+    };
+    const rr = (x, y, w, h, rad) => { g.beginPath(); g.roundRect(x, y, w, h, rad); };
+    const pc = k => cssVar("--p-" + k.slice(2));
+    try { await document.fonts.ready; } catch (e) {}
+    g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
+    const logo = await loadImg(darkNow() ? "/assets/logo-dark.svg" : "/assets/logo-light.svg");
+    if (logo) g.drawImage(logo, P, P - 8, 200, 80);
+    g.textBaseline = "middle"; font(500, 26, true); text(new Date(SNAP.at).toLocaleString(LANG, { dateStyle: "medium", timeStyle: "short" }), W - P, P + 32, C.mu, "right"); g.textBaseline = "alphabetic";
+
+    // title, then the country (and, when asked, the city, address and network)
+    font(700, 54); text(fit(t("card_title"), W - 2 * P), P, 222, C.fg);
+    let my = 274;
+    const fl = s.cc ? await loadImg(`/flags/${s.cc.toLowerCase()}.svg`) : null;
+    font(500, 28);
+    const where = [withLoc && s.city, s.cc && country(s.cc)].filter(Boolean).join(", ") + "  ·  IPv" + SNAP.v;
+    if (fl) { g.drawImage(fl, P, my - 23, 36, 27); text(fit(where, W - 2 * P - 50), P + 50, my, C.mu); } else text(fit(where, W - 2 * P), P, my, C.mu);
+    if (withLoc) { my += 42; text(fit([SNAP.ip, s.asn && "AS" + s.asn, s.org].filter(Boolean).join("  ·  "), W - 2 * P), P, my, C.mu); }
+
+    // the ring: the score in the grade's color, each deduction after it in its own color, as on the page
+    const cx = P + 160, cy = my + 236, R = 140;
+    const arc = (from, len, color) => { g.beginPath(); g.arc(cx, cy, R, -Math.PI / 2 + from / 50 * Math.PI, -Math.PI / 2 + (from + len) / 50 * Math.PI); g.strokeStyle = color; g.stroke(); };
+    g.lineWidth = 26; g.lineCap = "butt"; arc(0, 100, C.soft);
+    let at = r.score;
+    for (const p of r.parts) { const len = Math.min(p.pts, 100 - at); if (len <= 0) continue; arc(at + .6, Math.max(0, len - 1.2), pc(p.k)); at += len; }
+    if (r.score > 0) arc(0, r.score, GC);
+    g.textBaseline = "middle"; font(700, 104, true); text(String(r.score), cx, cy - 10, C.fg, "center");
+    font(700, 30); text(t("grade", { g: r.grade }), cx, cy + 60, GC, "center"); g.textBaseline = "alphabetic";
+
+    // the verdict and where the points went
+    const vx = cx + R + 64, vw = W - P - vx;
+    font(800, 52); text(fit(t("g_" + r.grade), vw), vx, cy - 76, GC);
+    font(500, 26); const dl = wrap(t("d_" + r.grade), vw, 3); dl.forEach((l, i) => text(l, vx, cy - 28 + i * 38, C.mu));
+    let px = vx, py = cy - 28 + dl.length * 38 + 30;
+    font(600, 24);
+    for (const p of r.parts) {
+      const label = "−" + p.pts + " " + t("pp_" + p.k.slice(2)), w = g.measureText(label).width + 28;
+      if (px + w > W - P && px > vx) { px = vx; py += 44; }
+      if (py > cy + R + 10) break;
+      g.fillStyle = pc(p.k); g.beginPath(); g.arc(px + 9, py - 8, 8, 0, Math.PI * 2); g.fill();
+      text(label, px + 26, py, C.fg); px += w + 22;
+    }
+
+    // what the address is and what it is good for, read off the page's cells
+    const LV = { "st-ok": C.ok, "st-warn": C.warn, "st-bad": C.bad };
+    const lvOf = el => LV[[...el.classList].find(c => c in LV)] || C.mu;
+    let y = cy + R + 96;
+    g.strokeStyle = C.line; g.lineWidth = 2; g.beginPath(); g.moveTo(P, y - 48); g.lineTo(W - P, y - 48); g.stroke();
+    const cells = ["type", "native", "anon", "tor", "risk", "abuse", "dnsbl", "geo"].map(f => $(`.fc[data-f="${f}"]`)).filter(Boolean);
+    const colW = (W - 2 * P - 48) / 2;
+    cells.forEach((c, i) => {
+      const x = P + (i % 2) * (colW + 48), yy = y + Math.floor(i / 2) * 58, col = lvOf(c);
+      g.fillStyle = col; g.beginPath(); g.arc(x + 9, yy - 9, 8, 0, Math.PI * 2); g.fill();
+      font(500, 25); const lab = fit(c.querySelector(".fc-l").lastChild.textContent.trim(), colW * .5); text(lab, x + 28, yy, C.mu);
+      font(600, 25); text(fit(c.querySelector(".fc-v").textContent.replace(/\s+/g, " ").trim(), colW - 48 - g.measureText(lab).width), x + colW, yy, col === C.mu ? C.fg : col, "right");
+    });
+    y += Math.ceil(cells.length / 2) * 58 + 28;
+    const uses = $$(".uc[data-f]"), uw = (W - 2 * P - 4 * 14) / 5;
+    uses.forEach((u, i) => {
+      const x = P + i * (uw + 14), col = lvOf(u);
+      rr(x, y, uw, 108, 16); g.fillStyle = C.soft; g.fill();
+      g.fillStyle = col; rr(x + 18, y + 18, 30, 6, 3); g.fill();
+      font(500, 22); text(fit(u.querySelector(".uc-l").textContent.trim(), uw - 36), x + 18, y + 58, C.mu);
+      font(700, 26); text(fit(u.querySelector(".uc-v").textContent.trim(), uw - 36), x + 18, y + 92, col);
+    });
+
+    // footer: invitation, address and a QR code to the site
+    const fy = H - P - 150;
+    g.strokeStyle = C.line; g.lineWidth = 2; g.beginPath(); g.moveTo(P, fy); g.lineTo(W - P, fy); g.stroke();
+    font(700, 38); text(fit(t("card_cta"), W - 2 * P - 200), P, fy + 74, C.fg);
+    font(500, 26); text(fit(location.host + "  ·  " + t("card_local"), W - 2 * P - 200), P, fy + 120, C.mu);
+    try {
+      const q = (await loadQR())(0, "M"); q.addData(location.origin + D.paths[LANG]); q.make();
+      const n = q.getModuleCount(), size = 130, m = size / n, qx = W - P - size, qy = fy + 20;
+      g.fillStyle = "#ffffff"; rr(qx - 10, qy - 10, size + 20, size + 20, 12); g.fill(); g.fillStyle = "#000000";
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (q.isDark(i, j)) g.fillRect(qx + j * m, qy + i * m, m + .5, m + .5);
+    } catch (e) {}
+    return cv;
+  }
+  let shareCur = null, shareGen = 0;
+  async function refreshShare() {
+    const withLoc = $("#shareLoc").checked, gen = ++shareGen;
+    $("#shareImg").classList.add("busy");
+    let link = await shareLink(withLoc), note = t("share_len", { n: link.length });
+    if (shortener()) {
+      $("#shareLink").value = "…";
+      const u = await shorten(link);
+      if (u) { link = u; note = t("share_shortNote", { host: new URL(u).host }); } else note = t("share_shortFail");
+    }
+    if (gen !== shareGen) return;
+    $("#shareLink").value = link; $("#shareNote").textContent = note;
+    const cv = await drawCard(withLoc), blob = await new Promise(res => cv.toBlob(res, "image/png"));
+    if (gen !== shareGen) return;
+    if (shareCur) URL.revokeObjectURL(shareCur.url);
+    shareCur = { blob, link, url: URL.createObjectURL(blob), file: new File([blob], `ipqs-${stamp()}.png`, { type: "image/png" }) };
+    const img = $("#shareImg"); img.src = shareCur.url; img.alt = shareTitle(); img.classList.remove("busy");
+    $("#shareCopyImg").hidden = !(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write);
+    $("#shareNative").hidden = !navigator.share;
+  }
+  $("#shareBtn").onclick = () => {
+    if (!SNAP) return;
+    // the address, city and network stay out unless asked for; a shared result without them can't add them
+    const loc = $("#shareLoc"); loc.checked = !!SHARED && !!SHARED.i; loc.closest(".tgl").hidden = !!SHARED && !SHARED.i;
+    openDlg("share"); refreshShare();
+  };
+  $("#shareLoc").onchange = refreshShare;
+  $("#shareDl").onclick = () => { if (!shareCur) return; const a = document.createElement("a"); a.href = shareCur.url; a.download = shareCur.file.name; document.body.appendChild(a); a.click(); a.remove(); };
+  $("#shareCopyImg").onclick = async () => { try { await navigator.clipboard.write([new ClipboardItem({ "image/png": shareCur.blob })]); toast(t("share_copied")); } catch (e) { toast(t("share_failed")); } };
+  $("#shareCopyLink").onclick = async () => {
+    const v = $("#shareLink").value; if (!v || v === "…") return;
+    try { await navigator.clipboard.writeText(v); toast(t("share_copied")); } catch (e) { $("#shareLink").select(); toast(t("share_failed")); }
+  };
+  $("#shareLink").onfocus = e => e.target.select();
+  $("#shareNative").onclick = async () => {
+    if (!shareCur) return;
+    const title = shareTitle(), withFile = navigator.canShare && navigator.canShare({ files: [shareCur.file] });
+    try { await navigator.share(withFile ? { title, text: title + " " + shareCur.link, files: [shareCur.file] } : { title, text: title, url: shareCur.link }); }
+    catch (e) { if (e && e.name !== "AbortError") toast(t("share_failed")); }
+  };
+  let toastEl, toastT = 0;
+  function toast(msg) {
+    if (!toastEl) toastEl = document.body.appendChild(Object.assign(document.createElement("div"), { className: "toast", role: "status" }));
+    toastEl.textContent = msg; toastEl.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 1800);
+  }
 
   /* ---------- the form ---------- */
   $("#ask").onsubmit = e => {
@@ -388,6 +595,6 @@ import { ccOfName, SOURCES } from "./sources.mjs";
   };
   input.oninput = () => input.classList.remove("bad");
   const start = () => { const q = new URL(location.href).searchParams.get("ip"); input.value = q || ""; run(q && canon(q) ? canon(q) : null, false); };
-  addEventListener("popstate", start);
-  start();
+  if (SHARE_CODE) replay(SHARE_CODE);
+  else { addEventListener("popstate", start); start(); }
 })();

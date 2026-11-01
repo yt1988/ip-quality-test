@@ -15,6 +15,7 @@ How clean is your IP? [IPQS](https://ipqs.1ms.dog) asks a dozen IP intelligence 
 - **Fraud and abuse scores** from the sources that have them, averaged with weights.
 - **Mail blocklists** (SpamCop, Barracuda, PSBL, Mailspike, UCEPROTECT, GBUdb, blocklist.de, Anonmails).
 - **What it means** for streaming, AI services (including the regions OpenAI and Anthropic don't serve), CAPTCHAs on Google and Cloudflare, sign-ups and payments, and sending mail.
+- **Sharing**: an image card (grade and score first; address, city and network only if you switch them on) and a link that opens the same result, with the grade in its link preview. Both are made in your browser.
 - **Every source's own answer**, linked to its page so you can check it there, and links to look the address up elsewhere (Scamalytics, Spur, ping0…).
 
 Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are asked from your browser), and any public address can be checked: `https://ipqs.1ms.dog/?ip=8.8.8.8`.
@@ -60,6 +61,8 @@ GET /api/check?ip=<addr>  any public IPv4 or IPv6 address
 
 The answer is NDJSON: a `start` line listing the rows, one `src` line per source and one `bl` line per blocklist as they answer, then a `done` line with `score`, `grade`, `parts`, `notes`, `uses` and `summary`. Answers are cached for six hours per address. Fresh lookups are limited to 20 a minute per visitor.
 
+Shared results live at `/r/<code>` (or `/<lang>/r/<code>`): the code is the answers, deflated and base64url-encoded, behind a format number (`src/share.mjs`). The Worker puts the grade and score into that page's link preview.
+
 ## Self-hosting
 
 ```bash
@@ -86,7 +89,8 @@ On 1ms.dog the page also gets the site's shared top bar, analytics and theme/lan
 npm install
 npm run dev        # wrangler dev on http://localhost:8792 (your own address isn't known locally: use ?ip=)
 npm run build      # regenerate public/ after changing src/ (commit public/)
-npm test           # public/ up to date, page contract, the scoring and IP parsing tests
+npm test           # public/ up to date, page contract, the scoring, sharing and IP parsing tests
+npm run og         # redraw the link-preview images in public/og/ (after changing the headline or grade texts)
 ```
 
 On 1ms.dog, every push to `main` deploys automatically (Cloudflare Workers Builds runs `npm ci && npm test` first).

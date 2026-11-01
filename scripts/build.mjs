@@ -4,6 +4,7 @@
 //   assets/app.<hash>.js, assets/app.<hash>.css the page's code and styles, shared by every language
 //   assets/l.<lang>.<hash>.js                    the strings the browser code needs, per language
 //   sitemap.xml, robots.txt, llms.txt, _headers  SEO and security headers (CSP)
+// The link-preview images in public/og/ come from scripts/og.mjs (run it when the strings or the look change).
 // The Worker (src/worker.js) is deployed from source by wrangler; it isn't built here.
 // Usage: node scripts/build.mjs          write the files
 //        node scripts/build.mjs --check  exit 1 if anything in public/ is out of date (CI)
@@ -12,12 +13,11 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { build as bundle, transform } from "esbuild";
 import { SOURCES, DNSBL } from "../src/sources.mjs";
+import { LANGS } from "../src/langs.mjs";
 
 const SITE = (process.env.SITE_URL || "https://ipqs.1ms.dog").replace(/\/+$/, "");
 const pub = new URL("../public/", import.meta.url), src = new URL("../src/", import.meta.url);
-// language, URL folder, og:locale; the first is the root
-export const LANGS = [["en", "", "en_US"], ["zh-CN", "zh-cn", "zh_CN"], ["zh-TW", "zh-tw", "zh_TW"], ["ja", "ja", "ja_JP"], ["ko", "ko", "ko_KR"],
-  ["es", "es", "es_ES"], ["fr", "fr", "fr_FR"], ["de", "de", "de_DE"], ["pt", "pt", "pt_BR"], ["ru", "ru", "ru_RU"]];
+export { LANGS };
 // the questions the sources table answers, one row each (src/app.js fills them)
 // the findings column: what the address is, then what it is good for (src/score.mjs decides each)
 export const PROFILE = ["type", "native", "geo", "anon", "tor", "risk", "abuse", "dnsbl"];
@@ -32,8 +32,9 @@ export const GROUPS = [
 ].map(([g, ids]) => [g, ids.map(id => [id, nameOf(id)])]);
 
 // Runs before first paint: apply the saved theme. On the English root, send visitors to their language's page
-// (a saved choice first, then the browser languages); crawlers and English readers stay. Keeps ?ip=.
-const PREPAINT = `(function(){var d=document.documentElement,th=null,s=null;try{th=localStorage.getItem("ipqs:theme");s=localStorage.getItem("ipqs:lang")}catch(e){}if(th==="light"||th==="dark")d.setAttribute("data-theme",th);if(!d.hasAttribute("data-root"))return;var P=JSON.parse(d.getAttribute("data-paths")||"{}"),l=null;try{var q=new URLSearchParams(location.search).get("lang");if(P[q])l=q}catch(e){}if(!l&&P[s])l=s;for(var ls=navigator.languages||[navigator.language||"en"],i=0;!l&&!s&&i<ls.length;i++){var x=String(ls[i]).toLowerCase(),b=x.split("-")[0];l=b==="zh"?(/tw|hk|mo|hant/.test(x)?"zh-TW":"zh-CN"):P[b]?b:null}if(l&&l!=="en")location.replace(P[l]+location.search+location.hash)})();`;
+// (a saved choice first, then the browser languages); crawlers and English readers stay. Keeps ?ip= and a shared
+// result's r/<code>.
+const PREPAINT = `(function(){var d=document.documentElement,th=null,s=null;try{th=localStorage.getItem("ipqs:theme");s=localStorage.getItem("ipqs:lang")}catch(e){}if(th==="light"||th==="dark")d.setAttribute("data-theme",th);if(!d.hasAttribute("data-root"))return;var P=JSON.parse(d.getAttribute("data-paths")||"{}"),l=null;try{var q=new URLSearchParams(location.search).get("lang");if(P[q])l=q}catch(e){}if(!l&&P[s])l=s;for(var ls=navigator.languages||[navigator.language||"en"],i=0;!l&&!s&&i<ls.length;i++){var x=String(ls[i]).toLowerCase(),b=x.split("-")[0];l=b==="zh"?(/tw|hk|mo|hant/.test(x)?"zh-TW":"zh-CN"):P[b]?b:null}if(l&&l!=="en")location.replace(P[l]+location.pathname.slice(1)+location.search+location.hash)})();`;
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const fill = (s, v) => { for (const k in v) s = s.split("{" + k + "}").join(v[k]); return s; };
@@ -72,10 +73,10 @@ export async function build({ check = false } = {}) {
     const sName = `l.${lang.toLowerCase()}.${hash(sjs)}.js`;
     files["assets/" + sName] = sjs;
 
-    const url = SITE + path(slug), docs = d.docs || en.docs;
+    const url = SITE + path(slug), docs = T("docs");
     const alts = langs.map(([l, sl]) => `<link rel="alternate" hreflang="${l}" href="${SITE + path(sl)}">`).join("\n") + `\n<link rel="alternate" hreflang="x-default" href="${SITE}/">`;
     const graph = [
-      { "@type": "WebApplication", name: "IPQS · 1ms.dog", url, applicationCategory: "UtilitiesApplication", operatingSystem: "Any",
+      { "@type": "WebApplication", name: T("app_name") + " · 1ms.dog", url, image: `${SITE}/og/${slug || "en"}.png`, applicationCategory: "UtilitiesApplication", operatingSystem: "Any",
         browserRequirements: "Requires JavaScript", description: T("seo_desc"), inLanguage: lang, isAccessibleForFree: true,
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } },
       { "@type": "FAQPage", mainEntity: docs.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a.replace(/\n+/g, " ") } })) },
@@ -93,7 +94,9 @@ export async function build({ check = false } = {}) {
       `<link rel="icon" href="/favicon.ico" sizes="any">`, `<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">`, `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`,
       `<meta property="og:type" content="website">`, `<meta property="og:site_name" content="1ms.dog">`,
       `<meta property="og:title" content="${esc(T("seo_title"))}">`, `<meta property="og:description" content="${esc(T("og_sub"))}">`, `<meta property="og:url" content="${url}">`,
-      `<meta property="og:locale" content="${locale}">`, `<meta name="twitter:card" content="summary">`,
+      `<meta property="og:locale" content="${locale}">`, `<meta property="og:image" content="${SITE}/og/${slug || "en"}.png">`,
+      `<meta property="og:image:width" content="1200">`, `<meta property="og:image:height" content="630">`, `<meta property="og:image:alt" content="${esc(T("app_name"))}">`,
+      `<meta name="twitter:card" content="summary_large_image">`, `<meta name="twitter:image" content="${SITE}/og/${slug || "en"}.png">`,
       `<meta name="twitter:title" content="${esc(T("seo_title"))}">`, `<meta name="twitter:description" content="${esc(T("og_sub"))}">`,
       `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c")}</script>`,
     ].join("\n");
@@ -132,7 +135,7 @@ export async function build({ check = false } = {}) {
     langs.map(([, s]) => `  <url>\n    <loc>${SITE + path(s)}</loc>\n` + langs.map(([l, s2]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE + path(s2)}"/>`).join("\n") +
       `\n    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE}/"/>\n  </url>`).join("\n") + "\n</urlset>\n";
   files["robots.txt"] = `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE}/sitemap.xml\n`;
-  files["llms.txt"] = `# IPQS · 1ms.dog
+  files["llms.txt"] = `# IP Quality Test (IPQS) · 1ms.dog
 
 > Free IP quality check. Asks up to ${SOURCES.length} IP intelligence sources (${SOURCES.map(s => s.name).join(", ")}) and
 > ${DNSBL.length} DNS blocklists about an address, then gives a 0–100 score (A–F), whether it is residential or data
@@ -147,7 +150,7 @@ export async function build({ check = false } = {}) {
 - More 1ms.dog tools: https://1ms.dog/
 `;
   // The only inline script is the pre-paint snippet, identical on every page: one hash covers the site.
-  const csp = ["default-src 'self'", `script-src 'self' 'sha256-${sha(PREPAINT)}'`, "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data:",
+  const csp = ["default-src 'self'", `script-src 'self' 'sha256-${sha(PREPAINT)}'`, "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data: blob:",
     // the exit checks (as on EgressLens) and IPinfo, which the browser asks directly
     "connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai " +
       // sources the page asks itself (src/sources.mjs, browser: "only" or "retry"), RDAP with every registry it redirects to
@@ -172,6 +175,10 @@ export async function build({ check = false } = {}) {
 /assets/fonts/*
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable
+/og/*
+  Cache-Control: public, max-age=86400
+/vendor/*
+  Cache-Control: public, max-age=2592000
 /flags/*
   Cache-Control: public, max-age=2592000
 /llms.txt

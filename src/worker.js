@@ -2,11 +2,14 @@
 //   GET /api/check            the visitor's own address
 //   GET /api/check?ip=<addr>  any public IPv4 or IPv6 address
 // by asking every source in src/sources.mjs and the DNS blocklists at once, streaming each answer as it arrives, then
-// scoring them all (src/score.mjs).
+// scoring them all (src/score.mjs), and
+//   GET [/<lang>]/r/<code>    a shared result (src/share.mjs): the language page with the grade in its link preview
 // Answers are cached per address for CACHE_TTL seconds, so a busy address costs the sources one lookup.
 import { family, canon, isPublic, reverse } from "./ip.mjs";
 import { SOURCES, DNSBL, ELSEWHERE } from "./sources.mjs";
 import { assess } from "./score.mjs";
+import { decode, unpackResults, SHARE_PATH } from "./share.mjs";
+import * as I18N from "./langs.mjs";
 
 const CACHE_TTL = 6 * 3600;
 const CACHE_VER = "v1";
@@ -137,6 +140,35 @@ async function check(request, env, ctx) {
   return new Response(readable, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 }
 
+// A shared result: the language page as it is, with its link preview naming the grade and score (the page itself
+// reads the result from its address). A link this code can't read gets the plain page.
+async function shared(request, env, m) {
+  const url = new URL(request.url), slug = m[1] || "", lang = I18N.BY_SLUG[slug];
+  if (lang === undefined || !env.ASSETS) return null;
+  const page = await env.ASSETS.fetch(new Request(new URL("/" + (slug ? slug + "/" : ""), url), { headers: request.headers }));
+  if (!page.ok) return page;
+  const P = await decode(m[2]), d = I18N.LANG[lang];
+  const res = new Response(page.body, page);
+  res.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+  res.headers.delete("ETag");
+  if (!P) return res;
+  const { res: results, bl } = unpackResults(P), r = assess(results, bl);
+  const fill = (s, v) => { for (const k in v) s = s.split("{" + k + "}").join(v[k]); return s; };
+  const title = fill(d.og_r_title, { g: r.grade, s: r.score, v: d["g_" + r.grade] }), desc = d["d_" + r.grade];
+  const image = url.origin + "/og/" + (slug || "en") + "-" + r.grade.toLowerCase() + ".png";
+  const set = v => ({ element(e) { e.setAttribute("content", v); } });
+  return new HTMLRewriter()
+    .on("html", { element(e) { e.setAttribute("data-shared", ""); } })
+    .on("title", { element(e) { e.setInnerContent(title + " · " + d.app_name); } })
+    .on('meta[name="description"]', set(desc))
+    .on('meta[name="robots"]', set("noindex, follow"))
+    .on('meta[property="og:title"], meta[name="twitter:title"]', set(title))
+    .on('meta[property="og:description"], meta[name="twitter:description"]', set(desc))
+    .on('meta[property="og:url"]', set(url.origin + url.pathname))
+    .on('meta[property="og:image"], meta[name="twitter:image"]', set(image))
+    .transform(res);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -146,6 +178,8 @@ export default {
       catch (e) { return json({ error: "internal" }, 500); }
     }
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, 404);
+    const m = SHARE_PATH.exec(url.pathname);
+    if (m && request.method === "GET") { const r = await shared(request, env, m); if (r) return r; }
     // anything else is a static file; an unknown path is a plain 404 (the site's shell shows its own page for it)
     if (env.ASSETS) {
       const r = await env.ASSETS.fetch(request);

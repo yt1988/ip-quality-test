@@ -2,7 +2,7 @@
 <html lang="en" data-paths="{&quot;en&quot;:&quot;/&quot;,&quot;zh-CN&quot;:&quot;/zh-cn/&quot;,&quot;zh-TW&quot;:&quot;/zh-tw/&quot;,&quot;ja&quot;:&quot;/ja/&quot;,&quot;ko&quot;:&quot;/ko/&quot;,&quot;es&quot;:&quot;/es/&quot;,&quot;fr&quot;:&quot;/fr/&quot;,&quot;de&quot;:&quot;/de/&quot;,&quot;pt&quot;:&quot;/pt/&quot;,&quot;ru&quot;:&quot;/ru/&quot;}" data-root>
 <head>
 <meta charset="utf-8">
-<script>(function(){var d=document.documentElement,th=null,s=null;try{th=localStorage.getItem("ipqs:theme");s=localStorage.getItem("ipqs:lang")}catch(e){}if(th==="light"||th==="dark")d.setAttribute("data-theme",th);if(!d.hasAttribute("data-root"))return;var P=JSON.parse(d.getAttribute("data-paths")||"{}"),l=null;try{var q=new URLSearchParams(location.search).get("lang");if(P[q])l=q}catch(e){}if(!l&&P[s])l=s;for(var ls=navigator.languages||[navigator.language||"en"],i=0;!l&&!s&&i<ls.length;i++){var x=String(ls[i]).toLowerCase(),b=x.split("-")[0];l=b==="zh"?(/tw|hk|mo|hant/.test(x)?"zh-TW":"zh-CN"):P[b]?b:null}if(l&&l!=="en")location.replace(P[l]+location.search+location.hash)})();</script>
+<script>(function(){var d=document.documentElement,th=null,s=null;try{th=localStorage.getItem("ipqs:theme");s=localStorage.getItem("ipqs:lang")}catch(e){}if(th==="light"||th==="dark")d.setAttribute("data-theme",th);if(!d.hasAttribute("data-root"))return;var P=JSON.parse(d.getAttribute("data-paths")||"{}"),l=null;try{var q=new URLSearchParams(location.search).get("lang");if(P[q])l=q}catch(e){}if(!l&&P[s])l=s;for(var ls=navigator.languages||[navigator.language||"en"],i=0;!l&&!s&&i<ls.length;i++){var x=String(ls[i]).toLowerCase(),b=x.split("-")[0];l=b==="zh"?(/tw|hk|mo|hant/.test(x)?"zh-TW":"zh-CN"):P[b]?b:null}if(l&&l!=="en")location.replace(P[l]+location.pathname.slice(1)+location.search+location.hash)})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IP Quality Check: fraud score, VPN/proxy detection, residential or data center · IP Quality Test</title>
 <meta name="description" content="Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.">
@@ -32,12 +32,17 @@
 <meta property="og:description" content="A dozen sources and 8 blocklists, one score">
 <meta property="og:url" content="https://ipqs.1ms.dog/">
 <meta property="og:locale" content="en_US">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://ipqs.1ms.dog/og/en.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="IP Quality Test">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ipqs.1ms.dog/og/en.png">
 <meta name="twitter:title" content="IP Quality Check: fraud score, VPN/proxy detection, residential or data center · IP Quality Test">
 <meta name="twitter:description" content="A dozen sources and 8 blocklists, one score">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IPQS · 1ms.dog","url":"https://ipqs.1ms.dog/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How is the score calculated?","acceptedAnswer":{"@type":"Answer","text":"Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network, 20 for proxy and 15 for VPN flags, 40 for Tor, 10 for abuse reports, up to 35 for the average fraud score, and 6 per mail blocklist (at most 24). Flags count by how many sources agree, so one source alone takes off only part of the points. Grades: A 85+, B 70+, C 50+, D 30+, F below 30. The breakdown under the source table shows exactly where the points went."}},{"@type":"Question","name":"Which sources are used?","acceptedAnswer":{"@type":"Answer","text":"Without any keys: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (the regional registries), ip.guide, Shodan InternetDB, the Tor Project's exit list, and Cloudflare (your own address only). With free API keys the site owner can add IPQualityScore, AbuseIPDB, Scamalytics and ipdata. Each row links to that source's own page, so you can check its answer there."}},{"@type":"Question","name":"What is a native IP, and a broadcast IP?","acceptedAnswer":{"@type":"Answer","text":"A native IP is used in the country where it's registered. A broadcast IP is registered in one country (in the registry's records, often by a hosting company) and announced from another. Most geolocation databases follow where the address really is, but some services go by the registration, so a broadcast IP can make you look like you're in another country. We compare the regional registry's record (RDAP) with where most databases place the address. When the registry record has no country (common for ARIN), we use the country of the network that owns the block."}},{"@type":"Question","name":"Residential or data center: why does it matter?","acceptedAnswer":{"@type":"Answer","text":"Sites see data-center addresses as servers, VPNs and proxies, not people. Streaming services, ticketing, banks and sign-up forms block them or ask for more verification. Residential and mobile addresses look like ordinary users. Mobile addresses are also shared by many people at once (CGNAT), so sites rarely block them."}},{"@type":"Question","name":"Why do the sources disagree?","acceptedAnswer":{"@type":"Answer","text":"Each one has its own data: some only know which networks belong to hosting companies, others run honeypots or collect fraud reports from their customers. A VPN server may be known to one and not yet to another. That's why we count how many agree instead of trusting any single one."}},{"@type":"Question","name":"My score is low. What can I do?","acceptedAnswer":{"@type":"Answer","text":"If it's your home connection: an abuse report or blocklist entry often means a device on your network was infected or used as a proxy. Clean it, then ask the blocklist to remove the address (each one links to its removal page). If it's a VPN or server, the score mostly reflects the network type and you can't change it. Pick a provider that offers residential or less-used addresses."}},{"@type":"Question","name":"Is anything stored?","acceptedAnswer":{"@type":"Answer","text":"Results are cached for six hours per address so the free sources aren't asked again for every visit. Nothing else is kept, and the IPv4/IPv6 detection runs in your browser."}}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP Quality Test · 1ms.dog","url":"https://ipqs.1ms.dog/","image":"https://ipqs.1ms.dog/og/en.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Check your IP's reputation against a dozen IP intelligence sources and 8 blocklists at once: a 0–100 score, residential or data center, native or broadcast, VPN, proxy and Tor flags, and what it means for streaming, ChatGPT, CAPTCHAs and sign-ups. Free.","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How is the score calculated?","acceptedAnswer":{"@type":"Answer","text":"Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network, 20 for proxy and 15 for VPN flags, 40 for Tor, 10 for abuse reports, up to 35 for the average fraud score, and 6 per mail blocklist (at most 24). Flags count by how many sources agree, so one source alone takes off only part of the points. Grades: A 85+, B 70+, C 50+, D 30+, F below 30. The breakdown under the source table shows exactly where the points went."}},{"@type":"Question","name":"Which sources are used?","acceptedAnswer":{"@type":"Answer","text":"Without any keys: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (the regional registries), ip.guide, Shodan InternetDB, the Tor Project's exit list, and Cloudflare (your own address only). With free API keys the site owner can add IPQualityScore, AbuseIPDB, Scamalytics and ipdata. Each row links to that source's own page, so you can check its answer there."}},{"@type":"Question","name":"What is a native IP, and a broadcast IP?","acceptedAnswer":{"@type":"Answer","text":"A native IP is used in the country where it's registered. A broadcast IP is registered in one country (in the registry's records, often by a hosting company) and announced from another. Most geolocation databases follow where the address really is, but some services go by the registration, so a broadcast IP can make you look like you're in another country. We compare the regional registry's record (RDAP) with where most databases place the address. When the registry record has no country (common for ARIN), we use the country of the network that owns the block."}},{"@type":"Question","name":"Residential or data center: why does it matter?","acceptedAnswer":{"@type":"Answer","text":"Sites see data-center addresses as servers, VPNs and proxies, not people. Streaming services, ticketing, banks and sign-up forms block them or ask for more verification. Residential and mobile addresses look like ordinary users. Mobile addresses are also shared by many people at once (CGNAT), so sites rarely block them."}},{"@type":"Question","name":"Why do the sources disagree?","acceptedAnswer":{"@type":"Answer","text":"Each one has its own data: some only know which networks belong to hosting companies, others run honeypots or collect fraud reports from their customers. A VPN server may be known to one and not yet to another. That's why we count how many agree instead of trusting any single one."}},{"@type":"Question","name":"My score is low. What can I do?","acceptedAnswer":{"@type":"Answer","text":"If it's your home connection: an abuse report or blocklist entry often means a device on your network was infected or used as a proxy. Clean it, then ask the blocklist to remove the address (each one links to its removal page). If it's a VPN or server, the score mostly reflects the network type and you can't change it. Pick a provider that offers residential or less-used addresses."}},{"@type":"Question","name":"Is anything stored?","acceptedAnswer":{"@type":"Answer","text":"Results are cached for six hours per address so the free sources aren't asked again for every visit. Nothing else is kept, and the IPv4/IPv6 detection runs in your browser."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.d9568fb886.css">
+<link rel="stylesheet" href="/assets/app.3b8ddcf355.css">
 </head>
 <body>
 <div class="app">
@@ -64,9 +69,14 @@
   </header>
 
   <main>
+    <div class="shared" id="sharedBar">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1a2.5 2.5 0 0 1-3.5-3.5l1-1"/></svg>
+      <span id="sharedT">&nbsp;</span>
+      <a class="btn sm pri" id="sharedMine" href="/" data-i="shared_mine">Check my IP</a>
+    </div>
     <section class="hero card">
       <div class="hero-h">
-        <h1>How clean is your IP?</h1>
+        <h1>IP quality check: how clean is your IP?</h1>
         <form class="ask" id="ask" autocomplete="off">
           <label class="sr" for="ipIn" data-i="ph">Any IPv4 or IPv6 address</label>
           <input id="ipIn" name="ip" type="text" inputmode="text" spellcheck="false" maxlength="45">
@@ -93,8 +103,8 @@
             <li><span data-i="r_net">Network</span><b><i class="skl"></i></b></li>
             <li><span data-i="r_host">Reverse DNS</span><b><i class="skl"></i></b></li>
           </ul>
-          <div class="sec-h"><span data-i="mine_h">Your exits</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">Which IP each site sees →</a></div>
-          <ul class="exits" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
+          <div class="sec-h mine"><span data-i="mine_h">Your exits</span><a class="eg" id="egLink" hidden target="_blank" rel="noopener" data-i="ex_more">Which IP each site sees →</a></div>
+          <ul class="exits mine" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
         </div>
         <div class="col">
           <div class="sec-h"><span data-i="h_finds">Findings</span></div>
@@ -104,7 +114,7 @@
       <div class="bar">
         <div class="prog" id="prog"><i></i></div>
         <span class="prog-t" id="progTxt">&nbsp;</span>
-        <div class="acts"><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">Check again</span></button></div>
+        <div class="acts"><button class="btn" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="share_btn">Share</span></button><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">Check again</span></button></div>
       </div>
     </section>
 
@@ -133,8 +143,28 @@
 </div>
 
 
+<div class="scrim" id="share" hidden>
+  <div class="dialog share" role="dialog" aria-modal="true" aria-labelledby="shareT">
+    <div class="dlg-h"><div><h2 id="shareT" data-i="share_h">Share the result</h2><p class="dlg-sub" data-i="share_sub">The image and the link are made in your browser; the result isn't uploaded.</p></div>
+      <button class="icon-btn" data-close type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+    <div class="share-b">
+      <div class="share-img"><img id="shareImg" alt="" width="1080" height="1350"></div>
+      <div class="share-side">
+        <label class="tgl"><input type="checkbox" id="shareLoc"><span class="sw"></span><span data-i="share_loc">Show IP, city and ISP</span></label>
+        <button class="btn pri" type="button" id="shareNative" hidden data-i="share_native">Share…</button>
+        <button class="btn" type="button" id="shareDl" data-i="share_dl">Download image</button>
+        <button class="btn" type="button" id="shareCopyImg" hidden data-i="share_copyImg">Copy image</button>
+        <label class="lbl" for="shareLink" data-i="share_link">Link</label>
+        <input class="inp" id="shareLink" readonly>
+        <button class="btn" type="button" id="shareCopyLink" data-i="share_copyLink">Copy link</button>
+        <p class="dlg-sub" id="shareNote">&nbsp;</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="application/json" id="data">{"lang":"en","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.en.75fc1c4700.js"></script>
-<script src="/assets/app.e3d08b48fd.js"></script>
+<script src="/assets/l.en.48742e0f88.js"></script>
+<script src="/assets/app.f7a0a52a8b.js"></script>
 </body>
 </html>

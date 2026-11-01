@@ -15,6 +15,7 @@
 - **欺诈和滥用分数**：有这项数据的来源加权平均。
 - **邮件黑名单**（SpamCop、Barracuda、PSBL、Mailspike、UCEPROTECT、GBUdb、blocklist.de、Anonmails）。
 - **对用途的影响**：流媒体、AI 服务（包括 OpenAI 和 Anthropic 不服务的地区）、Google 和 Cloudflare 验证码、注册和支付、发邮件。
+- **分享**：结果图片卡片（等级和分数为主，IP、城市和运营商默认不显示，可以打开）和一个能打开同样结果的链接，链接预览里写着等级和分数。两者都在你的浏览器里生成。
 - **每个来源的原始结果**，都链接到该来源自己的查询页，方便核对；另有去 Scamalytics、Spur、ping0 等网站查询的链接。
 
 本机的 IPv4 和 IPv6 都会找出来（由浏览器访问只支持 IPv4 和只支持 IPv6 的地址），也可以查任意公网地址：`https://ipqs.1ms.dog/?ip=8.8.8.8`。
@@ -60,6 +61,8 @@ GET /api/check?ip=<地址>  任意公网 IPv4 或 IPv6 地址
 
 返回 NDJSON：先是一行 `start`（列出所有行），每个来源返回时一行 `src`，每个黑名单一行 `bl`，最后一行 `done`，包含 `score`、`grade`、`parts`、`notes`、`uses` 和 `summary`。每个地址的结果缓存 6 小时。每个访问者每分钟最多 20 次新查询。
 
+分享的结果在 `/r/<code>`（或 `/<语言>/r/<code>`）：code 是各来源的回答，压缩后用 base64url 编码，前面带格式版本号（`src/share.mjs`）。Worker 会把等级和分数写进这个页面的链接预览。
+
 ## 自己部署
 
 ```bash
@@ -86,7 +89,8 @@ SITE_URL=https://ip.example.com node scripts/build.mjs
 npm install
 npm run dev        # wrangler dev，http://localhost:8792（本地拿不到本机地址，请用 ?ip=）
 npm run build      # 改了 src/ 之后重新生成 public/（public/ 要提交）
-npm test           # public/ 是否最新、页面约定、评分和 IP 解析的测试
+npm test           # public/ 是否最新、页面约定、评分、分享和 IP 解析的测试
+npm run og         # 重新生成 public/og/ 里的链接预览图（改了标题或等级文案之后）
 ```
 
 在 1ms.dog 上，推送到 `main` 会自动部署（Cloudflare Workers Builds 先运行 `npm ci && npm test`）。
