@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="十数個のソースと 8 つのブラックリスト、ひとつのスコア">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP 品質テスト · 1ms.dog","url":"https://ipqs.1ms.dog/ja/","image":"https://ipqs.1ms.dog/og/ja.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"十数個の IP インテリジェンスと 8 つのブラックリストで IP の評判を一度にチェック。0〜100 のスコア、住宅用かデータセンターか、ネイティブ IP かブロードキャスト IP か、VPN・プロキシ・Tor の判定、そして動画配信・ChatGPT・CAPTCHA・登録への影響まで。無料。","inLanguage":"ja","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"スコアの計算方法は？","acceptedAnswer":{"@type":"Answer","text":"どのアドレスも 100 点から始まり、ソースの結果に応じて減点します。データセンターは最大 20、プロキシ 20、VPN 15、Tor 40、不正報告 10、平均不正スコアで最大 35、メールブラックリスト 1 件につき 6（最大 24）。フラグは同意したソースの割合で数えるので、1 つだけなら一部しか減りません。 ランク：A 85 以上、B 70 以上、C 50 以上、D 30 以上、F 30 未満。ソース表の下に内訳が出ます。"}},{"@type":"Question","name":"どのソースを使っていますか？","acceptedAnswer":{"@type":"Answer","text":"キー不要：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（地域インターネットレジストリ）、ip.guide、Shodan InternetDB、Tor Project の出口リスト、Cloudflare（自分のアドレスのみ）。サイト運営者が無料 API キーを設定すると IPQualityScore、AbuseIPDB、Scamalytics、ipdata も加わります。各行はそのソース自身のページにリンクしています。"}},{"@type":"Question","name":"ネイティブ IP とブロードキャスト IP とは？","acceptedAnswer":{"@type":"Answer","text":"ネイティブ IP は登録された国で使われています。ブロードキャスト IP はある国で登録され（多くはホスティング会社）、別の国から使われています。多くの位置情報データベースは実際の場所を見ますが、登録国で判断するサービスもあり、ブロードキャスト IP では別の国にいるように見えることがあります。 ここではレジストリの記録（RDAP）と多くのデータベースが示す場所を比べます。記録に国がない場合（ARIN に多い）は、そのブロックを持つネットワークの登録国を使います。"}},{"@type":"Question","name":"住宅用とデータセンター、何が違う？","acceptedAnswer":{"@type":"Answer","text":"サイトはデータセンターのアドレスを人ではなくサーバー、VPN、プロキシと見なします。動画配信、チケット、銀行、登録フォームはブロックしたり追加確認を求めたりします。住宅用とモバイルは普通のユーザーに見えます。モバイルは多数で共有（CGNAT）されるため、ブロックはまれです。"}},{"@type":"Question","name":"なぜソースごとに結果が違う？","acceptedAnswer":{"@type":"Answer","text":"データの集め方が違います。ホスティング会社のネットワークだけを知るもの、ハニーポットや顧客の不正報告を集めるものなど。ある VPN サーバーを知っているところと、まだ知らないところがあります。だから 1 つを信じるのではなく、いくつが同意するかを数えます。"}},{"@type":"Question","name":"スコアが低いときは？","acceptedAnswer":{"@type":"Answer","text":"自宅の回線なら、不正報告やブラックリスト掲載は、ネットワーク内の機器が感染したりプロキシとして使われたりしたサインのことが多いです。対処してから、ブラックリストに削除を申請してください（各リストにリンクあり）。VPN やサーバーなら、スコアはおもにネットワークの種類によるもので変えられません。住宅用や利用者の少ないアドレスを提供する事業者を選びましょう。"}},{"@type":"Question","name":"何か保存されますか？","acceptedAnswer":{"@type":"Answer","text":"無料のソースに毎回問い合わせないよう、結果はアドレスごとに 6 時間キャッシュします。それ以外は保存せず、IPv4/IPv6 の判定はブラウザ内で行います。"}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.870c0cd71d.css">
+<link rel="stylesheet" href="/assets/app.b1de2a6558.css">
 </head>
 <body>
 <div class="app">
@@ -69,11 +69,6 @@
   </header>
 
   <main>
-    <div class="shared" id="sharedBar">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1a2.5 2.5 0 0 1-3.5-3.5l1-1"/></svg>
-      <span id="sharedT">&nbsp;</span>
-      <a class="btn sm pri" id="sharedMine" href="/ja/" data-i="shared_mine">自分の IP をチェック</a>
-    </div>
     <section class="hero card">
       <div class="hero-h">
         <h1>IP 品質チェック：あなたの IP はどれだけクリーン？</h1>
@@ -91,7 +86,7 @@
               <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
             </div>
             <div class="verdict">
-              <p class="v-h" id="vHead" data-i="checking">チェック中…</p>
+              <div class="v-row"><p class="v-h" id="vHead" data-i="checking">チェック中…</p><button class="btn sm pri" id="shareBtn" type="button" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="share_btn">共有</span></button></div>
               <p class="v-d" id="vText">&nbsp;</p>
               <p class="parts" id="parts">&nbsp;</p>
               <a class="ul" id="ckLink" hidden target="_blank" rel="noopener"><span data-i="ck_more">回線をまるごとチェック</span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
@@ -118,7 +113,7 @@
       <div class="bar">
         <div class="prog" id="prog"><i></i></div>
         <span class="prog-t" id="progTxt">&nbsp;</span>
-        <div class="acts"><button class="btn" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="share_btn">共有</span></button><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">再チェック</span></button></div>
+        <div class="acts"><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">再チェック</span></button></div>
       </div>
     </section>
 
@@ -148,7 +143,7 @@
 
 
 <script type="application/json" id="data">{"lang":"ja","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.ja.44a822cbe0.js"></script>
-<script src="/assets/app.79759abef6.js"></script>
+<script src="/assets/l.ja.bc8f4a04cf.js"></script>
+<script src="/assets/app.ed7233c740.js"></script>
 </body>
 </html>

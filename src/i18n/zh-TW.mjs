@@ -11,8 +11,8 @@ export default {
  
  
  
-  shared_t: "這是一份分享的檢測結果 · {d}",
-  shared_mine: "檢測我的 IP", shared_bad: "這個分享連結無法解析", r_hidden: "已隱藏",
+ 
+  shared_bad: "這個分享連結無法解析", r_hidden: "已隱藏",
   card_title: "我的 IP 品質", card_cta: "測測你的 IP 有多乾淨",
   og_r_title: "我的 IP 品質：{g} 級，{s} 分（{v}）",
 

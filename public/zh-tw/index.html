@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="十幾個情報庫和 8 個黑名單，一個分數">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP 品質測試 · 1ms.dog","url":"https://ipqs.1ms.dog/zh-tw/","image":"https://ipqs.1ms.dog/og/zh-tw.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"一次查詢十幾個 IP 情報庫和 8 個黑名單：給出 0–100 的 IP 品質分數，判斷家用寬頻還是機房、原生 IP 還是廣播 IP、是否被標記為 VPN/代理/Tor，以及能否看 Netflix、用 ChatGPT、會不會常跳驗證碼。免費，免註冊。","inLanguage":"zh-TW","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"分數怎麼算？","acceptedAnswer":{"@type":"Answer","text":"每個位址從 100 分開始，依各來源的發現扣分：機房網路最多扣 20，代理標記扣 20，VPN 標記扣 15，Tor 扣 40，濫用回報扣 10，平均詐騙分數最多扣 35，每個郵件黑名單扣 6（最多 24）。標記依同意的來源數折算，只有一個來源標記時只扣一部分。 等級：A 85 分以上，B 70 以上，C 50 以上，D 30 以上，F 低於 30。來源表格下方的明細列出每一項扣了多少。"}},{"@type":"Question","name":"用了哪些資料來源？","acceptedAnswer":{"@type":"Answer","text":"不需要金鑰的：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各區域的位址註冊機構）、ip.guide、Shodan InternetDB、Tor 專案的出口清單，以及 Cloudflare（只查本機位址）。站長設定免費 API 金鑰後，還會加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。每一列都連到該來源自己的查詢頁，可以去核對。"}},{"@type":"Question","name":"什麼是原生 IP、廣播 IP？","acceptedAnswer":{"@type":"Answer","text":"原生 IP 在它註冊的國家使用。廣播 IP 在一個國家註冊（通常是某家機房公司），卻在另一個國家宣告使用。多數定位資料庫依實際位置判斷，但有些服務依註冊地判斷，所以廣播 IP 可能讓你看起來在另一個國家。 這裡比較位址註冊機構的紀錄（RDAP）和多數資料庫給出的位置。註冊紀錄沒有國家時（ARIN 常見），改用該位址段所屬網路的註冊國家。"}},{"@type":"Question","name":"家用寬頻和機房差在哪？","acceptedAnswer":{"@type":"Answer","text":"網站把機房位址視為伺服器、VPN 和代理，而不是真人。串流、售票、銀行和註冊頁面會封鎖它們或要求更多驗證。家用寬頻和行動網路的位址像一般使用者。行動網路的位址還由許多人同時共用（CGNAT），網站很少封鎖。"}},{"@type":"Question","name":"為什麼各來源的結果不一樣？","acceptedAnswer":{"@type":"Answer","text":"每家的資料不同：有的只知道哪些網段屬於機房，有的經營蜜罐或收集客戶的詐騙回報。一台 VPN 伺服器可能已被一家發現，另一家還不知道。所以這裡看有多少來源同意，而不是只信一家。"}},{"@type":"Question","name":"分數很低怎麼辦？","acceptedAnswer":{"@type":"Answer","text":"如果是家裡的寬頻：濫用回報或黑名單紀錄，常代表網路裡有裝置中毒或被當成代理。清理後，向黑名單申請移除（每個黑名單都連到它的查詢和移除頁面）。如果是 VPN 或伺服器，分數主要反映網路類型，無法改變，可以換成提供家用或較少人用位址的業者。"}},{"@type":"Question","name":"會保存什麼嗎？","acceptedAnswer":{"@type":"Answer","text":"每個位址的結果快取 6 小時，避免每次造訪都重複查詢免費的資料來源。除此之外不保存任何東西，IPv4/IPv6 偵測在你的瀏覽器裡完成。"}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.870c0cd71d.css">
+<link rel="stylesheet" href="/assets/app.b1de2a6558.css">
 </head>
 <body>
 <div class="app">
@@ -69,11 +69,6 @@
   </header>
 
   <main>
-    <div class="shared" id="sharedBar">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1a2.5 2.5 0 0 1-3.5-3.5l1-1"/></svg>
-      <span id="sharedT">&nbsp;</span>
-      <a class="btn sm pri" id="sharedMine" href="/zh-tw/" data-i="shared_mine">檢測我的 IP</a>
-    </div>
     <section class="hero card">
       <div class="hero-h">
         <h1>IP 純淨度檢測：你的 IP 有多乾淨？</h1>
@@ -91,7 +86,7 @@
               <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
             </div>
             <div class="verdict">
-              <p class="v-h" id="vHead" data-i="checking">查詢中…</p>
+              <div class="v-row"><p class="v-h" id="vHead" data-i="checking">查詢中…</p><button class="btn sm pri" id="shareBtn" type="button" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="share_btn">分享</span></button></div>
               <p class="v-d" id="vText">&nbsp;</p>
               <p class="parts" id="parts">&nbsp;</p>
               <a class="ul" id="ckLink" hidden target="_blank" rel="noopener"><span data-i="ck_more">做一次完整體檢</span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
@@ -118,7 +113,7 @@
       <div class="bar">
         <div class="prog" id="prog"><i></i></div>
         <span class="prog-t" id="progTxt">&nbsp;</span>
-        <div class="acts"><button class="btn" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="share_btn">分享</span></button><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">重新檢測</span></button></div>
+        <div class="acts"><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">重新檢測</span></button></div>
       </div>
     </section>
 
@@ -148,7 +143,7 @@
 
 
 <script type="application/json" id="data">{"lang":"zh-TW","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.zh-tw.5b4c1f8065.js"></script>
-<script src="/assets/app.79759abef6.js"></script>
+<script src="/assets/l.zh-tw.37f6e48498.js"></script>
+<script src="/assets/app.ed7233c740.js"></script>
 </body>
 </html>

@@ -155,7 +155,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $$("#facts b").forEach((b, i) => { b.className = i ? "" : "ipv"; b.innerHTML = SKL; });
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
-    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").disabled = true; SNAP = null; $("#ulLink").hidden = true;
+    $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -374,7 +374,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
     showLinks();
-    $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").disabled = false;
+    $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").hidden = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
     if (EMBED && !SHARED) postResult(SNAP);
@@ -509,8 +509,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     if (!P) { toast(t("shared_bad")); history.replaceState(null, "", D.paths[LANG]); setTimeout(() => location.reload(), 1500); return; }
     SHARED = P;
     document.documentElement.setAttribute("data-shared", "");
-    const when = new Date(P.t * 60000).toLocaleString(LANG, { dateStyle: "medium", timeStyle: "short" });
-    $("#sharedT").textContent = t("shared_t", { d: when });
+    // the shared banner: whose result this is, and a button that checks the visitor's own address on the language page
+    if (!EMBED) import("/assets/share/share.js").then(({ received }) =>
+      received({ lang: LANG, ts: P.t * 60000, at: $(".hero"), test: () => { location.href = D.paths[LANG]; } }), () => {});
     reset(P.i || null);
     const { res, bl } = unpackResults(P);
     CUR = { ip: P.i || null, v: P.f }; RES = []; BLR = []; FAILS = (P.x || []).slice(); SKIP = { ...(P.k || {}) };
@@ -529,7 +530,6 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     }
     total = got = RES.length + BLR.length; progress();
     finish({ ...assess(res, bl), at: P.t * 60000, cached: false });
-    $("#progTxt").textContent = t("shared_t", { d: when });
     $("#rerun").hidden = true;
   }
 
@@ -587,12 +587,13 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     let at = r.score;
     for (const p of r.parts) { const len = Math.min(p.pts, 100 - at); if (len <= 0) continue; arc(at + .6, Math.max(0, len - 1.2), pc(p.k)); at += len; }
     if (r.score > 0) arc(0, r.score, GC);
-    g.textBaseline = "middle"; font(700, 100, true); text(String(r.score), cx, cy - 10, C.fg, "center");
-    font(700, 30); text(t("grade", { g: r.grade }), cx, cy + 58, GC, "center"); g.textBaseline = "alphabetic";
+    // the card is also the link's preview, shrunk to about half: the score, grade and verdict are drawn large
+    g.textBaseline = "middle"; font(700, 112, true); text(String(r.score), cx, cy - 16, C.fg, "center");
+    font(800, 40); text(fit(t("grade", { g: r.grade }), 2 * R - 70), cx, cy + 64, GC, "center"); g.textBaseline = "alphabetic";
 
     // the verdict and where the points went
     const vx = cx + R + 64, vw = W - P - vx;
-    font(800, 52); text(fit(t("g_" + r.grade), vw), vx, cy - 70, GC);
+    font(800, 62); text(fit(t("g_" + r.grade), vw), vx, cy - 70, GC);
     font(500, 26); const dl = wrap(t("d_" + r.grade), vw, 3); dl.forEach((l, i) => text(l, vx, cy - 22 + i * 38, C.mu));
     let px = vx, py = cy - 22 + dl.length * 38 + 30;
     font(600, 24);

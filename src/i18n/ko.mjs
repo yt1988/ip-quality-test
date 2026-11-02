@@ -11,8 +11,8 @@ export default {
  
  
  
-  shared_t: "공유된 결과 · {d}",
-  shared_mine: "내 IP 검사", shared_bad: "이 공유 링크를 읽을 수 없습니다", r_hidden: "숨김",
+ 
+  shared_bad: "이 공유 링크를 읽을 수 없습니다", r_hidden: "숨김",
   card_title: "내 IP 품질", card_cta: "내 IP는 얼마나 깨끗할까?",
   og_r_title: "내 IP 품질: {g}등급, {s}점 ({v})",
 

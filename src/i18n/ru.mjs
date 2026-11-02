@@ -11,8 +11,8 @@ export default {
  
  
  
-  shared_t: "Чужой результат · {d}",
-  shared_mine: "Проверить мой IP", shared_bad: "Эту ссылку не удаётся прочитать", r_hidden: "скрыто",
+ 
+  shared_bad: "Эту ссылку не удаётся прочитать", r_hidden: "скрыто",
   card_title: "Качество моего IP", card_cta: "Насколько чист ваш IP?",
   og_r_title: "Качество моего IP: класс {g}, {s}/100 ({v})",
 

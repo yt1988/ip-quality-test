@@ -11,8 +11,8 @@ export default {
  
  
  
-  shared_t: "Um resultado compartilhado · {d}",
-  shared_mine: "Testar meu IP", shared_bad: "Este link compartilhado não pode ser lido", r_hidden: "oculto",
+ 
+  shared_bad: "Este link compartilhado não pode ser lido", r_hidden: "oculto",
   card_title: "A qualidade do meu IP", card_cta: "Quão limpo é o seu IP?",
   og_r_title: "A qualidade do meu IP: nota {g}, {s}/100 ({v})",
 

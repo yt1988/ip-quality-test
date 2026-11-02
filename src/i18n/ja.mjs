@@ -11,8 +11,8 @@ export default {
  
  
  
-  shared_t: "共有された結果 · {d}",
-  shared_mine: "自分の IP をチェック", shared_bad: "この共有リンクは読み取れません", r_hidden: "非表示",
+ 
+  shared_bad: "この共有リンクは読み取れません", r_hidden: "非表示",
   card_title: "私の IP 品質", card_cta: "あなたの IP はどれだけクリーン？",
   og_r_title: "私の IP 品質：{g} ランク、{s} 点（{v}）",
 

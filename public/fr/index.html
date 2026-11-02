@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="Une douzaine de sources et 8 listes noires, un score">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Test qualité IP · 1ms.dog","url":"https://ipqs.1ms.dog/fr/","image":"https://ipqs.1ms.dog/og/fr.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Vérifiez la réputation de votre IP auprès d’une douzaine de sources de renseignement et de 8 listes noires d’un coup : un score de 0 à 100, résidentielle ou datacenter, IP native ou de diffusion, détection VPN, proxy et Tor, et ce que cela change pour le streaming, ChatGPT, les CAPTCHA et les inscriptions. Gratuit.","inLanguage":"fr","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Comment le score est-il calculé ?","acceptedAnswer":{"@type":"Answer","text":"Chaque adresse part de 100 et perd des points selon ce que trouvent les sources : jusqu’à 20 pour un réseau de datacenter, 20 pour un signalement proxy et 15 pour VPN, 40 pour Tor, 10 pour des signalements d’abus, jusqu’à 35 pour le score de fraude moyen et 6 par liste noire de messagerie (24 au plus). Les signalements comptent selon le nombre de sources d’accord : une seule ne retire qu’une partie. Notes : A 85+, B 70+, C 50+, D 30+, F en dessous de 30. Le détail sous le tableau montre chaque retrait."}},{"@type":"Question","name":"Quelles sources sont utilisées ?","acceptedAnswer":{"@type":"Answer","text":"Sans clé : ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP (les registres régionaux), ip.guide, Shodan InternetDB, la liste de sortie du Tor Project et Cloudflare (votre propre adresse uniquement). Avec des clés API gratuites, le propriétaire du site peut ajouter IPQualityScore, AbuseIPDB, Scamalytics et ipdata. Chaque ligne renvoie à la page de la source pour vérifier."}},{"@type":"Question","name":"IP native, IP de diffusion : de quoi s’agit-il ?","acceptedAnswer":{"@type":"Answer","text":"Une IP native est utilisée dans le pays où elle est enregistrée. Une IP de diffusion est enregistrée dans un pays (souvent par un hébergeur) et annoncée depuis un autre. La plupart des bases de géolocalisation suivent l’emplacement réel, mais certains services se fient à l’enregistrement : une IP de diffusion peut vous faire paraître dans un autre pays. Nous comparons l’enregistrement du registre régional (RDAP) avec l’emplacement donné par la plupart des bases. Sans pays dans l’enregistrement (fréquent chez ARIN), nous prenons le pays du réseau propriétaire du bloc."}},{"@type":"Question","name":"Résidentielle ou datacenter : pourquoi c’est important ?","acceptedAnswer":{"@type":"Answer","text":"Les sites voient les adresses de datacenter comme des serveurs, VPN et proxies, pas des personnes. Streaming, billetterie, banques et formulaires d’inscription les bloquent ou demandent plus de vérifications. Les adresses résidentielles et mobiles ressemblent à des utilisateurs ordinaires ; les mobiles sont en plus partagées (CGNAT), donc rarement bloquées."}},{"@type":"Question","name":"Pourquoi les sources ne sont-elles pas d’accord ?","acceptedAnswer":{"@type":"Answer","text":"Chacune a ses propres données : certaines savent seulement quels réseaux appartiennent à des hébergeurs, d’autres exploitent des pots de miel ou collectent les signalements de fraude de leurs clients. Un serveur VPN peut être connu de l’une et pas encore de l’autre. D’où le décompte des sources d’accord plutôt que la confiance en une seule."}},{"@type":"Question","name":"Mon score est bas. Que faire ?","acceptedAnswer":{"@type":"Answer","text":"Si c’est votre connexion domestique : un signalement d’abus ou une liste noire signifie souvent qu’un appareil du réseau a été infecté ou utilisé comme proxy. Nettoyez-le, puis demandez la radiation (chaque liste renvoie à sa page). Si c’est un VPN ou un serveur, le score reflète surtout le type de réseau et ne changera pas : choisissez un fournisseur aux adresses résidentielles ou moins utilisées."}},{"@type":"Question","name":"Quelque chose est-il conservé ?","acceptedAnswer":{"@type":"Answer","text":"Les résultats sont mis en cache six heures par adresse pour ne pas interroger les sources gratuites à chaque visite. Rien d’autre n’est conservé, et la détection IPv4/IPv6 se fait dans votre navigateur."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.870c0cd71d.css">
+<link rel="stylesheet" href="/assets/app.b1de2a6558.css">
 </head>
 <body>
 <div class="app">
@@ -69,11 +69,6 @@
   </header>
 
   <main>
-    <div class="shared" id="sharedBar">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1a2.5 2.5 0 0 1-3.5-3.5l1-1"/></svg>
-      <span id="sharedT">&nbsp;</span>
-      <a class="btn sm pri" id="sharedMine" href="/fr/" data-i="shared_mine">Tester mon IP</a>
-    </div>
     <section class="hero card">
       <div class="hero-h">
         <h1>Qualité d’IP : votre IP est-elle propre ?</h1>
@@ -91,7 +86,7 @@
               <div class="g-in"><b id="gNum">–</b><span id="gGrade">&nbsp;</span></div>
             </div>
             <div class="verdict">
-              <p class="v-h" id="vHead" data-i="checking">Vérification…</p>
+              <div class="v-row"><p class="v-h" id="vHead" data-i="checking">Vérification…</p><button class="btn sm pri" id="shareBtn" type="button" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="share_btn">Partager</span></button></div>
               <p class="v-d" id="vText">&nbsp;</p>
               <p class="parts" id="parts">&nbsp;</p>
               <a class="ul" id="ckLink" hidden target="_blank" rel="noopener"><span data-i="ck_more">Lancer un bilan complet</span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
@@ -118,7 +113,7 @@
       <div class="bar">
         <div class="prog" id="prog"><i></i></div>
         <span class="prog-t" id="progTxt">&nbsp;</span>
-        <div class="acts"><button class="btn" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="share_btn">Partager</span></button><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">Revérifier</span></button></div>
+        <div class="acts"><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun">Revérifier</span></button></div>
       </div>
     </section>
 
@@ -148,7 +143,7 @@
 
 
 <script type="application/json" id="data">{"lang":"fr","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.fr.0266a3db88.js"></script>
-<script src="/assets/app.79759abef6.js"></script>
+<script src="/assets/l.fr.4d9e72f9fd.js"></script>
+<script src="/assets/app.ed7233c740.js"></script>
 </body>
 </html>
