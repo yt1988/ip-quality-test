@@ -413,6 +413,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   // the browser check: an address that scores clean can still be told apart by the browser (fingerprint, time zone),
   // so its link sits under a clean verdict for the visitor's own exit
   if (who) $("#whoLink").href = who + D.paths[LANG];
+  // the checkup runs this check with the others (the visitor's whole connection): under the verdict from the start,
+  // except inside the checkup itself
+  if (CHECK && !EMBED) { const a = $("#ckLink"); a.href = CHECK + D.paths[LANG]; a.hidden = false; }
   // the IPv6 test: under the exits when the address checked is IPv6, or when no check found an IPv6 exit
   if (v6) $("#v6Link").href = v6 + D.paths[LANG];
   // the unlock check tests the visitor's own route, so its link sits under the verdict only when the address checked is one of their exits
