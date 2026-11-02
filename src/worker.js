@@ -145,13 +145,14 @@ async function check(request, env, ctx) {
 async function shared(request, env, m) {
   const url = new URL(request.url), slug = m[1] || "", lang = I18N.BY_SLUG[slug];
   if (lang === undefined || !env.ASSETS) return null;
+  // a result code that can't be read is a dead link: 404, as any unknown path (the shell shows the site's page)
+  const P = await decode(m[2]), d = I18N.LANG[lang];
+  if (!P) return new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   const page = await env.ASSETS.fetch(new Request(new URL("/" + (slug ? slug + "/" : ""), url), { headers: request.headers }));
   if (!page.ok) return page;
-  const P = await decode(m[2]), d = I18N.LANG[lang];
   const res = new Response(page.body, page);
   res.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
   res.headers.delete("ETag");
-  if (!P) return res;
   const { res: results, bl } = unpackResults(P), r = assess(results, bl);
   const fill = (s, v) => { for (const k in v) s = s.split("{" + k + "}").join(v[k]); return s; };
   const title = fill(d.og_r_title, { g: r.grade, s: r.score, v: d["g_" + r.grade] }), desc = d["d_" + r.grade];

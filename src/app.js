@@ -28,7 +28,13 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   const CHECK = (() => { try { return new URL(document.querySelector('meta[name="check"]').content).origin; } catch (e) { return ""; } })();
   const EMBED = !SHARE_CODE && !!CHECK && parent !== window && new URLSearchParams(location.search).get("embed") === "checkup" &&
     (() => { try { return new URL(document.referrer).origin === CHECK; } catch (e) { return false; } })();
-  const post = msg => { if (EMBED) parent.postMessage({ ms: "checkup", v: 1, tool: "ipqs", ...msg }, CHECK); };
+  // once an error is out, no result follows (the checkup marks the tool unfinished and moves on)
+  let ERRED = false;
+  const post = msg => {
+    if (!EMBED || (msg.type === "result" && ERRED)) return;
+    if (msg.type === "error") ERRED = true;
+    parent.postMessage({ ms: "checkup", v: 1, tool: "ipqs", ...msg }, CHECK);
+  };
   if (EMBED) document.documentElement.setAttribute("data-embed", "");
 
   /* ---------- theme and language (synced across the 1ms.dog tools) ---------- */
@@ -172,9 +178,21 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       history.pushState(null, "", u);
     }
     reset(ip); got = 0; total = 0;
+    // the visitor's own address comes from the shell first (/_ms/me: Cloudflare's view of this connection, no third
+    // party), with its place and network shown at once; a page without the shell (404) lets the API take the
+    // connection's address as before
+    let ask = ip;
+    if (!ip) {
+      const me = await getJ("/_ms/me", 3000).catch(() => null);
+      if (ctl !== RUN) return;
+      if (me && me.ip && canon(me.ip) && isPublic(canon(me.ip))) { ask = canon(me.ip); showMe(me, ask); }
+    }
+    // a request that never answers (held by a blocker or a dead network) fails within seconds, not never
+    const slow = setTimeout(() => ctl.abort(), 15000);
     let res;
-    try { res = await fetch("/api/check" + (ip ? "?ip=" + encodeURIComponent(ip) : ""), { cache: "no-store", signal: ctl.signal }); }
+    try { res = await fetch("/api/check" + (ask ? "?ip=" + encodeURIComponent(ask) : ""), { cache: "no-store", signal: ctl.signal }); }
     catch (e) { if (ctl === RUN) fail("err_net"); return; }
+    finally { clearTimeout(slow); }
     if (!res.ok) {
       let j = {}; try { j = await res.json(); } catch (e) {}
       if (ctl === RUN) fail({ bad_ip: "err_bad_ip", private: "err_private", rate: "err_rate" }[j.error] || "err_net");
@@ -198,6 +216,16 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       }
     } catch (e) { if (ctl !== RUN) return; }
     if (ctl === RUN && !done) fail("err_net");
+  }
+
+  function showMe(me, ip) {
+    const fb = $$("#facts b");
+    fb[0].className = "ipv"; fb[0].innerHTML = ipHtml(ip, family(ip));
+    const cc = /^[A-Z]{2}$/.test(me.country || "") ? me.country : "";
+    const where = [me.city, cc && country(cc)].filter(Boolean).join(", ");
+    if (where) { fb[1].className = ""; fb[1].innerHTML = `${flag(cc)} ${esc(where)}`; }
+    if (me.asn || me.org) { fb[2].className = ""; fb[2].innerHTML = `${me.asn ? "AS" + me.asn + " " : ""}<span class="m">${esc(me.org || "")}</span>`; }
+    noteMine(ip, cc);
   }
 
   // Some sources limit Cloudflare's shared addresses: the page asks those from the visitor's own browser (on the
@@ -242,8 +270,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       blRow(m); got++; progress();
     } else if (m.t === "done") {
       // scored here, once the browser's own lookups are in too (same rules as the API: src/score.mjs)
+      // no source answering at all is a failed check, not a clean address
       const cur = CUR;
-      Promise.allSettled(PEND).then(() => { if (CUR === cur) finish({ ...m, ...assess(RES, BLR) }); });
+      Promise.allSettled(PEND).then(() => { if (CUR !== cur) return; if (RES.length) finish({ ...m, ...assess(RES, BLR) }); else fail("err_net"); });
     } else if (m.t === "error") fail("err_net");
   }
 
@@ -402,7 +431,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     () => getJ("https://ipv4-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })),
     () => getJ("https://ipv6-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })),
   ];
-  let EX = new Map(), exFinished = false, selfIp = null, exGen = 0;
+  let EX = new Map(), exFinished = false, selfIp = null, selfCc = null, exGen = 0;
   const egress = (document.querySelector('meta[name="egress"]') || {}).content || "";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
   // links to the other tools, each only when the shell names its host (<meta name="...">)
@@ -446,9 +475,17 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     });
     markExit(CUR ? CUR.ip : null); showLinks();
   }
-  function noteMine(ip) { selfIp = ip; if (!EX.has(ip)) EX.set(ip, { ip, cc: null, n: 1 }); if (exFinished) renderExits(); }
+  // the visitor's own address, with its country when the shell gave one (no lookup needed for it then)
+  function noteMine(ip, cc) {
+    if (ip !== selfIp) selfCc = null;
+    if (cc) selfCc = cc;
+    selfIp = ip;
+    const x = EX.get(ip);
+    if (!x) EX.set(ip, { ip, cc: selfCc, n: 1 }); else if (!x.cc) x.cc = selfCc;
+    if (exFinished) renderExits();
+  }
   async function findExits() {
-    const gen = ++exGen; exFinished = false; EX = new Map(); if (selfIp) EX.set(selfIp, { ip: selfIp, cc: null, n: 1 });
+    const gen = ++exGen; exFinished = false; EX = new Map(); if (selfIp) EX.set(selfIp, { ip: selfIp, cc: selfCc, n: 1 });
     await Promise.allSettled(PROBES.map(p => p().then(r => {
       const ip = canon(r.ip || "");
       if (!ip || !isPublic(ip) || gen !== exGen) return;
