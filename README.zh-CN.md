@@ -63,6 +63,8 @@ GET /api/check?ip=<地址>  任意公网 IPv4 或 IPv6 地址
 
 分享的结果在 `/r/<code>`（或 `/<语言>/r/<code>`）：code 是各来源的回答，压缩后用 base64url 编码，前面带格式版本号（`src/share.mjs`）。Worker 会把等级和分数写进这个页面的链接预览。分享弹窗本身是 1ms.dog 各工具共用的组件，原样复制自 [1ms-shell](https://github.com/yt1988/1ms-shell) 到 `public/assets/share/`，本页只负责在卡片上画出结果。
 
+[线路体检](https://check.1ms.dog)用 `?embed=checkup` 嵌入本页：shell 注入了体检的地址（`<meta name="check">`）、且嵌入方正是它时，页面立即检测当前 IP，只显示分数，并只向这个地址回传进度、高度和结果（附一个不含 IP 的 `/r/` 链接）。协议见 1ms-shell 的 `docs/checkup.md`。
+
 ## 自己部署
 
 ```bash

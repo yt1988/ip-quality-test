@@ -21,6 +21,15 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   const list = a => a.join(t("v_join"));
   const SHARE_M = SHARE_PATH.exec(location.pathname), SHARE_CODE = SHARE_M ? SHARE_M[2] : "";
   let SHARED = null;
+  // Embedded in the line check (check.1ms.dog, the shell's docs/checkup.md): ?embed=checkup, and only when the shell
+  // names the check's address (<meta name="check">) and the frame sits on it; otherwise the parameter is ignored. The
+  // page then checks the current address at once, shows only the score, and posts its progress, height and result to
+  // that address alone.
+  const CHECK = (() => { try { return new URL(document.querySelector('meta[name="check"]').content).origin; } catch (e) { return ""; } })();
+  const EMBED = !SHARE_CODE && !!CHECK && parent !== window && new URLSearchParams(location.search).get("embed") === "checkup" &&
+    (() => { try { return new URL(document.referrer).origin === CHECK; } catch (e) { return false; } })();
+  const post = msg => { if (EMBED) parent.postMessage({ ms: "checkup", v: 1, tool: "ipqs", ...msg }, CHECK); };
+  if (EMBED) document.documentElement.setAttribute("data-embed", "");
 
   /* ---------- theme and language (synced across the 1ms.dog tools) ---------- */
   const thBtn = $("#theme"), TH = ["system", "light", "dark"];
@@ -130,6 +139,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $("#progTxt").textContent = t("progress", { n: got, of: total });
     $("#gNum").textContent = `${got}/${total}`;
     groupCounts();
+    post({ type: "progress", done: got, total, text: $("#progTxt").textContent });
   }
   function reset(ip) {
     gauge.classList.add("busy"); gauge.dataset.g = ""; $("#gArc").style.strokeDashoffset = 100; $("#gSeg").innerHTML = "";
@@ -147,6 +157,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $("#vHead").textContent = t("err_h");
     const vt = $("#vText"); vt.textContent = t(key); vt.classList.add("err");
     $("#rerun").disabled = false; $("#prog").classList.add("end");
+    post({ type: "error", text: t(key) });
   }
 
   async function run(ip, push) {
@@ -337,6 +348,42 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").disabled = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
+    if (EMBED && !SHARED) postResult(SNAP);
+  }
+  // the result for the line check: the verdict as on the page, a few numbers, the notes that matter most, the facts
+  // its cross-tool rules read, and a link that replays it (without the address, city or network, as sharing defaults)
+  async function postResult(snap) {
+    const r = snap.r, s = r.summary, F = s.flags, hits = snap.bl.filter(b => b.listed === true).length;
+    const stats = [
+      s.cc && { label: t("r_loc"), value: country(s.cc) },
+      s.type && { label: t("fl_type"), value: typeName(s.type) },
+      s.dnsbl.checked && { label: t("fl_dnsbl"), value: `${hits}/${s.dnsbl.checked}` },
+      s.risk !== null && { label: t("fl_risk"), value: String(s.risk) },
+      (F.vpn.of || F.proxy.of) && { label: t("fl_anon"), value: F.vpn.yes || F.proxy.yes ? `${Math.max(F.vpn.yes, F.proxy.yes)}/${Math.max(F.vpn.of, F.proxy.of)}` : t("fs_clean") },
+    ].filter(Boolean).slice(0, 4);
+    const RANK = { bad: 0, warn: 1, good: 2 };
+    const noteText = n => {
+      const p = { ...n.p };
+      for (const k of ["reg", "cc"]) if (p[k]) p[k] = country(p[k]);
+      if (Array.isArray(p.list)) p.list = list(n.k === "n_geo_split" ? p.list.map(country) : p.list);
+      return t(n.k, p);
+    };
+    const findings = r.notes.filter(n => n.lv in RANK).sort((a, b) => RANK[a.lv] - RANK[b.lv]).slice(0, 4)
+      .map(n => ({ level: n.lv === "good" ? "ok" : n.lv, text: noteText(n) }));
+    const facts = { score: r.score, grade: r.grade };
+    if (s.cc) facts.country = s.cc;
+    if (s.type) facts.type = s.type;
+    facts.native = s.native;
+    if (F.vpn.of || F.proxy.of) facts.proxy = !!(F.vpn.yes || F.proxy.yes);
+    if (s.dnsbl.checked) facts.blacklists = hits;
+    const path = D.paths[LANG] + "r/" + await encode(pack({ ...snap, details: false }));
+    post({ type: "result", lang: LANG, path, grade: r.grade, score: r.score, headline: t("g_" + r.grade), stats, findings, facts });
+  }
+  // the frame's height follows the content
+  if (EMBED) {
+    const app = $(".app");
+    let lastH = 0;
+    new ResizeObserver(() => { const h = Math.ceil(app.getBoundingClientRect().height); if (h !== lastH) post({ type: "size", height: lastH = h }); }).observe(app);
   }
   $("#rerun").onclick = () => { findExits(); run(lastIp, false); };
 
@@ -412,7 +459,8 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     if (gen !== exGen) return;
     exFinished = true; renderExits(); applyMask();
   }
-  if (!SHARE_CODE) findExits();
+  // (the exits aren't shown in the line check: egress lists them there)
+  if (!SHARE_CODE && !EMBED) findExits();
 
   /* ---------- a shared result ---------- */
   // the answers in the link fill the rows and the findings as a check would; the address only when it was shared

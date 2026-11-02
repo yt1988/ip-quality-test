@@ -63,6 +63,8 @@ The answer is NDJSON: a `start` line listing the rows, one `src` line per source
 
 Shared results live at `/r/<code>` (or `/<lang>/r/<code>`): the code is the answers, deflated and base64url-encoded, behind a format number (`src/share.mjs`). The Worker puts the grade and score into that page's link preview. The share dialog itself is the one every 1ms.dog tool uses, copied verbatim from [1ms-shell](https://github.com/yt1988/1ms-shell) into `public/assets/share/`; this page only draws its result on the card.
 
+The [Connection Checkup](https://check.1ms.dog) frames the page at `?embed=checkup`: when the shell names the checkup (`<meta name="check">`) and the frame sits on it, the page checks the current address at once, shows only the score, and posts its progress, height and result (with a `/r/` link that leaves the address out) to that origin only. The protocol is in 1ms-shell's `docs/checkup.md`.
+
 ## Self-hosting
 
 ```bash
