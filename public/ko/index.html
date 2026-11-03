@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="십여 곳의 소스와 블랙리스트 8개, 점수 하나">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP 품질 테스트 · 1ms.dog","url":"https://ipqs.1ms.dog/ko/","image":"https://ipqs.1ms.dog/og/ko.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"IP 인텔리전스 십여 곳과 블랙리스트 8개로 IP 평판을 한 번에 확인하세요. 0–100 점수, 가정용·데이터센터 여부, 네이티브·브로드캐스트 IP, VPN·프록시·Tor 판정, 그리고 스트리밍·ChatGPT·CAPTCHA·가입에 미치는 영향까지. 무료.","inLanguage":"ko","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"점수는 어떻게 계산하나요?","acceptedAnswer":{"@type":"Answer","text":"모든 주소는 100점에서 시작해 소스의 결과에 따라 감점됩니다. 데이터센터 최대 20, 프록시 20, VPN 15, Tor 40, 악용 신고 10, 평균 사기 점수 최대 35, 메일 블랙리스트 하나당 6(최대 24). 표시는 동의한 소스의 비율로 계산하므로, 하나만 표시하면 일부만 감점됩니다. 등급: A 85 이상, B 70 이상, C 50 이상, D 30 이상, F 30 미만. 소스 표 아래에 내역이 나옵니다."}},{"@type":"Question","name":"어떤 소스를 쓰나요?","acceptedAnswer":{"@type":"Answer","text":"키 없이: ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, RDAP(지역 인터넷 레지스트리), ip.guide, Shodan InternetDB, Tor Project 출구 목록, Cloudflare(내 주소만). 사이트 운영자가 무료 API 키를 설정하면 IPQualityScore, AbuseIPDB, Scamalytics, ipdata가 추가됩니다. 각 행은 해당 소스의 페이지로 연결됩니다."}},{"@type":"Question","name":"네이티브 IP와 브로드캐스트 IP란?","acceptedAnswer":{"@type":"Answer","text":"네이티브 IP는 등록된 나라에서 쓰입니다. 브로드캐스트 IP는 한 나라에 등록되어(대개 호스팅 회사) 다른 나라에서 쓰입니다. 대부분의 위치 데이터베이스는 실제 위치를 따르지만 등록 국가로 판단하는 서비스도 있어, 브로드캐스트 IP는 다른 나라에 있는 것처럼 보일 수 있습니다. 여기서는 레지스트리 기록(RDAP)과 대부분의 데이터베이스가 가리키는 위치를 비교합니다. 기록에 국가가 없으면(ARIN에서 흔함) 그 블록을 가진 네트워크의 등록 국가를 씁니다."}},{"@type":"Question","name":"가정용과 데이터센터, 무엇이 다른가요?","acceptedAnswer":{"@type":"Answer","text":"사이트는 데이터센터 주소를 사람이 아닌 서버, VPN, 프록시로 봅니다. 스트리밍, 예매, 은행, 가입 양식은 이를 차단하거나 추가 인증을 요구합니다. 가정용과 모바일 주소는 일반 사용자처럼 보이고, 모바일은 여러 사람이 함께 쓰므로(CGNAT) 거의 차단되지 않습니다."}},{"@type":"Question","name":"소스마다 결과가 왜 다른가요?","acceptedAnswer":{"@type":"Answer","text":"데이터를 모으는 방식이 다릅니다. 호스팅 회사 네트워크만 아는 곳도, 허니팟이나 고객의 사기 신고를 모으는 곳도 있습니다. 어떤 VPN 서버를 이미 아는 곳과 아직 모르는 곳이 있으니, 하나만 믿지 않고 몇 곳이 동의하는지 셉니다."}},{"@type":"Question","name":"점수가 낮으면 어떻게 하나요?","acceptedAnswer":{"@type":"Answer","text":"집 회선이라면 악용 신고나 블랙리스트 등재는 네트워크의 기기가 감염되었거나 프록시로 쓰였다는 신호인 경우가 많습니다. 정리한 뒤 블랙리스트에 삭제를 요청하세요(각 목록에 링크가 있습니다). VPN이나 서버라면 점수는 주로 네트워크 유형 때문이라 바꿀 수 없습니다. 가정용이나 덜 쓰인 주소를 주는 업체를 고르세요."}},{"@type":"Question","name":"저장되는 것이 있나요?","acceptedAnswer":{"@type":"Answer","text":"무료 소스에 매번 묻지 않도록 결과를 주소별로 6시간 캐시합니다. 그 밖에는 아무것도 저장하지 않으며, IPv4/IPv6 확인은 브라우저에서 합니다."}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.b1de2a6558.css">
+<link rel="stylesheet" href="/assets/app.698da24f67.css">
 </head>
 <body>
 <div class="app">
@@ -144,6 +144,6 @@
 
 <script type="application/json" id="data">{"lang":"ko","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
 <script src="/assets/l.ko.e33cf41a95.js"></script>
-<script src="/assets/app.50e75a3c29.js"></script>
+<script src="/assets/app.ea3e6ba1a6.js"></script>
 </body>
 </html>

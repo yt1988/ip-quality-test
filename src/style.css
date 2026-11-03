@@ -9,7 +9,7 @@ h2 { font-size: 15px; font-weight: 700; }
 .btn svg { width: 15px; height: 15px; }
 .btn.pri { background: var(--ink); color: var(--ink-fg); border-color: transparent; font-weight: 600; min-width: 88px; }
 .btn:disabled { opacity: .5; cursor: default; }
-.mini { border: 1px solid var(--line); background: transparent; border-radius: 6px; font-size: 11px; padding: 1px 7px; cursor: pointer; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.mini { border: 1px solid var(--line); background: transparent; border-radius: 6px; font-size: 12px; padding: 1px 7px; cursor: pointer; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
 .flag { width: 18px; height: 13px; border-radius: 2px; box-shadow: 0 0 0 1px var(--line); object-fit: cover; flex: none; vertical-align: -1px; }
 .num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
 /* a placeholder the height of a line of text */
@@ -21,12 +21,14 @@ h2 { font-size: 15px; font-weight: 700; }
 .hero-h { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
 .hero h1 { font-size: clamp(20px, 2.6vw, 26px); line-height: 1.25; letter-spacing: -.015em; font-weight: 700; }
 .ask { display: flex; gap: 8px; flex: 1 1 360px; max-width: 520px; min-width: 0; }
-.ask input { flex: 1; width: 0; min-width: 0; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: 14px var(--f-num); outline: none; }
+.ask input { flex: 1; width: 0; min-width: 0; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: 16px var(--f-num); outline: none; }
+/* the hint is words, not an address: in the UI font, as the monospace one spaces CJK out */
+.ask input::placeholder { font-family: var(--f-ui); }
 .ask input:focus { border-color: var(--ink); }
 .ask input.bad { border-color: var(--bad); }
 .hero-b { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 28px; }
 .col { min-width: 0; display: flex; flex-direction: column; }
-.sec-h { display: flex; align-items: center; gap: 8px; height: 22px; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; }
+.sec-h { display: flex; align-items: center; gap: 8px; height: 22px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; }
 .col > .sec-h:first-child { margin-top: 0; }
 .sec-h .eg { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 12px; color: var(--muted); text-decoration: none; }
 .sec-h .eg:hover { color: var(--ink); }
@@ -88,7 +90,7 @@ h2 { font-size: 15px; font-weight: 700; }
    what it is good for, five cells with a verdict (the reason on hover). A deduction tints its cell and shows its points. */
 .fgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .fc { position: relative; display: flex; flex-direction: column; gap: 3px; min-height: 58px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
-.fc-l { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.fc-l { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .fc-v { font-size: 14px; font-weight: 600; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
 .fc-v .m { font-weight: 500; font-size: 12px; }
 .fc-v .skl { width: 70%; }
@@ -131,8 +133,8 @@ h2 { font-size: 15px; font-weight: 700; }
 .pcol { min-width: 0; }
 .pg { margin-bottom: 14px; }
 .pr.na .pa { color: var(--muted); }
-.pg h3 { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; height: 20px; display: flex; align-items: center; margin: 0; }
-.pg-n { margin-left: auto; font: 500 11.5px var(--f-num); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.pg h3 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; height: 20px; display: flex; align-items: center; margin: 0; }
+.pg-n { margin-left: auto; font: 500 12px var(--f-num); letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .pr { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 12fr) 34px 56px; align-items: center; gap: 8px; height: 34px; border-top: 1px solid var(--line); font-size: 13px; }
 .pn { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pn a { color: inherit; text-decoration: none; }
@@ -147,7 +149,7 @@ h2 { font-size: 15px; font-weight: 700; }
 /* a source that didn't answer: tinted, the reason on hover */
 .pr.fail { margin: 0 -8px; padding: 0 8px; border-radius: 6px; background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .pr.fail + .pr, .pr.fail { border-top-color: transparent; }
-.ft { display: inline-block; padding: 0 6px; border-radius: 5px; font-size: 11.5px; font-weight: 600; line-height: 20px; text-decoration: none; background: var(--soft); color: var(--muted); flex: none; }
+.ft { display: inline-block; padding: 0 6px; border-radius: 5px; font-size: 12px; font-weight: 600; line-height: 20px; text-decoration: none; background: var(--soft); color: var(--muted); flex: none; }
 .ft.bad { background: color-mix(in srgb, var(--t5) 14%, transparent); color: var(--t5); }
 .rk { font: 600 12px var(--f-num); }
 .rk.ok { color: var(--t1); } .rk.warn { color: var(--t3); } .rk.bad { color: var(--t5); }
@@ -197,6 +199,12 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 [data-embed] .g-in b { font-size: 28px; }
 [data-embed] .v-d { min-height: 0; }
 [data-embed] .bar { margin: 0; padding: 10px 0 2px; }
+/* on touch screens the small links and the hide button get a finger-sized target; they look the same */
+@media (pointer: coarse) {
+  .verdict .ul, .col > .ul, .sec-h .eg, .sec-h .mini { min-height: 32px; }
+  .sec-h { height: auto; min-height: 22px; }
+  .sec-h .mini { padding: 0 10px; }
+}
 @media (prefers-reduced-motion: reduce) { .g-fg, .skl, .pr.wait .pa, .fc.flash { animation: none !important; transition: none !important; } }
 @media (max-width: 860px) {
   .hero-b { grid-template-columns: minmax(0, 1fr); gap: 8px; }
@@ -209,7 +217,6 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
   .bar .acts { margin-left: 0; width: 100%; } .bar .acts .btn { flex: 1; }
   .probes { padding: 16px 16px 12px; }
   .ask { flex-basis: 100%; max-width: none; }
-  .ask input { font-size: 16px; }   /* iOS zooms into smaller fields */
   .gauge { width: 104px; height: 104px; }
   .g-in b { font-size: 30px; }
   .ugrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
