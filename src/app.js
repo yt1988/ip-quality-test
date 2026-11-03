@@ -16,8 +16,11 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask" };
-  const country = cc => { try { return new Intl.DisplayNames([LANG], { type: "region" }).of(cc); } catch (e) { return cc; } };
-  const flag = cc => /^[A-Z]{2}$/.test(cc || "") ? `<img class="flag" src="/flags/${cc.toLowerCase()}.svg" alt="" width="20" height="15">` : "";
+  // Taiwan is "中国台湾 / Taiwan, China" with the PRC flag (1ms-shell docs/tool-contract.md §5); every other region by its system name
+  const TW = { "zh-CN": "中国台湾", "zh-TW": "中國台灣", en: "Taiwan, China", ja: "中国台湾", ko: "중국 대만", es: "Taiwán, China", fr: "Taïwan, Chine", de: "Taiwan, China", pt: "Taiwan, China", ru: "Тайвань, Китай" };
+  const country = cc => { if (cc === "TW") return TW[LANG]; try { return new Intl.DisplayNames([LANG], { type: "region" }).of(cc); } catch (e) { return cc; } };
+  const flagCode = cc => cc === "TW" ? "cn" : cc.toLowerCase();
+  const flag = cc => /^[A-Z]{2}$/.test(cc || "") ? `<img class="flag" src="/flags/${flagCode(cc)}.svg" alt="" width="20" height="15">` : "";
   const list = a => a.join(t("v_join"));
   const SHARE_M = SHARE_PATH.exec(location.pathname), SHARE_CODE = SHARE_M ? SHARE_M[2] : "";
   let SHARED = null;
@@ -574,7 +577,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     // title, then the country (and, when asked, the city, address and network)
     font(700, 50); text(fit(t("card_title"), W - 2 * P), P, kit.top + 44, C.fg);
     let my = kit.top + 94;
-    const fl = s.cc ? await loadImg(`/flags/${s.cc.toLowerCase()}.svg`) : null;
+    const fl = s.cc ? await loadImg(`/flags/${flagCode(s.cc)}.svg`) : null;
     font(500, 28);
     const where = [withLoc && s.city, s.cc && country(s.cc)].filter(Boolean).join(", ") + "  ·  IPv" + SNAP.v;
     if (fl) { g.drawImage(fl, P, my - 23, 36, 27); text(fit(where, W - 2 * P - 50), P + 50, my, C.mu); } else text(fit(where, W - 2 * P), P, my, C.mu);
