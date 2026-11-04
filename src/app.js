@@ -6,6 +6,7 @@ import { family, canon, isPublic } from "./ip.mjs";
 import { assess } from "./score.mjs";
 import { ccOfName, SOURCES } from "./sources.mjs";
 import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
+import { readDns, readConn } from "./conn.mjs";
 
 (function () {
   "use strict";
@@ -161,7 +162,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
-    cfShow();
+    cnShow(); cfShow();
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -379,7 +380,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
 
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
-    showLinks(); cfShow();
+    showLinks(); cnShow(); cfShow();
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").hidden = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
@@ -538,6 +539,63 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
     finish({ ...assess(res, bl), at: P.t * 60000, cached: false });
     if (CF_OF[P.c]) { SNAP.cf = CF_OF[P.c]; cfShow(); }
     $("#rerun").hidden = true;
+  }
+
+  /* ---------- the connection, measured on the 1ms.dog server: the DNS resolver and the TCP handshake ---------- */
+  // What the sources above can't see, because it isn't in the address: which DNS resolvers look names up for the
+  // visitor (dns's authoritative server on l.1ms.dog records who asks for a random name, its port 2053 answers with
+  // them), and how the visitor's TCP connection looks on arrival (who's probe: MSS and TTL). Both are read against the
+  // exit the check scored (src/conn.mjs). Only for the visitor's own check; started once at load (each lookup is a new
+  // random name), drawn when the check is in. The servers keep nothing beyond two minutes in memory.
+  const CN_ON = !EMBED && !SHARE_CODE;
+  let cnDns = null, cnTcp = null;
+  if (CN_ON) {
+    const tok = Array.from(crypto.getRandomValues(new Uint8Array(20)), b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+    const look = tag => getJ(`https://${tok}-${tag}.l.1ms.dog:2053/`, 5000).catch(() => null);
+    // three names: a resolver pool may send each through another of its addresses
+    cnDns = Promise.all(["a", "b", "c"].map(look)).then(() => getJ(`https://api.l.1ms.dog:2053/t/${tok}?wait=1500`, 5000))
+      .then(j => Array.isArray(j && j.hits) ? j.hits : null).catch(() => null);
+    cnTcp = getJ("https://probe.1ms.dog/conn", 5000).catch(() => null);
+  }
+  // the dns server places resolvers with DB-IP, whose licence asks for this line wherever its data shows
+  const DBIP = "IP geolocation by DB-IP (https://db-ip.com), CC BY 4.0";
+  const DNS_V = { own: "cn_d_own", same: "cn_d_same", public: "cn_d_pub", leak: "cn_d_leak", unknown: "cn_d_unknown" };
+  // Chinese and Japanese run sentences together and bracket full-width
+  const CJK = /^(zh|ja)/.test(LANG), gap = CJK ? "" : " ";
+  // a group's networks (two names at most) and its country
+  const where = r => {
+    const o = (r.orgs || [r.org]).filter(Boolean), org = o.slice(0, 2).join(t("v_join")) + (o.length > 2 ? "…" : "");
+    return (org && r.cc ? org + (CJK ? "（" + country(r.cc) + "）" : " (" + country(r.cc) + ")") : org || (r.cc && country(r.cc))) || r.ip;
+  };
+  async function cnShow() {
+    const box = $("#cnt"), snap = SNAP;
+    // a shared result, another address, or no reading from either server: no card
+    if (!CN_ON || !snap || SHARED || lastIp) { box.hidden = true; return; }
+    const [hits, tcp] = await Promise.all([cnDns, cnTcp]);
+    if (snap !== SNAP) return;
+    const s = snap.r.summary, exit = { ip: snap.ip, asn: s.asn, cc: s.cc, type: s.type, ips: [...EX.keys()] };
+    const d = hits && readDns(hits, exit), c = readConn(tcp, exit, navigator.userAgent);
+    box.hidden = !(hits || c);
+    if (box.hidden) return;
+    const off = `<span class="m">${esc(t("cn_none"))}</span>`;
+    if (!d) finding("dns", "none", off, t(hits ? "cn_d_none" : "cn_d_down"));
+    else {
+      // the worst network on the cell (and how many others there are); each network, its addresses and why, on hover
+      const g = d.groups, m = g[0], v = m.ecsOff && m.kind !== "leak" ? "cn_d_leak" : DNS_V[m.kind];
+      const tail = m.kind === "public" ? esc(m.pub) : `${flag(m.cc)} ${esc(m.org || m.ip)}`;
+      const more = g.length > 1 ? ` <span class="m">+${g.length - 1}</span>` : "";
+      const ips = r => r.ips.slice(0, 3).join(", ") + (r.ips.length > 3 ? ` … (${r.ips.length})` : "");
+      const line = r => (ips(r) + " · " + t("cn_dw_" + r.kind, { at: where(r), pub: r.pub, exit: s.cc ? country(s.cc) : "" }) + (r.ecsOff ? gap + t("cn_dw_ecs", { ecs: r.ecs }) : "")).replace(/） /g, "）");
+      finding("dns", d.lv, `${esc(t(v))} <span class="m">${tail}</span>${more}`, [...g.map(line), DBIP].join("\n"));
+    }
+    if (!c) finding("tcp", "none", off, t("cn_t_down"));
+    else {
+      const p = { mss: c.mss, mtu: c.mtu, ttl: c.init, ip: c.ip };
+      const why = [t("cn_tw_" + c.kind, p)];
+      if (c.kind === "proxy" && c.mtu < 1480) why.push(t("cn_tw_tunnel", p));
+      if (c.other) why.push(t("cn_tw_other", p));
+      finding("tcp", c.lv, `${esc(t("cn_t_" + c.kind))} <span class="m">MSS ${c.mss}</span>`, why.join("\n"));
+    }
   }
 
   /* ---------- Cloudflare's human check, measured: Turnstile on this exit and browser ---------- */
