@@ -169,7 +169,10 @@ export default {
   cn_tw_pppoe: "Um MSS de {mss} (MTU {mtu}) fica um pouco abaixo de uma linha comum: o valor usual da banda larga PPPoE, não um túnel.",
   cn_tw_tunnel: "O MSS é só {mss} (MTU {mtu}), menor que o de uma linha comum. O espaço que falta costuma ir para o cabeçalho de uma VPN ou túnel (o WireGuard costuma usar MTU 1420; OpenVPN e IPsec, cerca de 1400). Sites que detectam VPN por características TCP conseguem perceber.",
   cn_tw_small: "O MSS é só {mss} (MTU {mtu}), menor que o de uma linha comum. Redes móveis muitas vezes são pequenas assim, então não precisa ser uma VPN.",
-  cn_tw_proxy: "O TTL inicial da conexão é {ttl}, que não combina com o sistema do seu navegador (Windows usa 128; macOS, Linux e celulares, 64). Muito provavelmente um servidor proxy abriu esta conexão por você, e os sites conseguem perceber que você usa proxy.",
+  cn_tw_proxy: "As características TCP desta conexão parecem de {sys}, mas o navegador diz que roda em {ua}. Muito provavelmente um servidor proxy abriu a conexão por você, e os sites conseguem perceber que você usa proxy.",
+  cn_t_narrow: "MTU um pouco pequeno",
+  cn_tw_narrow: "Um MSS de {mss} (MTU {mtu}) fica abaixo de uma linha comum, mas deixa mais espaço que uma VPN (em geral 1420 ou menos): não é sinal de túnel. Alguns provedores e redes móveis usam esse valor.",
+  cn_sys_other: "outro sistema",
   cn_tw_other: "Medido por outra saída, {ip}: o seu proxy escolhe a rota pelo destino e chegou ao servidor deste site por ela.",
   docs: [
     ["Como a nota é calculada?", "Todo endereço começa com 100 e perde pontos pelo que as fontes encontram: até 20 por uma rede de data center e até 5 por uma rede de empresa; 20 se for marcado como proxy, 15 como VPN e 40 como Tor; 10 por denúncias de abuso; até 35 pela pontuação de fraude média; e 6 por lista negra de e-mail, no máximo 24. As marcações contam conforme quantas fontes concordam, então uma fonte sozinha tira só parte dos pontos.\nA pontuação de fraude mostra o quanto os bancos de dados de risco acham um IP suspeito, de 0 a 100. Quanto maior, mais suspeito.\nNotas: A a partir de 85, B a partir de 70, C a partir de 50, D a partir de 30 e F abaixo de 30. Abaixo do resultado aparece quantos pontos cada item tirou."],

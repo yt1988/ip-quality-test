@@ -544,7 +544,7 @@ import { readDns, readConn } from "./conn.mjs";
   /* ---------- the connection, measured on the 1ms.dog server: the DNS resolver and the TCP handshake ---------- */
   // What the sources above can't see, because it isn't in the address: which DNS resolvers look names up for the
   // visitor (dns's authoritative server on l.1ms.dog records who asks for a random name, its port 2053 answers with
-  // them), and how the visitor's TCP connection looks on arrival (who's probe: MSS and TTL). Both are read against the
+  // them), and how the visitor's TCP connection looks on arrival (who's probe /fp: MSS, MTU and the system it came from). Both are read against the
   // exit the check scored (src/conn.mjs). Only for the visitor's own check; started once at load (each lookup is a new
   // random name), drawn when the check is in. The servers keep nothing beyond two minutes in memory.
   const CN_ON = !EMBED && !SHARE_CODE;
@@ -555,10 +555,11 @@ import { readDns, readConn } from "./conn.mjs";
     // three names: a resolver pool may send each through another of its addresses
     cnDns = Promise.all(["a", "b", "c"].map(look)).then(() => getJ(`https://api.l.1ms.dog:2053/t/${tok}?wait=1500`, 5000))
       .then(j => Array.isArray(j && j.hits) ? j.hits : null).catch(() => null);
-    cnTcp = getJ("https://probe.1ms.dog/conn", 5000).catch(() => null);
+    cnTcp = getJ("https://probe.1ms.dog/fp", 5000).catch(() => null);
   }
   // the dns server places resolvers with DB-IP, whose licence asks for this line wherever its data shows
   const DBIP = "IP geolocation by DB-IP (https://db-ip.com), CC BY 4.0";
+  const SYS = { windows: "Windows", apple: "macOS / iOS", linux: "Linux / Android" };
   const DNS_V = { own: "cn_d_own", same: "cn_d_same", public: "cn_d_pub", leak: "cn_d_leak", unknown: "cn_d_unknown" };
   // Chinese and Japanese run sentences together and bracket full-width
   const CJK = /^(zh|ja)/.test(LANG), gap = CJK ? "" : " ";
@@ -590,7 +591,7 @@ import { readDns, readConn } from "./conn.mjs";
     }
     if (!c) finding("tcp", "none", off, t("cn_t_down"));
     else {
-      const p = { mss: c.mss, mtu: c.mtu, ttl: c.init, ip: c.ip };
+      const p = { mss: c.mss, mtu: c.mtu, ip: c.ip, sys: SYS[c.os] || t("cn_sys_other"), ua: SYS[c.ua] };
       const why = [t("cn_tw_" + c.kind, p)];
       if (c.kind === "proxy" && c.mtu < 1480) why.push(t("cn_tw_tunnel", p));
       if (c.other) why.push(t("cn_tw_other", p));

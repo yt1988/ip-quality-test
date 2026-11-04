@@ -169,7 +169,10 @@ export default {
   cn_tw_pppoe: "Eine MSS von {mss} (MTU {mtu}) liegt etwas unter einer normalen Leitung: der übliche Wert eines PPPoE-Anschlusses, kein Tunnel.",
   cn_tw_tunnel: "Die MSS ist nur {mss} (MTU {mtu}), weniger als bei einer normalen Leitung. Der fehlende Platz geht meist an den Header eines VPN oder Tunnels (WireGuard nutzt oft MTU 1420, OpenVPN und IPsec um 1400). Seiten, die VPNs an TCP-Merkmalen erkennen, sehen das.",
   cn_tw_small: "Die MSS ist nur {mss} (MTU {mtu}), weniger als bei einer normalen Leitung. Mobilfunknetze sind oft so klein, es muss also kein VPN sein.",
-  cn_tw_proxy: "Die Anfangs-TTL der Verbindung ist {ttl} und passt nicht zum System deines Browsers (Windows nutzt 128, macOS, Linux und Handys 64). Wahrscheinlich hat ein Proxyserver diese Verbindung für dich aufgebaut, und Seiten erkennen, dass du einen Proxy nutzt.",
+  cn_tw_proxy: "Die TCP-Merkmale dieser Verbindung sehen nach {sys} aus, aber der Browser sagt, er läuft unter {ua}. Wahrscheinlich hat ein Proxyserver die Verbindung für dich aufgebaut, und Seiten erkennen, dass du einen Proxy nutzt.",
+  cn_t_narrow: "Etwas kleine MTU",
+  cn_tw_narrow: "Eine MSS von {mss} (MTU {mtu}) liegt unter einer normalen Leitung, lässt aber mehr Platz als ein VPN (meist 1420 oder weniger): kein Hinweis auf einen Tunnel. Manche Provider und Mobilfunknetze nutzen diesen Wert.",
+  cn_sys_other: "ein anderes System",
   cn_tw_other: "Über einen anderen Ausgang gemessen, {ip}: Dein Proxy wählt den Weg nach Ziel und hat den Server dieser Seite darüber erreicht.",
   docs: [
     ["Wie wird der Score berechnet?", "Jede Adresse startet bei 100 und verliert Punkte für das, was die Quellen finden: bis zu 20 für ein Rechenzentrumsnetz und bis zu 5 für ein Firmennetz; 20 für eine Proxy-Markierung, 15 für VPN und 40 für Tor; 10 für Missbrauchsmeldungen; bis zu 35 für den durchschnittlichen Fraud-Score; und 6 pro E-Mail-Blockliste, höchstens 24. Markierungen zählen danach, wie viele Quellen übereinstimmen – eine einzelne Quelle zieht nur einen Teil der Punkte ab.\nDer Fraud-Score gibt an, wie verdächtig Risikodatenbanken eine IP einstufen, von 0 bis 100. Je höher, desto verdächtiger.\nNoten: A ab 85, B ab 70, C ab 50, D ab 30, F unter 30. Unter dem Ergebnis siehst du, wofür wie viele Punkte abgezogen wurden."],

@@ -169,7 +169,10 @@ export default {
   cn_tw_pppoe: "Un MSS de {mss} (MTU {mtu}) es algo menor que el de una línea normal: el valor habitual de la banda ancha PPPoE, no un túnel.",
   cn_tw_tunnel: "El MSS es solo {mss} (MTU {mtu}), menor que el de una línea normal. El espacio que falta suele ocuparlo la cabecera de una VPN o un túnel (WireGuard suele usar MTU 1420; OpenVPN e IPsec, alrededor de 1400). Los sitios que detectan VPN por rasgos TCP pueden notarlo.",
   cn_tw_small: "El MSS es solo {mss} (MTU {mtu}), menor que el de una línea normal. Las redes móviles suelen ser así de pequeñas, así que no tiene por qué ser una VPN.",
-  cn_tw_proxy: "El TTL inicial de la conexión es {ttl}, que no encaja con el sistema de tu navegador (Windows usa 128; macOS, Linux y los móviles, 64). Lo más probable es que un servidor proxy abriera esta conexión por ti, y los sitios pueden notar que usas un proxy.",
+  cn_tw_proxy: "Los rasgos TCP de esta conexión parecen de {sys}, pero el navegador dice que funciona en {ua}. Lo más probable es que un servidor proxy abriera la conexión por ti, y los sitios pueden notar que usas un proxy.",
+  cn_t_narrow: "MTU algo pequeño",
+  cn_tw_narrow: "Un MSS de {mss} (MTU {mtu}) es menor que el de una línea normal, pero deja más espacio que una VPN (normalmente 1420 o menos): no es señal de túnel. Algunos proveedores y redes móviles usan este valor.",
+  cn_sys_other: "otro sistema",
   cn_tw_other: "Medido a través de otra salida, {ip}: tu proxy enruta según el destino y llegó al servidor de este sitio por ella.",
   docs: [
     ["¿Cómo se calcula la puntuación?", "Cada dirección empieza con 100 puntos y pierde puntos según lo que encuentran las fuentes: hasta 20 por una red de centro de datos y hasta 5 por una red de empresa; 20 si la marcan como proxy, 15 como VPN y 40 como Tor; 10 por reportes de abuso; hasta 35 por la puntuación de fraude media; y 6 por cada lista negra de correo, con un máximo de 24. Las marcas cuentan según cuántas fuentes coinciden, así que una sola fuente solo resta parte de los puntos.\nLa puntuación de fraude indica qué tan sospechosa consideran una IP las bases de datos de riesgo, de 0 a 100. Cuanto más alta, más sospechosa.\nNiveles: A desde 85, B desde 70, C desde 50, D desde 30 y F por debajo de 30. Debajo del resultado se muestra cuántos puntos restó cada cosa."],

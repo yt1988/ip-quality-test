@@ -86,7 +86,7 @@ npx wrangler login
 npx wrangler deploy
 ```
 
-只有一个 Worker：页面是静态资源（免费、不计请求数），`src/worker.js` 负责 `/api/check`。`wrangler.toml` 关闭了 `*.workers.dev` 和预览地址；在 **Workers & Pages → ipqs → Settings → Domains & Routes** 绑定自己的域名，或者临时设置 `workers_dev = true` 试用。用 `npx wrangler secret put IPQS_KEY` 等命令添加密钥。Cloudflare 人机验证实测（访客点按钮才运行的 Turnstile 小组件）要设置 `TURNSTILE_SITEKEY` 和 `TURNSTILE_SECRET` 后才会出现：在控制台的 **Turnstile** 里建一个托管模式的小组件。「你的连接」两格（DNS 解析器、TCP 握手）由浏览器直接读 1ms.dog 自己的服务器：`l.1ms.dog` 的权威 DNS（github.com/yt1988/dns-test 的 `server/dns`）和 who 的探针 `probe.1ms.dog/conn`；读不到时这两格不显示。
+只有一个 Worker：页面是静态资源（免费、不计请求数），`src/worker.js` 负责 `/api/check`。`wrangler.toml` 关闭了 `*.workers.dev` 和预览地址；在 **Workers & Pages → ipqs → Settings → Domains & Routes** 绑定自己的域名，或者临时设置 `workers_dev = true` 试用。用 `npx wrangler secret put IPQS_KEY` 等命令添加密钥。Cloudflare 人机验证实测（访客点按钮才运行的 Turnstile 小组件）要设置 `TURNSTILE_SITEKEY` 和 `TURNSTILE_SECRET` 后才会出现：在控制台的 **Turnstile** 里建一个托管模式的小组件。「你的连接」两格（DNS 解析器、TCP 握手）由浏览器直接读 1ms.dog 自己的服务器：`l.1ms.dog` 的权威 DNS（github.com/yt1988/dns-test 的 `server/dns`）和 who 的探针 `probe.1ms.dog/fp`；读不到时这两格不显示。
 
 要让 canonical 标签和站点地图用你自己的域名，用 `SITE_URL` 重新构建：
 

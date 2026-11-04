@@ -63,27 +63,30 @@ export function readDns(hits, exit) {
   return { lv, rs, groups: [...gs.values()] };
 }
 
-// The usual initial TTLs: 64 (Linux, macOS, iOS, Android), 128 (Windows), 255 (some routers and BSDs)
-const initTtl = ttl => ttl > 128 ? 255 : ttl > 64 ? 128 : ttl > 32 ? 64 : 32;
-const uaOs = ua => /Windows/.test(ua) ? "win" : /Mac OS X|iPhone|iPad|Android|Linux|CrOS/.test(ua) ? "nix" : "";
+// The browser's own system, in the probe's words (who reads the system from the SYN: windows, apple, linux, unix, other)
+const uaOs = ua => /Windows/.test(ua) ? "windows" : /Mac OS X|iPhone|iPad/.test(ua) ? "apple" : /Android|Linux|CrOS/.test(ua) ? "linux" : "";
+// without the probe's system, the initial TTL only tells Windows (128) from the rest (64)
+const ttlOs = init => init === 128 ? "windows" : init === 64 ? "notwin" : "";
 
-// c: the probe's reading of this connection ({ip, mss, ttl, window}, maybe initial_ttl); exit as above (and its type);
-// ua: the browser's user agent. → null when there is no reading, else
-// { lv, kind, mss, mtu, ttl, init, other, ip }, kind:
+// fp: who's probe.1ms.dog/fp ({ip, tcp: {mss, mtu, ttl, initial_ttl, os, ...}}; no tcp when the SYN wasn't read);
+// exit as above (and its type); ua: the browser's user agent. → null when there is no reading, else
+// { lv, kind, mss, mtu, os, ua, other, ip }. The lines match who's connection check (MTU 1420 or less is a tunnel
+// sign; a TCP system that isn't the browser's is a proxy). kind:
 //   plain   a full-size path (MTU 1500 or more): nothing in the way
-//   pppoe   1480–1499: dial-up broadband (PPPoE takes 8 bytes), not a tunnel
-//   tunnel  smaller: the room a VPN or tunnel header takes (WireGuard's MTU 1420, OpenVPN and IPsec around 1400)
+//   pppoe   1480–1499: PPPoE broadband (it takes 8 bytes), not a tunnel
+//   narrow  1421–1479: smaller than usual, but more room than a VPN leaves (some ISPs and mobile networks)
+//   tunnel  1420 or less: the room a VPN or tunnel header takes (WireGuard's MTU 1420, OpenVPN and IPsec around 1400)
 //   small   as tunnel, on a mobile network, whose own paths are often that small too
-//   proxy   the TTL says another system opened the connection than the browser runs on: a proxy server opens it for
-//           the visitor (a VPN keeps the visitor's own packets, so their TTL)
+//   proxy   the connection came from another system than the browser runs on: a proxy server opened it for the
+//           visitor (a VPN carries the visitor's own packets, so their system)
 // other: the probe was reached through another exit than the one checked (a proxy that routes by destination).
-export function readConn(c, exit, ua) {
-  if (!c || !family(c.ip) || !(c.mss > 0)) return null;
-  const ip = canon(c.ip), mtu = c.mss + (family(ip) === 6 ? 60 : 40);
-  const ttl = c.ttl > 0 ? c.ttl : 0, init = c.initial_ttl > 0 ? c.initial_ttl : ttl ? initTtl(ttl) : 0;
-  const os = uaOs(ua || ""), stack = init === 128 ? "win" : init === 64 ? "nix" : "";
-  const proxy = !!(os && stack && os !== stack);
-  const kind = proxy ? "proxy" : mtu >= 1500 ? "plain" : mtu >= 1480 ? "pppoe" : exit.type === "mobile" ? "small" : "tunnel";
+export function readConn(fp, exit, ua) {
+  const c = fp && fp.tcp;
+  if (!c || !family(fp.ip) || !(c.mss > 0)) return null;
+  const ip = canon(fp.ip), mtu = c.mtu > 0 ? c.mtu : c.mss + (family(ip) === 6 ? 60 : 40);
+  const os = /^(windows|apple|linux)$/.test(c.os) ? c.os : ttlOs(c.initial_ttl), mine = uaOs(ua || "");
+  const proxy = !!(os && mine && (os === "notwin" ? mine === "windows" : os !== mine));
+  const kind = proxy ? "proxy" : mtu >= 1500 ? "plain" : mtu >= 1480 ? "pppoe" : mtu > 1420 ? "narrow" : exit.type === "mobile" ? "small" : "tunnel";
   const lv = kind === "proxy" || kind === "tunnel" ? "warn" : kind === "small" ? "info" : "ok";
-  return { lv, kind, mss: c.mss, mtu, ttl, init, other: !!(exit.ip && ip !== canon(exit.ip)), ip };
+  return { lv, kind, mss: c.mss, mtu, os: os === "notwin" ? "" : os, ua: mine, other: !!(exit.ip && ip !== canon(exit.ip)), ip };
 }

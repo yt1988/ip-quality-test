@@ -169,7 +169,10 @@ export default {
   cn_tw_pppoe: "MSS {mss} (MTU {mtu}) is a little below an ordinary line's: the usual value for PPPoE broadband, not a tunnel.",
   cn_tw_tunnel: "MSS is only {mss} (MTU {mtu}), less than an ordinary line's. The missing room usually goes to a VPN or tunnel header (WireGuard often uses MTU 1420, OpenVPN and IPsec around 1400). Sites that read TCP traits to spot VPNs can tell.",
   cn_tw_small: "MSS is only {mss} (MTU {mtu}), less than an ordinary line's. Mobile networks are often this small, so it needn't be a VPN.",
-  cn_tw_proxy: "The connection's initial TTL is {ttl}, which doesn't fit your browser's system (Windows uses 128; macOS, Linux and phones use 64). A proxy server most likely opened this connection for you, and sites can tell you use a proxy.",
+  cn_tw_proxy: "This connection's TCP traits look like {sys}, but the browser says it runs on {ua}. A proxy server most likely opened the connection for you, and sites can tell you use a proxy.",
+  cn_t_narrow: "Slightly small MTU",
+  cn_tw_narrow: "MSS {mss} (MTU {mtu}) is below an ordinary line's, but leaves more room than a VPN (usually 1420 or less): not a tunnel sign. Some ISPs and mobile networks use this value.",
+  cn_sys_other: "another system",
   cn_tw_other: "Measured through another exit, {ip}: your proxy routes by destination and reached this site's server that way.",
   docs: [
     ["How is the score calculated?", "Every address starts at 100, and points come off for what the sources find: up to 20 for a data center network and up to 5 for a business network; 20 for a proxy flag, 15 for VPN and 40 for Tor; 10 for abuse reports; up to 35 for the average fraud score; and 6 for each mail blocklist, at most 24. Flags count by how many sources agree, so a single source only takes off part of the points.\nThe fraud score is how suspicious risk databases rate an IP, from 0 to 100. Higher means more suspicious.\nGrades: A is 85 or more, B 70 or more, C 50 or more, D 30 or more, and F below 30. The list under the verdict shows where each point went."],
