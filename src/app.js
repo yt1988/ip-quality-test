@@ -550,13 +550,26 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
   if (!EMBED && !SHARE_CODE) getJ("/api/turnstile", 4000).then(j => { if (j && j.sitekey) { CFK = j.sitekey; cfShow(); } }).catch(() => {});
   const CF_LV = { pass: "ok", click: "warn", fail: "bad" };
   // state: idle | run | ask | err | pass | click | fail
+  // the card only grows while a test runs (the tallest state it has shown sets its height), so moving from one state
+  // to the next never makes the page below it jump up and back down
+  const cfBox = $("#cfc");
+  const cfHold = () => { const h = cfBox.offsetHeight; if (h > (cfBox._h || 0)) { cfBox._h = h; cfBox.style.minHeight = h + "px"; } };
+  // held before each change (so the next state starts at least this tall) and as the widget grows inside it
+  if (window.ResizeObserver) new ResizeObserver(cfHold).observe(cfBox);
+  const cfUnhold = () => { cfBox._h = 0; cfBox.style.minHeight = ""; };
   function cfCard(state, lv, v, d, x) {
-    const c = $("#cfc"); c.dataset.s = state; c.className = "cfc st-" + lv;
+    if (state !== "idle") cfHold();
+    const c = cfBox; c.dataset.s = state; c.className = "cfc st-" + lv;
     c.querySelector(".st").textContent = ICON[lv];
     $("#cfV").textContent = v; $("#cfD").textContent = d;
     const xe = $("#cfX"); xe.hidden = !x; xe.innerHTML = x || "";
   }
-  function cfGo(label) { const b = $("#cfGo"); b.hidden = !label; if (label) { b.textContent = t(label); b.disabled = false; b.classList.toggle("pri", label === "cf_go"); } }
+  // the button stays put through the test: busy, it shows a spinner and waits
+  function cfGo(label, busy) {
+    const b = $("#cfGo"); b.hidden = !label; if (!label) return;
+    b.disabled = !!busy; b.classList.toggle("pri", label === "cf_go" && !busy);
+    b.innerHTML = (busy ? '<i class="spin"></i>' : "") + esc(t(label));
+  }
   // what the answer says next to the guess: the address's reputation, or the browser
   function cfRead(res) {
     const guess = SNAP.r.uses && SNAP.r.uses.captcha ? SNAP.r.uses.captcha.lv : "good";
@@ -570,7 +583,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
     // a shared result shows the sender's answer when it holds one; a check of another address has nothing to test
     const can = !!(CFK && SNAP && !SHARED && !lastIp);
     box.hidden = !(res || can);
-    if (box.hidden) { $("#cfW").textContent = ""; return; }
+    if (box.hidden) { $("#cfW").textContent = ""; cfUnhold(); return; }
     if (res) cfCard(res, CF_LV[res], t("cf_v_" + res), t("cf_" + res), cfRead(res));
     else cfCard("idle", "info", t("cf_q"), t("cf_idle"), esc(t("cf_priv")));
     cfGo(can ? (res ? "cf_again" : "cf_go") : "");
@@ -583,7 +596,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
   });
   $("#cfGo").onclick = async () => {
     const snap = SNAP; if (!CFK || !snap) return;
-    cfCard("run", "info", t("cf_wait"), t("cf_wait_d"), ""); cfGo("");
+    cfCard("run", "info", t("cf_wait"), t("cf_wait_d"), ""); cfGo("cf_busy", true);
     let ts = null, asked = false, over = false;
     function end(v) {
       if (over) return; over = true;
@@ -597,9 +610,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
     cfId = ts.render("#cfW", {
       sitekey: CFK, action: "ipqs", theme: "auto", appearance: "interaction-only", retry: "never",
       language: LANG === "pt" ? "pt-br" : LANG.toLowerCase(),
-      "before-interactive-callback": () => { asked = true; cfCard("ask", "warn", t("cf_ask_v"), t("cf_ask"), ""); },
+      "before-interactive-callback": () => { asked = true; cfCard("ask", "warn", t("cf_ask_v"), "", ""); cfGo("cf_wait_tick", true); },
       callback: async token => {
-        cfCard("run", "info", t("cf_wait"), t("cf_wait_d"), "");
+        cfGo("cf_busy", true);
         const j = await fetch("/api/turnstile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }), cache: "no-store" })
           .then(r => r.ok ? r.json() : null).catch(() => null);
         end(!j ? null : j.success ? (asked ? "click" : "pass") : "fail");
