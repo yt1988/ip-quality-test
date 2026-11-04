@@ -58,6 +58,8 @@ const fp = (ip, tcp) => ({ ip, proto: "HTTP/2", tcp });
 test("readConn: MTU sorts plain, PPPoE, narrow and tunnel paths, on the lines who's check uses", () => {
   assert.equal(readConn(fp("45.76.1.2", { mss: 1460, mtu: 1500, os: "apple" }), jp, MAC).kind, "plain");
   assert.equal(readConn(fp("45.76.1.2", { mss: 1452, mtu: 1492, os: "apple" }), jp, MAC).kind, "pppoe");
+  // jumbo frames: only within one cloud, so a server there opened it
+  assert.equal(readConn(fp("2406:da14::1", { mss: 8941, mtu: 9001, os: "other" }), jp, MAC).kind, "jumbo");
   assert.equal(readConn(fp("45.76.1.2", { mss: 1400, mtu: 1440, os: "apple" }), jp, MAC).kind, "narrow");
   const w = readConn(fp("45.76.1.2", { mss: 1380, mtu: 1420, os: "apple" }), jp, MAC);
   assert.equal(w.kind, "tunnel"); assert.equal(w.lv, "warn");

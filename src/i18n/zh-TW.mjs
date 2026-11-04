@@ -170,6 +170,8 @@ export default {
   cn_tw_tunnel: "MSS 只有 {mss}（MTU {mtu}），比一般線路小，少掉的部分通常被 VPN 或隧道的封包標頭占了（WireGuard 常用 MTU 1420，OpenVPN、IPsec 在 1400 左右）。依 TCP 特徵辨識 VPN 的網站能據此看出來。",
   cn_tw_small: "MSS 只有 {mss}（MTU {mtu}），比一般線路小。行動網路常常就是這麼小，不一定是走了 VPN。",
   cn_tw_proxy: "這條連線的 TCP 特徵像 {sys} 發出的，但瀏覽器說自己在 {ua} 上。連線多半是代理伺服器替你發起的，網站能據此看出你在用代理。",
+  cn_t_jumbo: "像雲端伺服器",
+  cn_tw_jumbo: "連線的 MTU 是 {mtu}，超過網際網路通常的 1500。只有在同一個雲端的內網裡（巨型訊框）才會這樣，說明這條連線是從雲端伺服器發起的，例如你的代理就架在雲端。",
   cn_t_narrow: "MTU 略小",
   cn_tw_narrow: "MSS {mss}（MTU {mtu}）比一般線路小，但比 VPN 留的空間大（VPN 一般在 1420 以下），不算隧道跡象。有些業者和行動網路就是這個值。",
   cn_sys_other: "別的系統",

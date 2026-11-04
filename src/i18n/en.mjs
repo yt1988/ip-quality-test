@@ -170,6 +170,8 @@ export default {
   cn_tw_tunnel: "MSS is only {mss} (MTU {mtu}), less than an ordinary line's. The missing room usually goes to a VPN or tunnel header (WireGuard often uses MTU 1420, OpenVPN and IPsec around 1400). Sites that read TCP traits to spot VPNs can tell.",
   cn_tw_small: "MSS is only {mss} (MTU {mtu}), less than an ordinary line's. Mobile networks are often this small, so it needn't be a VPN.",
   cn_tw_proxy: "This connection's TCP traits look like {sys}, but the browser says it runs on {ua}. A proxy server most likely opened the connection for you, and sites can tell you use a proxy.",
+  cn_t_jumbo: "Looks like a cloud server",
+  cn_tw_jumbo: "The connection's MTU is {mtu}, above the internet's usual 1500. That only happens inside one cloud's own network (jumbo frames), so a cloud server opened this connection: your proxy runs in the cloud, for example.",
   cn_t_narrow: "Slightly small MTU",
   cn_tw_narrow: "MSS {mss} (MTU {mtu}) is below an ordinary line's, but leaves more room than a VPN (usually 1420 or less): not a tunnel sign. Some ISPs and mobile networks use this value.",
   cn_sys_other: "another system",

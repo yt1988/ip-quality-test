@@ -170,6 +170,8 @@ export default {
   cn_tw_tunnel: "Die MSS ist nur {mss} (MTU {mtu}), weniger als bei einer normalen Leitung. Der fehlende Platz geht meist an den Header eines VPN oder Tunnels (WireGuard nutzt oft MTU 1420, OpenVPN und IPsec um 1400). Seiten, die VPNs an TCP-Merkmalen erkennen, sehen das.",
   cn_tw_small: "Die MSS ist nur {mss} (MTU {mtu}), weniger als bei einer normalen Leitung. Mobilfunknetze sind oft so klein, es muss also kein VPN sein.",
   cn_tw_proxy: "Die TCP-Merkmale dieser Verbindung sehen nach {sys} aus, aber der Browser sagt, er läuft unter {ua}. Wahrscheinlich hat ein Proxyserver die Verbindung für dich aufgebaut, und Seiten erkennen, dass du einen Proxy nutzt.",
+  cn_t_jumbo: "Wirkt wie ein Cloud-Server",
+  cn_tw_jumbo: "Die MTU der Verbindung ist {mtu}, mehr als die im Internet üblichen 1500. Das gibt es nur im internen Netz einer Cloud (Jumbo-Frames), also hat ein Cloud-Server diese Verbindung aufgebaut: etwa weil dein Proxy in der Cloud läuft.",
   cn_t_narrow: "Etwas kleine MTU",
   cn_tw_narrow: "Eine MSS von {mss} (MTU {mtu}) liegt unter einer normalen Leitung, lässt aber mehr Platz als ein VPN (meist 1420 oder weniger): kein Hinweis auf einen Tunnel. Manche Provider und Mobilfunknetze nutzen diesen Wert.",
   cn_sys_other: "ein anderes System",

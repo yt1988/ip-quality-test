@@ -72,7 +72,9 @@ const ttlOs = init => init === 128 ? "windows" : init === 64 ? "notwin" : "";
 // exit as above (and its type); ua: the browser's user agent. → null when there is no reading, else
 // { lv, kind, mss, mtu, os, ua, other, ip }. The lines match who's connection check (MTU 1420 or less is a tunnel
 // sign; a TCP system that isn't the browser's is a proxy). kind:
-//   plain   a full-size path (MTU 1500 or more): nothing in the way
+//   jumbo   more than 1500: only inside one cloud's network (jumbo frames), so a cloud server opened it (a proxy
+//           in the probe's cloud; the probe is on AWS in Tokyo)
+//   plain   a full-size path (MTU 1500): nothing in the way
 //   pppoe   1480–1499: PPPoE broadband (it takes 8 bytes), not a tunnel
 //   narrow  1421–1479: smaller than usual, but more room than a VPN leaves (some ISPs and mobile networks)
 //   tunnel  1420 or less: the room a VPN or tunnel header takes (WireGuard's MTU 1420, OpenVPN and IPsec around 1400)
@@ -86,7 +88,7 @@ export function readConn(fp, exit, ua) {
   const ip = canon(fp.ip), mtu = c.mtu > 0 ? c.mtu : c.mss + (family(ip) === 6 ? 60 : 40);
   const os = /^(windows|apple|linux)$/.test(c.os) ? c.os : ttlOs(c.initial_ttl), mine = uaOs(ua || "");
   const proxy = !!(os && mine && (os === "notwin" ? mine === "windows" : os !== mine));
-  const kind = proxy ? "proxy" : mtu >= 1500 ? "plain" : mtu >= 1480 ? "pppoe" : mtu > 1420 ? "narrow" : exit.type === "mobile" ? "small" : "tunnel";
-  const lv = kind === "proxy" || kind === "tunnel" ? "warn" : kind === "small" ? "info" : "ok";
+  const kind = proxy ? "proxy" : mtu > 1500 ? "jumbo" : mtu === 1500 ? "plain" : mtu >= 1480 ? "pppoe" : mtu > 1420 ? "narrow" : exit.type === "mobile" ? "small" : "tunnel";
+  const lv = kind === "proxy" || kind === "tunnel" || kind === "jumbo" ? "warn" : kind === "small" ? "info" : "ok";
   return { lv, kind, mss: c.mss, mtu, os: os === "notwin" ? "" : os, ua: mine, other: !!(exit.ip && ip !== canon(exit.ip)), ip };
 }
