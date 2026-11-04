@@ -107,14 +107,23 @@ h2 { font-size: 15px; font-weight: 700; }
 /* a deduction hovered under the score flashes its cell */
 .fc.flash { animation: flash .9s ease-out; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc, var(--ink)) 60%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
-/* Cloudflare's human check, measured: a line, its button, and Turnstile's widget when it asks for a click */
-.cf-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
-.cf-t { flex: 1 1 220px; margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
-.cf-t b { color: var(--fg); }
-.cf-t.st-ok b { color: var(--t1); } .cf-t.st-warn b { color: var(--t3); } .cf-t.st-bad b { color: var(--t5); }
-.cf-why { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+/* Cloudflare's human check, measured: a card in the uses' style (soft, a bar in the colour of its state), the button
+   in it, and Turnstile's widget under it when Cloudflare asks for a tick */
+.cfc { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 4px 10px; padding: 10px 12px; border-radius: 10px; background: var(--soft); border-left: 3px solid var(--ink); }
+.cfc.st-ok { border-left-color: var(--t1); } .cfc.st-warn { border-left-color: var(--t3); } .cfc.st-bad { border-left-color: var(--t5); } .cfc.st-none { border-left-color: var(--line); }
+.cfc > .st { margin-top: 4px; }
+.cfc.st-info > .st, .cfc.st-none > .st { box-shadow: inset 0 0 0 1.5px var(--muted); color: var(--muted); }
+.cfc[data-s="run"] > .st { animation: blink 1.4s ease-in-out infinite; }
+.cf-m { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cf-v { font-size: 14px; font-weight: 600; line-height: 22px; }
+.cfc.st-ok .cf-v { color: var(--t1); } .cfc.st-warn .cf-v { color: var(--t3); } .cfc.st-bad .cf-v { color: var(--t5); }
+.cf-d { margin: 0; font-size: 13px; line-height: 1.5; }
+.cf-x { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.cf-x a { color: var(--ink); text-decoration: none; } .cf-x a:hover { text-decoration: underline; }
+.cfc > .btn { align-self: center; }
 .cf-w:not(:empty) { margin-top: 8px; }
-#cft[hidden], #cfGo[hidden], #cfWhy[hidden] { display: none; }
+#cft[hidden], #cfGo[hidden], #cfX[hidden] { display: none; }
+@media (max-width: 420px) { .cfc { grid-template-columns: auto minmax(0, 1fr); } .cfc > .btn { grid-column: 2; justify-self: start; margin-top: 6px; } }
 .ugrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .uc { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px 9px; border-radius: 10px; background: var(--soft); border-top: 3px solid var(--line); min-width: 0; }
 .uc.st-ok { border-top-color: var(--t1); } .uc.st-warn { border-top-color: var(--t3); } .uc.st-bad { border-top-color: var(--t5); }

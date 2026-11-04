@@ -541,24 +541,39 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
   }
 
   /* ---------- Cloudflare's human check, measured: Turnstile on this exit and browser ---------- */
-  // Only for the visitor's own address, and only when they press the button: the widget runs in Cloudflare's frame,
-  // which reads the browser to decide. The Worker names the site key (GET /api/turnstile; 404 without one, and the
-  // test stays hidden) and verifies the token (POST). "pass": no click needed; "click": Turnstile asked for one first
-  // (before-interactive-callback) and it then passed; "fail": refused.
+  // The uses above guess from the address whether Cloudflare will challenge it; this runs the real thing once, for the
+  // visitor's own address, when they press the button (the widget runs in Cloudflare's frame and reads the browser).
+  // The Worker names the site key (GET /api/turnstile; 404 without one, and the card stays hidden) and verifies the
+  // token (POST). "pass": no tick needed; "click": Turnstile asked for one first (before-interactive-callback) and
+  // then passed; "fail": refused. The answer is then read against the guess, which says where the trouble likely is.
   let CFK = null, cfId = null, cfP = null;
   if (!EMBED && !SHARE_CODE) getJ("/api/turnstile", 4000).then(j => { if (j && j.sitekey) { CFK = j.sitekey; cfShow(); } }).catch(() => {});
-  const CF_LV = { pass: "st-ok", click: "st-warn", fail: "st-bad" };
-  function cfSay(html, lv) { const p = $("#cfT"); p.className = "cf-t" + (lv ? " " + lv : ""); p.innerHTML = html; }
+  const CF_LV = { pass: "ok", click: "warn", fail: "bad" };
+  // state: idle | run | ask | err | pass | click | fail
+  function cfCard(state, lv, v, d, x) {
+    const c = $("#cfc"); c.dataset.s = state; c.className = "cfc st-" + lv;
+    c.querySelector(".st").textContent = ICON[lv];
+    $("#cfV").textContent = v; $("#cfD").textContent = d;
+    const xe = $("#cfX"); xe.hidden = !x; xe.innerHTML = x || "";
+  }
+  function cfGo(label) { const b = $("#cfGo"); b.hidden = !label; if (label) { b.textContent = t(label); b.disabled = false; b.classList.toggle("pri", label === "cf_go"); } }
+  // what the answer says next to the guess: the address's reputation, or the browser
+  function cfRead(res) {
+    const guess = SNAP.r.uses && SNAP.r.uses.captcha ? SNAP.r.uses.captcha.lv : "good";
+    if (res === "pass") return esc(t(guess === "good" ? "cf_x_same_ok" : "cf_x_lucky"));
+    if (guess !== "good") return esc(t("cf_x_ip"));
+    const link = who && !SHARED ? ` <a href="${esc(who + D.paths[LANG])}" target="_blank" rel="noopener">${esc(t("cf_who"))} →</a>` : "";
+    return esc(t("cf_x_browser")) + link;
+  }
   function cfShow() {
     const box = $("#cft"), res = SNAP && SNAP.cf;
     // a shared result shows the sender's answer when it holds one; a check of another address has nothing to test
     const can = !!(CFK && SNAP && !SHARED && !lastIp);
     box.hidden = !(res || can);
-    if (box.hidden) return;
-    if (res) cfSay(`<b>${esc(t("cf_v_" + res))}</b> · ${esc(t("cf_" + res))}`, CF_LV[res]);
-    else cfSay(esc(t("cf_intro")));
-    $("#cfWhy").hidden = !(res && res !== "pass");
-    const go = $("#cfGo"); go.hidden = !can; go.disabled = false; go.textContent = t(res ? "cf_again" : "cf_go");
+    if (box.hidden) { $("#cfW").textContent = ""; return; }
+    if (res) cfCard(res, CF_LV[res], t("cf_v_" + res), t("cf_" + res), cfRead(res));
+    else cfCard("idle", "info", t("cf_q"), t("cf_idle"), esc(t("cf_priv")));
+    cfGo(can ? (res ? "cf_again" : "cf_go") : "");
   }
   const loadTurnstile = () => cfP ||= new Promise((ok, no) => {
     const s = document.createElement("script");
@@ -568,21 +583,23 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
   });
   $("#cfGo").onclick = async () => {
     const snap = SNAP; if (!CFK || !snap) return;
-    const go = $("#cfGo"); go.disabled = true; cfSay(esc(t("cf_wait"))); $("#cfWhy").hidden = true;
+    cfCard("run", "info", t("cf_wait"), t("cf_wait_d"), ""); cfGo("");
     let ts = null, asked = false, over = false;
     function end(v) {
       if (over) return; over = true;
       if (ts && cfId !== null) { try { ts.remove(cfId); } catch (e) {} cfId = null; }
       if (snap !== SNAP) return;
-      if (v) { snap.cf = v; cfShow(); } else { cfShow(); cfSay(esc(t("cf_err"))); }
+      if (v) { snap.cf = v; cfShow(); }
+      else { cfCard("err", "none", t("cf_err_v"), t("cf_err"), ""); cfGo("cf_retry"); }
     }
     try { ts = await loadTurnstile(); } catch (e) { return end(null); }
     if (cfId !== null) { try { ts.remove(cfId); } catch (e) {} cfId = null; }
     cfId = ts.render("#cfW", {
       sitekey: CFK, action: "ipqs", theme: "auto", appearance: "interaction-only", retry: "never",
       language: LANG === "pt" ? "pt-br" : LANG.toLowerCase(),
-      "before-interactive-callback": () => { asked = true; cfSay(esc(t("cf_ask")), "st-warn"); },
+      "before-interactive-callback": () => { asked = true; cfCard("ask", "warn", t("cf_ask_v"), t("cf_ask"), ""); },
       callback: async token => {
+        cfCard("run", "info", t("cf_wait"), t("cf_wait_d"), "");
         const j = await fetch("/api/turnstile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }), cache: "no-store" })
           .then(r => r.ok ? r.json() : null).catch(() => null);
         end(!j ? null : j.success ? (asked ? "click" : "pass") : "fail");
