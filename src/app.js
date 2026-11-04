@@ -5,7 +5,7 @@
 import { family, canon, isPublic } from "./ip.mjs";
 import { assess } from "./score.mjs";
 import { ccOfName, SOURCES } from "./sources.mjs";
-import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
+import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
 
 (function () {
   "use strict";
@@ -159,6 +159,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
+    cfShow();
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -376,7 +377,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
 
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
-    showLinks();
+    showLinks(); cfShow();
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").hidden = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
@@ -533,8 +534,62 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
     }
     total = got = RES.length + BLR.length; progress();
     finish({ ...assess(res, bl), at: P.t * 60000, cached: false });
+    if (CF_OF[P.c]) { SNAP.cf = CF_OF[P.c]; cfShow(); }
     $("#rerun").hidden = true;
   }
+
+  /* ---------- Cloudflare's human check, measured: Turnstile on this exit and browser ---------- */
+  // Only for the visitor's own address, and only when they press the button: the widget runs in Cloudflare's frame,
+  // which reads the browser to decide. The Worker names the site key (GET /api/turnstile; 404 without one, and the
+  // test stays hidden) and verifies the token (POST). "pass": no click needed; "click": Turnstile asked for one first
+  // (before-interactive-callback) and it then passed; "fail": refused.
+  let CFK = null, cfId = null, cfP = null;
+  if (!EMBED && !SHARE_CODE) getJ("/api/turnstile", 4000).then(j => { if (j && j.sitekey) { CFK = j.sitekey; cfShow(); } }).catch(() => {});
+  const CF_LV = { pass: "st-ok", click: "st-warn", fail: "st-bad" };
+  function cfSay(html, lv) { const p = $("#cfT"); p.className = "cf-t" + (lv ? " " + lv : ""); p.innerHTML = html; }
+  function cfShow() {
+    const box = $("#cft"), res = SNAP && SNAP.cf;
+    // a shared result shows the sender's answer when it holds one; a check of another address has nothing to test
+    const can = !!(CFK && SNAP && !SHARED && !lastIp);
+    box.hidden = !(res || can);
+    if (box.hidden) return;
+    if (res) cfSay(`<b>${esc(t("cf_v_" + res))}</b> · ${esc(t("cf_" + res))}`, CF_LV[res]);
+    else cfSay(esc(t("cf_intro")));
+    $("#cfWhy").hidden = !(res && res !== "pass");
+    const go = $("#cfGo"); go.hidden = !can; go.disabled = false; go.textContent = t(res ? "cf_again" : "cf_go");
+  }
+  const loadTurnstile = () => cfP ||= new Promise((ok, no) => {
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    s.onload = () => window.turnstile ? ok(window.turnstile) : no(); s.onerror = () => { cfP = null; no(); };
+    document.head.appendChild(s);
+  });
+  $("#cfGo").onclick = async () => {
+    const snap = SNAP; if (!CFK || !snap) return;
+    const go = $("#cfGo"); go.disabled = true; cfSay(esc(t("cf_wait"))); $("#cfWhy").hidden = true;
+    let ts = null, asked = false, over = false;
+    function end(v) {
+      if (over) return; over = true;
+      if (ts && cfId !== null) { try { ts.remove(cfId); } catch (e) {} cfId = null; }
+      if (snap !== SNAP) return;
+      if (v) { snap.cf = v; cfShow(); } else { cfShow(); cfSay(esc(t("cf_err"))); }
+    }
+    try { ts = await loadTurnstile(); } catch (e) { return end(null); }
+    if (cfId !== null) { try { ts.remove(cfId); } catch (e) {} cfId = null; }
+    cfId = ts.render("#cfW", {
+      sitekey: CFK, action: "ipqs", theme: "auto", appearance: "interaction-only", retry: "never",
+      language: LANG === "pt" ? "pt-br" : LANG.toLowerCase(),
+      "before-interactive-callback": () => { asked = true; cfSay(esc(t("cf_ask")), "st-warn"); },
+      callback: async token => {
+        const j = await fetch("/api/turnstile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }), cache: "no-store" })
+          .then(r => r.ok ? r.json() : null).catch(() => null);
+        end(!j ? null : j.success ? (asked ? "click" : "pass") : "fail");
+      },
+      // 3xxxxx and 6xxxxx: the challenge itself failed; anything else (setup, network, a blocked frame) is no answer
+      "error-callback": code => { end(/^[36]/.test(String(code)) ? "fail" : null); return true; },
+      "unsupported-callback": () => end(null),
+    });
+  };
 
   /* ---------- share: the 1ms.dog dialog (/assets/share/, copied from 1ms-shell) with this result's card and link ---------- */
   const shareLink = async withLoc => location.origin + D.paths[LANG] + "r/" + await encode(pack({ ...SNAP, details: withLoc }));
@@ -548,7 +603,8 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
   function layout(kit) {
     const my = kit.top + 94 + (kit.show ? 42 : 0), cy = my + 40 + R, cells = cy + R + 96;
     const uses = cells + Math.ceil(CELLS.length / 2) * 58 - 10;
-    return { my, cy, cells, uses, end: uses + 108 + 36 };
+    // Cloudflare's human check, when it was run, gets a line under the uses
+    return { my, cy, cells, uses, end: uses + 108 + 36 + (SNAP && SNAP.cf ? 56 : 0) };
   }
   // the result between kit.top and kit.bottom, in the page's theme; the findings and uses are read off the page's cells
   async function drawCard(g, kit) {
@@ -629,6 +685,12 @@ import { pack, unpackResults, encode, decode, SHARE_PATH } from "./share.mjs";
       font(500, 22); text(fit(u.querySelector(".uc-l").textContent.trim(), uw - 36), x + 18, L.uses + 58, C.mu);
       font(700, 26); text(fit(u.querySelector(".uc-v").textContent.trim(), uw - 36), x + 18, L.uses + 92, col);
     });
+    if (SNAP.cf) {
+      const col = { pass: C.ok, click: C.warn, fail: C.bad }[SNAP.cf], yy = L.uses + 108 + 62;
+      g.fillStyle = col; g.beginPath(); g.arc(P + 9, yy - 9, 8, 0, Math.PI * 2); g.fill();
+      font(500, 25); const lab = t("cf_l"), lw = g.measureText(lab).width; text(lab, P + 28, yy, C.mu);
+      font(700, 25); text(fit(t("cf_v_" + SNAP.cf), W - 2 * P - 60 - lw), P + 44 + lw, yy, col);
+    }
   }
   $("#shareBtn").onclick = async () => {
     if (!SNAP) return;

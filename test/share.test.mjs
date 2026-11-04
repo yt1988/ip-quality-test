@@ -1,7 +1,7 @@
 // A shared link scores the same as the check it came from, and leaves the address out unless asked.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pack, encode, decode, unpackResults, SHARE_PATH } from "../src/share.mjs";
+import { pack, encode, decode, unpackResults, SHARE_PATH, CF_OF } from "../src/share.mjs";
 import { assess } from "../src/score.mjs";
 
 const res = [
@@ -41,4 +41,10 @@ test("the share path is found after a language folder or at the root", () => {
   assert.deepEqual(SHARE_PATH.exec("/r/1.abc").slice(1), [undefined, "1.abc"]);
   assert.deepEqual(SHARE_PATH.exec("/zh-cn/r/1.abc").slice(1), ["zh-cn", "1.abc"]);
   assert.equal(SHARE_PATH.exec("/zh-cn/"), null);
+});
+
+test("Cloudflare's human check rides along when it was run, and older links simply lack it", async () => {
+  for (const cf of ["pass", "click", "fail"]) assert.equal(CF_OF[(await decode(await encode(pack({ ...snap, cf })))).c], cf);
+  assert.equal((await decode(await encode(pack(snap)))).c, undefined);
+  assert.equal(pack({ ...snap, cf: "maybe" }).c, undefined);
 });

@@ -20,3 +20,5 @@ simple = { limit = 20, period = 60 }
 # Optional API keys, each turns on a source (set with `npx wrangler secret put <NAME>`):
 #   IPQS_KEY  ABUSEIPDB_KEY  SCAMALYTICS_USER + SCAMALYTICS_KEY (+ SCAMALYTICS_URL)  IPDATA_KEY
 #   PROXYCHECK_KEY  IPAPI_IS_KEY  IP2LOCATION_KEY  IPINFO_TOKEN   (raise those sources' free quotas or add fields)
+# Cloudflare's human check on the page (a Turnstile widget, managed mode): set both, or the test stays hidden:
+#   TURNSTILE_SITEKEY  TURNSTILE_SECRET

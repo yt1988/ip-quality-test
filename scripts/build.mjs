@@ -153,7 +153,9 @@ export async function build({ check = false } = {}) {
 - More 1ms.dog tools: https://1ms.dog/
 `;
   // The only inline script is the pre-paint snippet, identical on every page: one hash covers the site.
-  const csp = ["default-src 'self'", `script-src 'self' 'sha256-${sha(PREPAINT)}'`, "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data: blob:",
+  const csp = ["default-src 'self'", `script-src 'self' 'sha256-${sha(PREPAINT)}' https://challenges.cloudflare.com`,
+    // Cloudflare's human check (Turnstile): its script and its frame
+    "frame-src https://challenges.cloudflare.com", "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data: blob:",
     // the exit checks (as on EgressLens) and IPinfo, which the browser asks directly
     "connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai " +
       // sources the page asks itself (src/sources.mjs, browser: "only" or "retry"), RDAP with every registry it redirects to

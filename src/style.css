@@ -107,6 +107,14 @@ h2 { font-size: 15px; font-weight: 700; }
 /* a deduction hovered under the score flashes its cell */
 .fc.flash { animation: flash .9s ease-out; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc, var(--ink)) 60%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+/* Cloudflare's human check, measured: a line, its button, and Turnstile's widget when it asks for a click */
+.cf-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.cf-t { flex: 1 1 220px; margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.cf-t b { color: var(--fg); }
+.cf-t.st-ok b { color: var(--t1); } .cf-t.st-warn b { color: var(--t3); } .cf-t.st-bad b { color: var(--t5); }
+.cf-why { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+.cf-w:not(:empty) { margin-top: 8px; }
+#cft[hidden], #cfGo[hidden], #cfWhy[hidden] { display: none; }
 .ugrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .uc { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px 9px; border-radius: 10px; background: var(--soft); border-top: 3px solid var(--line); min-width: 0; }
 .uc.st-ok { border-top-color: var(--t1); } .uc.st-warn { border-top-color: var(--t3); } .uc.st-bad { border-top-color: var(--t5); }

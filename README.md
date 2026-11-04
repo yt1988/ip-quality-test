@@ -86,7 +86,7 @@ npx wrangler login
 npx wrangler deploy
 ```
 
-It's one Worker: the pages are static assets (free, unmetered), and `src/worker.js` answers `/api/check`. `wrangler.toml` turns off `*.workers.dev` and preview URLs; bind your own domain under **Workers & Pages → ipqs → Settings → Domains & Routes**, or set `workers_dev = true` for a quick test. Add keys with `npx wrangler secret put IPQS_KEY` and so on.
+It's one Worker: the pages are static assets (free, unmetered), and `src/worker.js` answers `/api/check`. `wrangler.toml` turns off `*.workers.dev` and preview URLs; bind your own domain under **Workers & Pages → ipqs → Settings → Domains & Routes**, or set `workers_dev = true` for a quick test. Add keys with `npx wrangler secret put IPQS_KEY` and so on. The Cloudflare human-check test (a Turnstile widget the visitor runs with a button) appears only once `TURNSTILE_SITEKEY` and `TURNSTILE_SECRET` are set: create a widget in managed mode under **Turnstile** in the dashboard.
 
 To put your own domain into canonical tags and the sitemap, rebuild with `SITE_URL`:
 

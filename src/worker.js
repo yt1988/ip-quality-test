@@ -4,6 +4,8 @@
 // by asking every source in src/sources.mjs and the DNS blocklists at once, streaming each answer as it arrives, then
 // scoring them all (src/score.mjs), and
 //   GET [/<lang>]/r/<code>    a shared result (src/share.mjs): the language page with the grade in its link preview
+//   GET  /api/turnstile       the Turnstile site key for the page's human-check test
+//   POST /api/turnstile       {token}: verifies a token the page's Turnstile widget handed back (siteverify)
 // Answers are cached per address for CACHE_TTL seconds, so a busy address costs the sources one lookup.
 import { family, canon, isPublic, reverse } from "./ip.mjs";
 import { SOURCES, DNSBL, ELSEWHERE } from "./sources.mjs";
@@ -170,6 +172,24 @@ async function shared(request, env, m) {
     .transform(res);
 }
 
+// Cloudflare's human check (Turnstile), measured on the page: GET names the site key, POST verifies the token the
+// widget handed back. Both are 404 until TURNSTILE_SITEKEY and TURNSTILE_SECRET are set; the page then leaves the test out.
+async function turnstile(request, env) {
+  if (!env.TURNSTILE_SITEKEY || !env.TURNSTILE_SECRET) return json({ error: "not_found" }, 404);
+  if (request.method === "GET") return json({ sitekey: env.TURNSTILE_SITEKEY });
+  if (request.method !== "POST") return json({ error: "method" }, 405, { Allow: "GET, POST" });
+  let token = "";
+  try { token = String((await request.json()).token || ""); } catch (e) {}
+  if (!token || token.length > 4096) return json({ error: "bad_token" }, 400);
+  const body = new FormData();
+  body.set("secret", env.TURNSTILE_SECRET); body.set("response", token);
+  const ip = request.headers.get("CF-Connecting-IP");
+  if (ip) body.set("remoteip", ip);
+  const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body, signal: AbortSignal.timeout(8000) });
+  const j = await r.json();
+  return json({ success: j.success === true, codes: j["error-codes"] || [] });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -177,6 +197,10 @@ export default {
       if (request.method !== "GET") return json({ error: "method" }, 405, { Allow: "GET" });
       try { return await check(request, env, ctx); }
       catch (e) { return json({ error: "internal" }, 500); }
+    }
+    if (url.pathname === "/api/turnstile") {
+      try { return await turnstile(request, env); }
+      catch (e) { return json({ error: "internal" }, 502); }
     }
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, 404);
     const m = SHARE_PATH.exec(url.pathname);

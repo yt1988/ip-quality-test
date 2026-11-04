@@ -5,7 +5,8 @@
 // Link: <language page>r/<format>.<base64url of the deflated JSON>. The format number leads, so a later format can
 // change everything after it while links already shared keep opening. Format 1:
 //   { t: minutes since 1970, f: 4 | 6, i?: address, s: { source id: answer }, x: [sources that failed],
-//     k: { source id: why it doesn't apply }, b: { blocklist id: 1 listed | 0 clean | 2 no answer } }
+//     k: { source id: why it doesn't apply }, b: { blocklist id: 1 listed | 0 clean | 2 no answer },
+//     c?: Cloudflare's human check when it was run: "p" passed without a click | "c" after a click | "f" refused }
 // Without the address (the default) the answers keep only what the score and the findings need: the country, network
 // type, flags and risk scores, never the city, network name, reverse DNS or registry record.
 import { DNSBL } from "./sources.mjs";
@@ -13,10 +14,13 @@ import { DNSBL } from "./sources.mjs";
 export const FORMAT = 1;
 const KEEP = ["cc", "regCc", "asCc", "rir", "type", "tor", "vpn", "proxy", "abuser", "relay", "risk", "anycast", "ports", "tags"];
 const BL = { 1: true, 0: false, 2: null };
+// Cloudflare's human check: the page's words for it and the link's letters
+const CF_CODE = { pass: "p", click: "c", fail: "f" };
+export const CF_OF = { p: "pass", c: "click", f: "fail" };
 
 // at: when the sources answered (ISO string or ms); res: [{ id, data }]; bl: [{ id, listed }]; fails: [ids];
 // skip: { id: reason }
-export function pack({ at, v, ip, res, fails = [], skip = {}, bl = [], details = false }) {
+export function pack({ at, v, ip, res, fails = [], skip = {}, bl = [], cf, details = false }) {
   const s = {};
   for (const r of res) {
     const d = {};
@@ -30,6 +34,7 @@ export function pack({ at, v, ip, res, fails = [], skip = {}, bl = [], details =
   if (fails.length) P.x = fails;
   if (Object.keys(skip).length) P.k = skip;
   if (bl.length) P.b = Object.fromEntries(bl.map(b => [b.id, b.listed === true ? 1 : b.listed === false ? 0 : 2]));
+  if (CF_CODE[cf]) P.c = CF_CODE[cf];
   return P;
 }
 
