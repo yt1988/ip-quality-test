@@ -143,4 +143,14 @@ export default {
     ["Mi puntuación es baja. ¿Qué hago?", "Si es la conexión de tu casa: un reporte de abuso o una entrada en una lista negra suele significar que un dispositivo de tu red está infectado o se usa como proxy. Límpialo y luego pide a la lista negra que quite tu dirección (cada una enlaza a su página de consulta y eliminación).\nSi es una VPN o un servidor: la puntuación depende sobre todo del tipo de red, y eso no lo puedes cambiar. Cambia a un proveedor que ofrezca IP residenciales o direcciones menos usadas."],
     ["¿Guardan algo?", "Para revisar una dirección, la enviamos a las fuentes de arriba; a algunas las consulta tu navegador directamente. Los resultados se guardan en caché seis horas por dirección, para no volver a preguntar a las fuentes gratuitas en cada visita. No guardamos nada más.\nPara encontrar tus IP de salida, tu navegador se conecta directamente a algunos servicios de consulta de IP.\nSi pulsas «Probar» en la verificación humana de Cloudflare, tu navegador se conecta directamente a Cloudflare, que lo analiza para decidir; este sitio solo recibe si pasaste o no."],
   ],
+  // the same sentences when the number is one (Intl.PluralRules), docs: 1ms-shell translation.md, plurals
+  tag_bl_one: "En {n} lista negra",
+  n_anon_one: "{n} fuente la marca como VPN o proxy, así que los sitios pueden notar que usas uno.",
+  n_risk_low_one: "Riesgo bajo: la puntuación de fraude de {n} fuente es {v} (de 0 a 100; cuanto más alta, más sospechosa).",
+  n_risk_mid_one: "Riesgo moderado: la puntuación de fraude de {n} fuente es {v} (de 0 a 100; cuanto más alta, más sospechosa).",
+  n_risk_high_one: "Riesgo alto: la puntuación de fraude de {n} fuente es {v} (de 0 a 100; cuanto más alta, más sospechosa).",
+  n_abuser_one: "{n} fuente reporta abusos recientes desde ella, como spam, ataques o un dispositivo hackeado.",
+  src_n_one: "Respondió {ok} fuente · {at}",
+  fs_geo_ok_one: "Coincide {n}",
+  p_why_one: "{why}: −{n} punto",
 };

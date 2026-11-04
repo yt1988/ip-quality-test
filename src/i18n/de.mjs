@@ -143,4 +143,14 @@ export default {
     ["Mein Score ist niedrig. Was kann ich tun?", "Bei deinem Anschluss zu Hause: Eine Missbrauchsmeldung oder ein Blocklisteneintrag bedeutet oft, dass ein Gerät in deinem Netz infiziert ist oder als Proxy missbraucht wird. Bring es in Ordnung und beantrage dann bei der Blockliste, deine Adresse zu entfernen (jede verlinkt auf ihre Abfrage- und Löschseite).\nBei einem VPN oder Server: Der Score spiegelt vor allem den Netztyp wider, und den kannst du nicht ändern. Wechsle zu einem Anbieter mit Privatkunden-IPs oder weniger genutzten Adressen."],
     ["Wird etwas gespeichert?", "Um eine Adresse zu prüfen, schicken wir sie an die oben genannten Quellen; einige davon fragt dein Browser direkt. Die Ergebnisse werden pro Adresse sechs Stunden zwischengespeichert, damit die kostenlosen Quellen nicht bei jedem Besuch erneut gefragt werden. Sonst wird nichts gespeichert.\nUm deine Ausgangs-IPs zu finden, ruft dein Browser direkt ein paar IP-Abfragedienste auf.\nWenn du beim Cloudflare-Menschencheck auf „Testen“ tippst, verbindet sich dein Browser direkt mit Cloudflare, das deinen Browser prüft; diese Website erfährt nur, ob du bestanden hast."],
   ],
+  // the same sentences when the number is one (Intl.PluralRules), docs: 1ms-shell translation.md, plurals
+  tag_bl_one: "Auf {n} Blockliste",
+  n_anon_one: "{n} Quelle markiert sie als VPN oder Proxy – Websites können also merken, dass du einen nutzt.",
+  n_risk_low_one: "Geringes Risiko: Der Fraud-Score von {n} Quelle liegt bei {v} (0–100, je höher, desto verdächtiger).",
+  n_risk_mid_one: "Mittleres Risiko: Der Fraud-Score von {n} Quelle liegt bei {v} (0–100, je höher, desto verdächtiger).",
+  n_risk_high_one: "Hohes Risiko: Der Fraud-Score von {n} Quelle liegt bei {v} (0–100, je höher, desto verdächtiger).",
+  n_abuser_one: "{n} Quelle meldet kürzlichen Missbrauch von dieser Adresse, etwa Spam, Angriffe oder ein gehacktes Gerät.",
+  src_n_one: "{ok} Quelle hat geantwortet · {at}",
+  fs_geo_ok_one: "{n} stimmt überein",
+  p_why_one: "{why}: −{n} Punkt",
 };

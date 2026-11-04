@@ -12,7 +12,9 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const D = JSON.parse($("#data").textContent);
   const L = window.L1MS || {}, LANG = D.lang;
-  const t = (k, v) => { let s = L[k] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
+  // a count of one picks the key_one sentence where there is one (docs: 1ms-shell translation.md, plurals)
+  const PLURAL = new Intl.PluralRules(LANG), plural = (k, v) => { const c = v && (v.n ?? v.ok), r = c != null && k + "_" + PLURAL.select(+c); return r && L[r] != null ? r : k; };
+  const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask" };

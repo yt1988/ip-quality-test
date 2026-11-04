@@ -143,4 +143,14 @@ export default {
     ["Minha nota está baixa. O que eu faço?", "Se for a internet da sua casa: uma denúncia de abuso ou uma entrada em lista negra muitas vezes significa que algum aparelho da sua rede está infectado ou sendo usado como proxy. Resolva isso e depois peça à lista negra para remover seu endereço (cada uma leva à sua página de consulta e remoção).\nSe for uma VPN ou um servidor: a nota reflete principalmente o tipo de rede, e isso você não muda. Troque para um provedor que ofereça IPs residenciais ou endereços menos usados."],
     ["Vocês guardam alguma coisa?", "Para verificar um endereço, nós o enviamos às fontes listadas acima; algumas são consultadas direto pelo seu navegador. Os resultados ficam em cache por seis horas para cada endereço, para não consultar as fontes gratuitas de novo a cada visita. Nada mais é guardado.\nPara encontrar seus IPs de saída, seu navegador acessa direto alguns serviços de consulta de IP.\nSe você tocar em \"Testar\" na verificação humana da Cloudflare, seu navegador se conecta direto à Cloudflare, que analisa o navegador para decidir; este site só recebe se você passou ou não."],
   ],
+  // the same sentences when the number is one (Intl.PluralRules), docs: 1ms-shell translation.md, plurals
+  tag_bl_one: "Em {n} lista negra",
+  n_anon_one: "{n} fonte marca o IP como VPN ou proxy, então os sites podem perceber que você está usando um.",
+  n_risk_low_one: "Risco baixo: a pontuação de fraude de {n} fonte é {v} (de 0 a 100; quanto maior, mais suspeito).",
+  n_risk_mid_one: "Risco moderado: a pontuação de fraude de {n} fonte é {v} (de 0 a 100; quanto maior, mais suspeito).",
+  n_risk_high_one: "Risco alto: a pontuação de fraude de {n} fonte é {v} (de 0 a 100; quanto maior, mais suspeito).",
+  n_abuser_one: "{n} fonte relata abusos recentes a partir dele, como spam, ataques ou um aparelho invadido.",
+  src_n_one: "{ok} fonte respondeu · {at}",
+  fs_geo_ok_one: "{n} concorda",
+  p_why_one: "{why}: −{n} ponto",
 };

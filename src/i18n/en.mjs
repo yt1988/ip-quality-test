@@ -143,4 +143,14 @@ export default {
     ["My score is low. What can I do?", "If it's your home connection: an abuse report or blocklist entry often means a device on your network is infected or being used as a proxy. Clean it up, then ask the blocklist to remove your address (each one links to its lookup and removal page).\nIf it's a VPN or server: the score mostly reflects the network type, which you can't change. Switch to a provider that offers home broadband or less-used addresses."],
     ["Do you store anything?", "To check an address, we send it to the sources listed above; a few of them are asked by your browser directly. Results are cached for six hours per address, so the free sources aren't asked again on every visit. Nothing else is kept.\nTo find your exit IPs, your browser contacts a few IP lookup services directly.\nIf you press \"Test it\" under the Cloudflare human check, your browser talks to Cloudflare directly, which reads your browser to decide; this site only gets whether you passed."],
   ],
+  // the same sentences when the number is one (Intl.PluralRules), docs: 1ms-shell translation.md, plurals
+  tag_bl_one: "On {n} blocklist",
+  n_anon_one: "{n} source flags it as a VPN or proxy, so sites may notice you're using one.",
+  n_risk_low_one: "Low risk: the fraud score from {n} source is {v} (0–100, higher is more suspicious).",
+  n_risk_mid_one: "Moderate risk: the fraud score from {n} source is {v} (0–100, higher is more suspicious).",
+  n_risk_high_one: "High risk: the fraud score from {n} source is {v} (0–100, higher is more suspicious).",
+  n_abuser_one: "{n} source reports recent abuse from it, such as spam, attacks or a hacked device.",
+  src_n_one: "{ok} source answered · {at}",
+  fs_geo_ok_one: "{n} source agrees",
+  p_why_one: "{why}: −{n} point",
 };

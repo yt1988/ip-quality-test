@@ -143,4 +143,14 @@ export default {
     ["Mon score est bas. Que faire ?", "S’il s’agit de votre connexion à la maison : un signalement d’abus ou une liste noire veut souvent dire qu’un appareil de votre réseau est infecté ou sert de proxy. Nettoyez-le, puis demandez à la liste noire de retirer votre adresse (chacune renvoie vers sa page de consultation et de retrait).\nS’il s’agit d’un VPN ou d’un serveur : le score dépend surtout du type de réseau, que vous ne pouvez pas changer. Passez à un fournisseur qui propose des IP résidentielles ou des adresses moins utilisées."],
     ["Conservez-vous quelque chose ?", "Pour vérifier une adresse, nous l’envoyons aux sources ci-dessus ; certaines sont interrogées directement par votre navigateur. Les résultats sont mis en cache six heures par adresse, pour ne pas solliciter les sources gratuites à chaque visite. Rien d’autre n’est conservé.\nPour trouver vos IP de sortie, votre navigateur contacte directement quelques services d’identification d’IP.\nSi vous appuyez sur « Tester » dans la vérification humaine Cloudflare, votre navigateur se connecte directement à Cloudflare, qui l’analyse pour décider ; ce site reçoit seulement le résultat (passé ou non)."],
   ],
+  // the same sentences when the number is one (Intl.PluralRules), docs: 1ms-shell translation.md, plurals
+  tag_bl_one: "Sur {n} liste noire",
+  n_anon_one: "{n} source la signale comme VPN ou proxy : les sites peuvent voir que vous en utilisez un.",
+  n_risk_low_one: "Risque faible : le score de fraude de {n} source est de {v} (de 0 à 100 ; plus il est élevé, plus l’IP est suspecte).",
+  n_risk_mid_one: "Risque modéré : le score de fraude de {n} source est de {v} (de 0 à 100 ; plus il est élevé, plus l’IP est suspecte).",
+  n_risk_high_one: "Risque élevé : le score de fraude de {n} source est de {v} (de 0 à 100 ; plus il est élevé, plus l’IP est suspecte).",
+  n_abuser_one: "{n} source signale des abus récents depuis cette adresse : spam, attaques ou appareil piraté.",
+  src_n_one: "{ok} source a répondu · {at}",
+  fs_geo_ok_one: "{n} concorde",
+  p_why_one: "{why} : −{n} point",
 };
