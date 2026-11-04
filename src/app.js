@@ -549,7 +549,8 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
   let CFK = null, cfId = null, cfP = null;
   if (!EMBED && !SHARE_CODE) getJ("/api/turnstile", 4000).then(j => { if (j && j.sitekey) { CFK = j.sitekey; cfShow(); } }).catch(() => {});
   const CF_LV = { pass: "ok", click: "warn", fail: "bad" };
-  // state: idle | run | ask | err | pass | click | fail
+  // state: idle | run | ask | err | pass | click | fail. Until the answer the card keeps its question, icon and colour
+  // (only the line under it and the button change), so the one big change on the card is the answer itself
   // the card only grows while a test runs (the tallest state it has shown sets its height), so moving from one state
   // to the next never makes the page below it jump up and back down
   const cfBox = $("#cfc");
@@ -596,7 +597,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
   });
   $("#cfGo").onclick = async () => {
     const snap = SNAP; if (!CFK || !snap) return;
-    cfCard("run", "info", t("cf_wait"), t("cf_wait_d"), ""); cfGo("cf_busy", true);
+    cfCard("run", "info", t("cf_q"), t("cf_wait_d"), ""); cfGo("cf_busy", true);
     let ts = null, asked = false, over = false;
     function end(v) {
       if (over) return; over = true;
@@ -610,7 +611,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
     cfId = ts.render("#cfW", {
       sitekey: CFK, action: "ipqs", theme: "auto", appearance: "interaction-only", retry: "never",
       language: LANG === "pt" ? "pt-br" : LANG.toLowerCase(),
-      "before-interactive-callback": () => { asked = true; cfCard("ask", "warn", t("cf_ask_v"), "", ""); cfGo("cf_wait_tick", true); },
+      "before-interactive-callback": () => { asked = true; cfCard("ask", "info", t("cf_q"), "", ""); cfGo("cf_wait_tick", true); },
       callback: async token => {
         cfGo("cf_busy", true);
         const j = await fetch("/api/turnstile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }), cache: "no-store" })
