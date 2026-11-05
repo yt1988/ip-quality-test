@@ -7,6 +7,7 @@ import { assess } from "./score.mjs";
 import { ccOfName, SOURCES } from "./sources.mjs";
 import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
 import { readDns, readConn } from "./conn.mjs";
+import { readSeg } from "./seg.mjs";
 
 (function () {
   "use strict";
@@ -162,7 +163,7 @@ import { readDns, readConn } from "./conn.mjs";
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
-    cnShow(); cfShow();
+    $("#sgt").hidden = true; cnShow(); cfShow();
     markExit(ip || selfIp);
   }
   function fail(key) {
@@ -253,6 +254,7 @@ import { readDns, readConn } from "./conn.mjs";
   function handle(m) {
     if (m.t === "start") {
       CUR = m; RES = []; BLR = []; PEND = []; FAILS = []; SKIP = {};
+      segStart(m.ip, m.v);
       const b = $("#facts b"); b.className = "ipv"; b.innerHTML = ipHtml(m.ip, m.v);
       // sources this deployment has no keys for stay out of the list (the same for every address); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
       const cur = m, mine = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
@@ -380,7 +382,7 @@ import { readDns, readConn } from "./conn.mjs";
 
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
-    showLinks(); cnShow(); cfShow();
+    showLinks(); segShow(); cnShow(); cfShow();
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").hidden = false;
     $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
     groupCounts();
@@ -522,6 +524,8 @@ import { readDns, readConn } from "./conn.mjs";
     reset(P.i || null);
     const { res, bl } = unpackResults(P);
     CUR = { ip: P.i || null, v: P.f }; RES = []; BLR = []; FAILS = (P.x || []).slice(); SKIP = { ...(P.k || {}) };
+    // a shared result with its address can show that address's /24 (public facts about the /24, read now)
+    segStart(P.i, P.f);
     const b = $("#facts b"); b.className = "ipv";
     b.innerHTML = P.i ? ipHtml(P.i, P.f) : `<span class="m">${esc(t("r_hidden"))} · IPv${P.f}</span>`;
     for (const id in PR) {
@@ -539,6 +543,41 @@ import { readDns, readConn } from "./conn.mjs";
     finish({ ...assess(res, bl), at: P.t * 60000, cached: false });
     if (CF_OF[P.c]) { SNAP.cf = CF_OF[P.c]; cfShow(); }
     $("#rerun").hidden = true;
+  }
+
+  /* ---------- the /24 portrait: what the 1ms.dog server finds for the address's /24 ---------- */
+  // Asked as soon as the check knows the address (IPv4 only), drawn when the check is in (src/seg.mjs reads it). The
+  // server (server/) reads the /24's 256 reverse names and a few public lists, daily; it contacts no address of the
+  // /24. Not in the line check (D.seg empty there too) and absent without the service.
+  let segP = null;
+  function segStart(ip, v) {
+    segP = D.seg && !EMBED && v === 4 && ip ? getJ(D.seg + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null) : null;
+  }
+  const SG = ["kind", "rdns", "anon", "bad", "tor", "prefix"];
+  // the lists' credit (IP2Proxy LITE asks for it), with the oldest list's date
+  const SG_SRC = [["proxy", "IP2Proxy LITE", "https://lite.ip2location.com"], ["bad", "IPsum", "https://github.com/stamparm/ipsum"],
+    ["vpn", "X4BNet", "https://github.com/X4BNet/lists_vpn"], ["drop", "Spamhaus DROP", "https://www.spamhaus.org/blocklists/do-not-route-or-peer/"],
+    ["tor", "Tor Project", "https://www.torproject.org/"]];
+  async function segShow() {
+    const box = $("#sgt"), snap = SNAP, p = segP;
+    if (!snap || !p) { box.hidden = true; return; }
+    const j = await p;
+    if (snap !== SNAP || p !== segP) return;
+    if (!j || !j.rdns) { box.hidden = true; return; }
+    const r = readSeg(j, snap.r.summary.type), L = j.lists || {};
+    // list parameters read as a list in the page's language; a network type by its name
+    const say = (k, v) => { const q = { ...v }; for (const x in q) if (Array.isArray(q[x])) q[x] = list(q[x]); if (q.type) q.type = typeName(q.type); return t(k, q); };
+    for (const f of SG) {
+      const x = r[f];
+      const v = f === "rdns" ? `<span class="num">${x.p.named}/256</span>` + (x.p.top ? ` <span class="m">${esc(x.p.top)}</span>` : "")
+        : f === "prefix" && x.p.prefix ? `<span class="num">${esc(x.p.prefix)}</span>` + (x.p.asns.length ? ` <span class="m">AS${x.p.asns[0]}</span>` : "")
+        : x.lv === "none" ? `<span class="m">${esc(t(x.k))}</span>` : esc(t(x.k, x.p));
+      finding("sg_" + f, x.lv, v, x.why.map(([k, q]) => say(k, q)).join("\n"));
+    }
+    $("#sgN").textContent = j.seg;
+    const src = SG_SRC.filter(([k]) => L[k] != null).map(([, n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`);
+    $("#sgSrc").innerHTML = src.length ? esc(t("sg_src", { at: L.at ? new Date(L.at).toLocaleDateString(LANG) : "" })) + (CJK ? "" : " ") + src.join(esc(t("v_join"))) : "";
+    box.hidden = false;
   }
 
   /* ---------- the connection, measured on the 1ms.dog server: the DNS resolver and the TCP handshake ---------- */

@@ -3,3 +3,8 @@ node_modules/
 .env
 .dev.vars
 .claude/
+
+# the /24 portrait service: its build and local data
+server/seg
+server/seg.exe
+server/data/

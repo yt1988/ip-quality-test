@@ -125,6 +125,13 @@ h2 { font-size: 15px; font-weight: 700; }
 .cf-w:not(:empty) { margin-top: 6px; }
 .cf-w iframe { max-width: 100%; }
 #cft[hidden], #cfGo[hidden], #cfX[hidden] { display: none; }
+/* the /24 portrait: its six findings in the findings' cells, the /24 in the heading, the lists' credit under them */
+#sgt[hidden], #cnt[hidden] { display: none; }
+.sg-n { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.sg-src { margin: 6px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.sg-src a { color: inherit; }
+/* a prefix such as 138.226.239.0/24 fits its half-width cell on a phone (its AS stays in the hover text) */
+@media (max-width: 420px) { #sgt .fc-v .num { font-size: 12.5px; } #sgt [data-f="sg_prefix"] .fc-v .m { display: none; } }
 @media (prefers-reduced-motion: reduce) { .btn .spin { animation: none; } }
 @media (max-width: 420px) { .cfc { grid-template-columns: auto minmax(0, 1fr); } .cfc > .btn { grid-column: 2; justify-self: start; margin-top: 6px; } }
 .ugrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
