@@ -181,6 +181,8 @@ export default {
   sg_v_wait: "이웃 256개를 확인하는 중…",
   sg_l_me: "조회한 IP",
   sg_src: "공개 목록(매일 갱신, {at}):",
+  cnx_t: "여기의 실측(DNS 조회, TCP 연결, Cloudflare 사람 확인)은 내 네트워크와 브라우저를 측정하므로 다른 사람의 IP를 조회할 때는 표시하지 않습니다.",
+  cnx_go: "내 IP 조회",
   cn_h: "실측: 내 연결",
   fl_dns: "DNS 조회",
   fl_tcp: "TCP 연결",

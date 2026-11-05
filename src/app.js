@@ -662,6 +662,7 @@ import { readSeg, addrLines } from "./seg.mjs";
   // exit the check scored (src/conn.mjs). Only for the visitor's own check; started once at load (each lookup is a new
   // random name), drawn when the check is in. The servers keep nothing beyond two minutes in memory.
   const CN_ON = !EMBED && !SHARE_CODE;
+  $("#cnxGo").onclick = () => { input.value = ""; run(null, true); };
   let cnDns = null, cnTcp = null;
   if (CN_ON) {
     const tok = Array.from(crypto.getRandomValues(new Uint8Array(20)), b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
@@ -685,6 +686,8 @@ import { readSeg, addrLines } from "./seg.mjs";
   async function cnShow() {
     const box = $("#cnt"), snap = SNAP;
     // a shared result, someone else's address, or no reading from either server: no card
+    // someone else's address: say why the tests aren't here, with the way back to the visitor's own check
+    $("#cnx").hidden = !(CN_ON && snap && !SHARED && !mine());
     if (!CN_ON || !snap || !mine()) { box.hidden = true; return; }
     const [hits, tcp] = await Promise.all([cnDns, cnTcp]);
     if (snap !== SNAP) return;

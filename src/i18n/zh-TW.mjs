@@ -181,6 +181,8 @@ export default {
   sg_v_wait: "正在查這 256 個鄰居…",
   sg_l_me: "你查的 IP",
   sg_src: "公開名單（每天更新，{at}）：",
+  cnx_t: "這裡的實測（DNS 解析、TCP 連線、Cloudflare 人機驗證）測的是你自己的網路和瀏覽器，查別人的 IP 時用不上，所以不顯示。",
+  cnx_go: "查我自己的 IP",
   cn_h: "實測：你的連線",
   fl_dns: "DNS 解析",
   fl_tcp: "TCP 連線",

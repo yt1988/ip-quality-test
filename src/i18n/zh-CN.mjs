@@ -181,6 +181,8 @@ export default {
   sg_v_wait: "正在查这 256 个邻居…",
   sg_l_me: "你查的 IP",
   sg_src: "公开名单（每天更新，{at}）：",
+  cnx_t: "这里的实测（DNS 解析、TCP 连接、Cloudflare 人机验证）测的是你自己的网络和浏览器，查别人的 IP 时用不上，所以不显示。",
+  cnx_go: "查我自己的 IP",
   cn_h: "实测：你的连接",
   fl_dns: "DNS 解析",
   fl_tcp: "TCP 连接",

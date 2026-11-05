@@ -181,6 +181,8 @@ export default {
   sg_v_wait: "256 個の隣人を調べています…",
   sg_l_me: "調べた IP",
   sg_src: "公開リスト（毎日更新、{at}）：",
+  cnx_t: "ここの実測（DNS 解決、TCP 接続、Cloudflare の人間確認）はあなた自身のネットワークとブラウザーを測るため、他人の IP を調べるときは表示しません。",
+  cnx_go: "自分の IP を調べる",
   cn_h: "実測：あなたの接続",
   fl_dns: "DNS 解決",
   fl_tcp: "TCP 接続",

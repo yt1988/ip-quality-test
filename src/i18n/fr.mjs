@@ -181,6 +181,8 @@ export default {
   sg_v_wait: "Vérification des 256 voisins…",
   sg_l_me: "L’IP vérifiée",
   sg_src: "Listes publiques (mises à jour chaque jour, {at}) :",
+  cnx_t: "Les tests réels d’ici (résolution DNS, connexion TCP, vérification humaine Cloudflare) mesurent votre propre réseau et votre navigateur : ils ne s’appliquent pas à l’IP de quelqu’un d’autre.",
+  cnx_go: "Vérifier mon IP",
   cn_h: "Test réel : votre connexion",
   fl_dns: "Résolution DNS",
   fl_tcp: "Connexion TCP",

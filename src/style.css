@@ -130,7 +130,7 @@ h2 { font-size: 15px; font-weight: 700; }
    32 a row (16 on a phone), each square the colour of its worst listing and green when on none; the address pointed
    at (or tapped; the checked one otherwise) on one line under it, then the legend. Pointer, pick and the checked
    address are rings inside their square, so the gaps between squares stay clear. */
-#sgt[hidden], #cnt[hidden], .sg-v6[hidden], #sgGo[hidden], .sg-body[hidden], #sgVs[hidden], .sg-note:empty { display: none; }
+#sgt[hidden], #cnt[hidden], #cnx[hidden], .sg-v6[hidden], #sgGo[hidden], .sg-body[hidden], #sgVs[hidden], .sg-note:empty { display: none; }
 .segs { padding: 18px 22px 18px; display: flex; flex-direction: column; gap: 14px; }
 .sg-head { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
 .segs h2 { font-size: 16px; letter-spacing: -.01em; }
@@ -144,9 +144,7 @@ h2 { font-size: 15px; font-weight: 700; }
 .sg-meta .tag { height: 21px; vertical-align: 1px; }
 .sg-meta .num { color: var(--fg); }
 .sg-vs { margin: 0; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.55; color: var(--t5); background: color-mix(in srgb, var(--t5) 9%, transparent); }
-.sg-map { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 3px; }
-@container (min-width: 480px) { .sg-map { grid-template-columns: repeat(32, minmax(0, 1fr)); } }
-@container (min-width: 900px) { .sg-map { grid-template-columns: repeat(64, minmax(0, 1fr)); } }
+.sg-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(18px, 1fr)); gap: 4px; }
 .sg-map i { aspect-ratio: 1; border-radius: 3px; background: var(--sq); cursor: pointer; transition: box-shadow .12s; }
 .s-wait { --sq: var(--soft); cursor: default !important; animation: sgwait 1.4s ease-in-out infinite; }
 @keyframes sgwait { 50% { opacity: .55; } }
@@ -180,11 +178,14 @@ h2 { font-size: 15px; font-weight: 700; }
   .sg-top { flex-direction: column; align-items: flex-start; gap: 4px; }
   .sg-info .nm { flex-basis: 100%; }
 }
+/* someone else's address: where the connection tests would be, why they aren't, and the way to the visitor's own */
+.cnx-c { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 12px 14px; border-radius: 10px; background: var(--soft); }
+.cnx-c p { margin: 0; flex: 1 1 260px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.cnx-c .btn, .sg-v6 .btn { background: var(--ink-soft); border-color: transparent; color: var(--ink); font-weight: 600; }
+.cnx-c .btn:hover, .sg-v6 .btn:hover { background: color-mix(in srgb, var(--ink) 16%, transparent); }
 /* an IPv6 address: why there's no portrait, and the visitor's IPv4 exit to look at instead */
 .sg-v6 { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .sg-v6 p { margin: 0; max-width: 72ch; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
-.sg-v6 .btn { background: var(--ink-soft); border-color: transparent; color: var(--ink); font-weight: 600; }
-.sg-v6 .btn:hover { background: color-mix(in srgb, var(--ink) 16%, transparent); }
 .sg-v6 .btn .num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .btn .spin { animation: none; } }
 @media (max-width: 420px) { .cfc { grid-template-columns: auto minmax(0, 1fr); } .cfc > .btn { grid-column: 2; justify-self: start; margin-top: 6px; } }

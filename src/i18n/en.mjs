@@ -181,6 +181,8 @@ export default {
   sg_v_wait: "Checking the 256 neighbours…",
   sg_l_me: "The IP you checked",
   sg_src: "Public lists (updated daily, {at}):",
+  cnx_t: "The live tests here (DNS lookups, the TCP connection, Cloudflare's human check) measure your own network and browser, so they don't apply to someone else's IP.",
+  cnx_go: "Check my own IP",
   cn_h: "Live test: your connection",
   fl_dns: "DNS lookups",
   fl_tcp: "TCP connection",
