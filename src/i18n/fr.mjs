@@ -164,6 +164,7 @@ export default {
   sg_kw_vs: "Les bases d’IP la classent comme {type}, mais le /24 autour ressemble à un centre de données : l’adresse est peut-être mal classée, ou déguisée en {type}.",
   sg_rw: "{named} de ses 256 adresses ont un nom inverse. Domaines les plus fréquents : {list}.",
   sg_rw_none: "Aucune de ses 256 adresses n’a de nom inverse.",
+  sg_rw_dead: "Les serveurs DNS inverse de ce /24 ne répondent pas, ses noms sont donc illisibles.",
   sg_rw_ex: "Par exemple : {list}.",
   sg_rw_part: "Seules {n} adresses ont répondu à temps ; les autres ont expiré.",
   sg_a_none: "Aucun",

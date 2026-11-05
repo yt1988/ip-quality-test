@@ -49,7 +49,7 @@ func TestSummarize(t *testing.T) {
 		names[i] = "static." + string(rune('a'+i%26)) + ".clients.your-server.de"
 	}
 	names[250] = "mail.example.com"
-	s := Summarize(names, 256)
+	s := Summarize(names, 256, false)
 	if s.Named != 201 || s.Kinds["hosting"] != 200 || s.Kinds["mail"] != 1 {
 		t.Fatalf("summary %+v", s)
 	}
@@ -166,5 +166,15 @@ func TestCacheAndLimiter(t *testing.T) {
 	now = now.Add(2 * time.Hour)
 	if !l.Allow("x") {
 		t.Fatal("window")
+	}
+}
+
+func TestParseCymru(t *testing.T) {
+	p := parseCymru([]string{"7922 | 73.0.0.0/8 | US | arin | 2005-04-19", "7922 | 73.0.0.0/12 | US | arin | 2005-04-19", "13335 15169 | 73.0.0.0/12 | US | arin |"})
+	if p.Prefix != "73.0.0.0/12" || len(p.ASNs) != 3 {
+		t.Fatalf("%+v", p)
+	}
+	if q := parseCymru([]string{"junk"}); q.Prefix != "" || q.ASNs == nil {
+		t.Fatalf("%+v", q)
 	}
 }

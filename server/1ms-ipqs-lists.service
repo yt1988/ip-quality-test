@@ -1,0 +1,31 @@
+# Fetch the public lists into /var/lib/1ms-ipqs/lists.gob (1ms-ipqs picks it up within 10 minutes). Daily, by
+# 1ms-ipqs-lists.timer. The IP2Proxy download token is the user's, in /etc/1ms/ipqs/ip2proxy.token (empty: the
+# proxy list is skipped).
+[Unit]
+Description=1ms.dog ipqs /24 portrait: fetch the public lists
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=1ms-ipqs
+Group=1ms-ipqs
+ExecStart=/opt/1ms/ipqs/seg -update -data /var/lib/1ms-ipqs
+LoadCredential=ip2proxy:/etc/1ms/ipqs/ip2proxy.token
+StateDirectory=1ms-ipqs
+# unzipping and counting IP2Proxy's 3 million rows
+MemoryMax=400M
+TimeoutStartSec=20min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native

@@ -26,10 +26,10 @@ export function readSeg(j, type) {
   if (home && k.kind === "hosting") kw.push(["sg_kw_vs", { type }]);
   out.kind = { lv: home && k.kind === "hosting" ? "bad" : LV[k.kind], k: "sg_k_" + k.kind, p: {}, why: kw };
 
-  const rw = [r.named ? ["sg_rw", { named: r.named, list: (r.domains || []).slice(0, 3).map(d => `${d.d} (${d.n})`) }] : ["sg_rw_none", {}]];
+  const rw = [r.dead ? ["sg_rw_dead", {}] : r.named ? ["sg_rw", { named: r.named, list: (r.domains || []).slice(0, 3).map(d => `${d.d} (${d.n})`) }] : ["sg_rw_none", {}]];
   if ((r.samples || []).length) rw.push(["sg_rw_ex", { list: r.samples.slice(0, 3) }]);
   // (the server keeps a sweep for a week from 240 answers; below that it says so)
-  if (r.answered < 240) rw.push(["sg_rw_part", { n: r.answered }]);
+  if (r.answered < 240 && !r.dead) rw.push(["sg_rw_part", { n: r.answered }]);
   out.rdns = { lv: "info", k: "", p: { named: r.named, top: r.domains && r.domains[0] ? r.domains[0].d : "" }, why: rw };
 
   // open proxies and VPN providers' ranges

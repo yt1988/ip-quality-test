@@ -17,8 +17,8 @@ import { LANGS } from "../src/langs.mjs";
 
 const SITE = (process.env.SITE_URL || "https://ipqs.1ms.dog").replace(/\/+$/, "");
 // The /24 portrait service on the 1ms.dog VPS (server/), at the address Public registers in 1ms-shell
-// docs/processes.md; empty: no portrait card. SEG_API overrides it for a local test (never commit that build).
-const SEG = (process.env.SEG_API ?? "").replace(/\/+$/, "");
+// docs/processes.md (an empty one: no portrait card). SEG_API overrides it for a local test (never commit that build).
+const SEG = (process.env.SEG_API ?? "https://seg.1ms.dog:8444").replace(/\/+$/, "");
 const pub = new URL("../public/", import.meta.url), src = new URL("../src/", import.meta.url);
 export { LANGS };
 // the questions the sources table answers, one row each (src/app.js fills them)

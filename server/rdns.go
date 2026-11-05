@@ -22,10 +22,14 @@ func resolver(i int) *net.Resolver {
 	}}
 }
 
-// Sweep: the PTR name of each of the /24's addresses ("" for none), within the deadline; done says how many were
-// answered or refused before it (the rest timed out).
-func Sweep(ctx context.Context, seg uint32, workers int, each time.Duration) (names [256]string, done int) {
+// Sweep: the PTR name of each of the /24's addresses ("" for none), within the deadline; done says how many got an
+// answer of any kind before it (the rest timed out). dead: the first round (one query per worker) got no real answer
+// (only failures or timeouts), so the /24's reverse servers are taken to be down and the rest isn't asked.
+func Sweep(ctx context.Context, seg uint32, workers int, each time.Duration) (names [256]string, done int, dead bool) {
+	ctx, stop := context.WithCancel(ctx)
+	defer stop()
 	var mu sync.Mutex
+	finished, good := 0, 0
 	jobs := make(chan int)
 	var wg sync.WaitGroup
 	for w := 0; w < workers; w++ {
@@ -39,13 +43,24 @@ func Sweep(ctx context.Context, seg uint32, workers int, each time.Duration) (na
 				ns, err := r.LookupAddr(qctx, ip)
 				cancel()
 				var dnsErr *net.DNSError
-				answered := err == nil || (asDNSError(err, &dnsErr) && dnsErr.IsNotFound)
+				// a name, or a clean "no name", is a real answer; the network's own reverse servers failing (SERVFAIL)
+				// is an answer too, true of the /24, but not a working zone; only a timeout leaves the address unknown
+				isErr := asDNSError(err, &dnsErr)
+				real := err == nil || (isErr && dnsErr.IsNotFound)
+				answered := real || (isErr && !dnsErr.IsTimeout)
 				mu.Lock()
 				if err == nil && len(ns) > 0 {
 					names[i] = strings.TrimSuffix(strings.ToLower(ns[0]), ".")
 				}
 				if answered {
 					done++
+				}
+				if real {
+					good++
+				}
+				if finished++; finished == workers && good == 0 {
+					dead = true
+					stop()
 				}
 				mu.Unlock()
 			}
@@ -149,15 +164,16 @@ type Domain struct {
 
 type RDNS struct {
 	Asked    int            `json:"asked"`    // 256
-	Answered int            `json:"answered"` // answered or refused in time (the rest timed out)
+	Answered int            `json:"answered"` // answered in time, with a name or without (the rest timed out)
+	Dead     bool           `json:"dead"`     // the /24's reverse servers didn't answer at all
 	Named    int            `json:"named"`    // addresses with a name
 	Kinds    map[string]int `json:"kinds"`    // anon, hosting, dynamic, static, mail, other
 	Domains  []Domain       `json:"domains"`  // the most common domains, most first (up to 5)
 	Samples  []string       `json:"samples"`  // a few names, spread over the /24
 }
 
-func Summarize(names [256]string, answered int) RDNS {
-	out := RDNS{Asked: 256, Answered: answered, Kinds: map[string]int{}, Domains: []Domain{}, Samples: []string{}}
+func Summarize(names [256]string, answered int, dead bool) RDNS {
+	out := RDNS{Asked: 256, Answered: answered, Dead: dead, Kinds: map[string]int{}, Domains: []Domain{}, Samples: []string{}}
 	dc := map[string]int{}
 	var named []int
 	for i, n := range names {

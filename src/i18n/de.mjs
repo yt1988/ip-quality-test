@@ -164,6 +164,7 @@ export default {
   sg_kw_vs: "Die IP-Datenbanken führen sie als {type}, aber das /24 drumherum sieht nach Rechenzentrum aus: Die Adresse ist vielleicht falsch eingestuft oder als {type} getarnt.",
   sg_rw: "{named} seiner 256 Adressen haben einen Reverse-Namen. Häufigste Domains: {list}.",
   sg_rw_none: "Keine seiner 256 Adressen hat einen Reverse-Namen.",
+  sg_rw_dead: "Die Reverse-DNS-Server dieses /24 antworten nicht, seine Namen lassen sich daher nicht lesen.",
   sg_rw_ex: "Zum Beispiel: {list}.",
   sg_rw_part: "Nur {n} Adressen haben rechtzeitig geantwortet; der Rest lief in den Timeout.",
   sg_a_none: "Keine",

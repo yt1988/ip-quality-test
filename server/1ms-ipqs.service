@@ -1,0 +1,34 @@
+# The /24 portrait API for ipqs.1ms.dog: https://seg.1ms.dog:8444 (as registered in 1ms-shell docs/processes.md).
+# The certificate comes in as credentials (renewal restarts the service); the lists index is in the state directory,
+# written daily by 1ms-ipqs-lists.service.
+[Unit]
+Description=1ms.dog ipqs /24 portrait
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=1ms-ipqs
+Group=1ms-ipqs
+ExecStart=/opt/1ms/ipqs/seg -addr :8444 -cert %d/fullchain.pem -key %d/privkey.pem -data /var/lib/1ms-ipqs
+LoadCredential=fullchain.pem:/etc/letsencrypt/live/seg.1ms.dog/fullchain.pem
+LoadCredential=privkey.pem:/etc/letsencrypt/live/seg.1ms.dog/privkey.pem
+StateDirectory=1ms-ipqs
+Restart=always
+RestartSec=3
+MemoryMax=150M
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

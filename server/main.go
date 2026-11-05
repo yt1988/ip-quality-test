@@ -8,10 +8,10 @@
 // prefix of a /24 are cached in memory for 7 days (at most 5,000 /24s); the lists are read fresh on every request. No
 // request is logged, and the server's own error log is silenced (it would name clients).
 //
-//	seg -addr :8447 -cert fullchain.pem -key privkey.pem -data /var/lib/1ms-ipqs     the API
+//	seg -addr :8444 -cert fullchain.pem -key privkey.pem -data /var/lib/1ms-ipqs     the API
 //	seg -update -data /var/lib/1ms-ipqs                                               fetch the lists (daily)
 //
-// The IP2Proxy download token is read from $IP2PROXY_TOKEN or the systemd credential "ip2proxy-token".
+// The IP2Proxy download token is read from $IP2PROXY_TOKEN or the systemd credential "ip2proxy" (an empty one: none).
 // Port, directory, user and service names are as registered in 1ms-shell docs/processes.md ("专用服务器").
 package main
 
@@ -75,7 +75,7 @@ func token() string {
 		return t
 	}
 	if d := os.Getenv("CREDENTIALS_DIRECTORY"); d != "" {
-		if b, err := os.ReadFile(filepath.Join(d, "ip2proxy-token")); err == nil {
+		if b, err := os.ReadFile(filepath.Join(d, "ip2proxy")); err == nil {
 			return strings.TrimSpace(string(b))
 		}
 	}
@@ -225,11 +225,12 @@ func (s *Server) sweep(ctx context.Context, seg uint32, name string) *Seg {
 			px = p
 		}
 	}()
-	names, answered := Sweep(wctx, seg, 32, 1500*time.Millisecond)
+	names, answered, dead := Sweep(wctx, seg, 32, 2500*time.Millisecond)
 	<-pdone
-	f.seg = &Seg{Seg: name, At: time.Now().UTC(), RDNS: Summarize(names, answered), Prefix: px}
-	// a sweep cut short by slow resolvers is still shown, but asked again next time rather than kept for a week
-	if answered >= 240 {
+	f.seg = &Seg{Seg: name, At: time.Now().UTC(), RDNS: Summarize(names, answered, dead), Prefix: px}
+	// a sweep cut short by slow resolvers, or without its prefix, is still shown, but asked again next time rather
+	// than kept for a week
+	if (answered >= 240 || dead) && px != nil {
 		s.cache.Put(seg, f.seg)
 	}
 	return f.seg

@@ -55,3 +55,9 @@ test("readSeg: a partial sweep, no prefix, RIPEstat down", () => {
   assert.equal(readSeg({ ...hetzner, prefix: { prefix: "", asns: [] } }, "hosting").prefix.k, "sg_p_none");
   assert.equal(readSeg({ ...hetzner, prefix: null }, "hosting").prefix.lv, "none");
 });
+
+test("readSeg: a /24 whose reverse servers are down says so, not that answers were late", () => {
+  const r = readSeg({ ...hetzner, rdns: { asked: 256, answered: 32, dead: true, named: 0, kinds: {}, domains: [], samples: [] } }, "residential").rdns;
+  assert.equal(r.why[0][0], "sg_rw_dead");
+  assert.ok(!r.why.some(([k]) => k === "sg_rw_part"));
+});

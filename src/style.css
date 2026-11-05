@@ -125,13 +125,21 @@ h2 { font-size: 15px; font-weight: 700; }
 .cf-w:not(:empty) { margin-top: 6px; }
 .cf-w iframe { max-width: 100%; }
 #cft[hidden], #cfGo[hidden], #cfX[hidden] { display: none; }
-/* the /24 portrait: its six findings in the findings' cells, the /24 in the heading, the lists' credit under them */
+/* the /24 portrait: a card of its own between the hero and the sources, the /24 by its heading, six findings in the
+   findings' cells (each with its first sentence under the answer, the rest on hover), the lists' credit under them */
 #sgt[hidden], #cnt[hidden] { display: none; }
-.sg-n { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
-.sg-src { margin: 6px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.segs { padding: 18px 22px 16px; display: flex; flex-direction: column; gap: 12px; }
+.sg-head { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.segs h2 { font-size: 16px; letter-spacing: -.01em; }
+.sg-n { margin-left: auto; color: var(--muted); font-size: 13px; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.sg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fc-d { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fc-d:empty { display: none; }
+.sg-src { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
 .sg-src a { color: inherit; }
-/* a prefix such as 138.226.239.0/24 fits its half-width cell on a phone (its AS stays in the hover text) */
-@media (max-width: 420px) { #sgt .fc-v .num { font-size: 12.5px; } #sgt [data-f="sg_prefix"] .fc-v .m { display: none; } }
+@media (max-width: 860px) { .sg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .segs { padding: 16px 16px 14px; } }
+@media (max-width: 560px) { .sg-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .btn .spin { animation: none; } }
 @media (max-width: 420px) { .cfc { grid-template-columns: auto minmax(0, 1fr); } .cfc > .btn { grid-column: 2; justify-self: start; margin-top: 6px; } }
 .ugrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }

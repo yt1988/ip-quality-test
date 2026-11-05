@@ -1,0 +1,10 @@
+# Daily at 05:10 UTC, as Public scheduled it (after asn 03:40 and cdn-ecs 04:20).
+[Unit]
+Description=1ms.dog ipqs /24 portrait: fetch the public lists daily
+
+[Timer]
+OnCalendar=*-*-* 05:10:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

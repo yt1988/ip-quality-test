@@ -164,6 +164,7 @@ export default {
   sg_kw_vs: "The IP databases call it {type}, but the /24 around it looks like a data centre: the address may be mislabelled, or dressed up as {type}.",
   sg_rw: "{named} of its 256 addresses have a reverse name. Most common domains: {list}.",
   sg_rw_none: "None of its 256 addresses has a reverse name.",
+  sg_rw_dead: "This /24's reverse DNS servers don't answer, so its names can't be read.",
   sg_rw_ex: "For example: {list}.",
   sg_rw_part: "Only {n} addresses answered in time; the rest timed out.",
   sg_a_none: "None",

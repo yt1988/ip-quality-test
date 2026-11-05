@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -206,6 +207,11 @@ func fetch(dir, url string) (string, error) {
 	req.Header.Set("User-Agent", "1ms.dog ipqs lists (+https://ipqs.1ms.dog)")
 	res, err := client.Do(req)
 	if err != nil {
+		// without the URL: IP2Proxy's holds the account's token, and this error goes to the system log
+		var ue *neturl.Error
+		if errors.As(err, &ue) {
+			return "", ue.Err
+		}
 		return "", err
 	}
 	defer res.Body.Close()

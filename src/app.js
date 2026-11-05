@@ -572,7 +572,9 @@ import { readSeg } from "./seg.mjs";
       const v = f === "rdns" ? `<span class="num">${x.p.named}/256</span>` + (x.p.top ? ` <span class="m">${esc(x.p.top)}</span>` : "")
         : f === "prefix" && x.p.prefix ? `<span class="num">${esc(x.p.prefix)}</span>` + (x.p.asns.length ? ` <span class="m">AS${x.p.asns[0]}</span>` : "")
         : x.lv === "none" ? `<span class="m">${esc(t(x.k))}</span>` : esc(t(x.k, x.p));
-      finding("sg_" + f, x.lv, v, x.why.map(([k, q]) => say(k, q)).join("\n"));
+      const lines = x.why.map(([k, q]) => say(k, q));
+      finding("sg_" + f, x.lv, v, lines.join("\n"));
+      $(`[data-f="sg_${f}"] .fc-d`).textContent = lines[0] || "";
     }
     $("#sgN").textContent = j.seg;
     const src = SG_SRC.filter(([k]) => L[k] != null).map(([, n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`);
