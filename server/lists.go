@@ -1,10 +1,10 @@
 package main
 
-// The public lists a /24 is read against, downloaded once a day by `seg -update` and kept as a compact index (a few
-// MB): per /24, how many of its addresses a list names, and for range lists, how much of the /24 they cover.
+// The public lists a /24 is read against, downloaded once a day by `seg -update` and kept as a compact index: for each
+// /24, which of its 256 addresses each list names (a 256-bit mask), and IPsum's score for each address it names.
 //
 //   proxy  IP2Proxy PX1 LITE: open public proxies (free with attribution; needs the account's download token)
-//   bad    IPsum: addresses on many public blocklists, each with a score (how many lists name it, 1–10)
+//   bad    IPsum: addresses on many public blocklists, each with a score (how many lists name it)
 //   tor    the Tor Project's exit list
 //   vpn    X4BNet lists_vpn, output/vpn: VPN providers' ranges (MIT)
 //   dc     X4BNet lists_vpn, output/datacenter: data centres and VPNs, anything not an eyeball network (MIT)
@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/bits"
 	"net/http"
 	"net/netip"
 	neturl "net/url"
@@ -32,73 +33,129 @@ import (
 	"time"
 )
 
-// Counts: per /24 (its first address >> 8), how many addresses a list names, and the highest score among them.
-type Counts struct {
+// Mask: one bit per address of a /24 (bit i: the address .i)
+type Mask [4]uint64
+
+func (m *Mask) set(lo, hi int) {
+	for i := lo; i <= hi; i++ {
+		m[i>>6] |= 1 << (i & 63)
+	}
+}
+func (m Mask) Has(i int) bool { return m[i>>6]>>(i&63)&1 == 1 }
+func (m Mask) Count() int {
+	return bits.OnesCount64(m[0]) + bits.OnesCount64(m[1]) + bits.OnesCount64(m[2]) + bits.OnesCount64(m[3])
+}
+
+// Bits: per /24 (its first address >> 8), which addresses a list names; sorted by /24
+type Bits struct {
 	K []uint32
-	N []uint16
+	M []Mask
+}
+
+func (b Bits) Of(seg uint32) Mask {
+	i := sort.Search(len(b.K), func(i int) bool { return b.K[i] >= seg })
+	if i < len(b.K) && b.K[i] == seg {
+		return b.M[i]
+	}
+	return Mask{}
+}
+
+// Scored: single addresses with a score (IPsum), sorted
+type Scored struct {
+	A []uint32
 	S []uint8
 }
 
-func (c Counts) Get(seg uint32) (n int, s int) {
-	i := sort.Search(len(c.K), func(i int) bool { return c.K[i] >= seg })
-	if i < len(c.K) && c.K[i] == seg {
-		return int(c.N[i]), int(c.S[i])
+func (x Scored) Of(seg uint32) (m Mask, score [256]uint8) {
+	i := sort.Search(len(x.A), func(i int) bool { return x.A[i] >= seg<<8 })
+	for ; i < len(x.A) && x.A[i]>>8 == seg; i++ {
+		o := int(x.A[i] & 0xff)
+		m.set(o, o)
+		score[o] = x.S[i]
 	}
-	return 0, 0
+	return
 }
 
 // Ranges: merged, sorted, inclusive [from, to] address ranges.
 type Ranges struct{ F, T []uint32 }
 
-// Cover: how many addresses of the /24 the ranges hold (0–256).
-func (r Ranges) Cover(seg uint32) int {
+func (r Ranges) Of(seg uint32) (m Mask) {
 	lo, hi := seg<<8, seg<<8|0xff
 	i := sort.Search(len(r.T), func(i int) bool { return r.T[i] >= lo })
-	n := 0
 	for ; i < len(r.F) && r.F[i] <= hi; i++ {
 		a, b := max(r.F[i], lo), min(r.T[i], hi)
 		if b >= a {
-			n += int(b-a) + 1
+			m.set(int(a&0xff), int(b&0xff))
 		}
 	}
-	return n
+	return
 }
 
 type Index struct {
 	At    map[string]time.Time // when each list was last fetched; absent: never
-	Proxy Counts
-	Bad   Counts
-	Tor   Counts
+	Proxy Bits
+	Bad   Scored
+	Tor   Bits
 	VPN   Ranges
 	DC    Ranges
 	Drop  Ranges
 }
 
-// counting addresses (and ranges, split at /24 boundaries) into Counts
-type counter map[uint32][2]int
+// building Bits: addresses and ranges (split at /24 boundaries) set into each /24's mask
+type bitset map[uint32]*Mask
 
-func (c counter) add(from, to uint32, score int) {
+func (b bitset) add(from, to uint32) {
 	for seg := from >> 8; seg <= to>>8; seg++ {
 		lo, hi := max(from, seg<<8), min(to, seg<<8|0xff)
-		v := c[seg]
-		v[0] += int(hi-lo) + 1
-		v[1] = max(v[1], score)
-		c[seg] = v
+		m := b[seg]
+		if m == nil {
+			m = &Mask{}
+			b[seg] = m
+		}
+		m.set(int(lo&0xff), int(hi&0xff))
 		if seg == 0xffffff {
 			break
 		}
 	}
 }
 
-func (c counter) counts() Counts {
-	out := Counts{K: make([]uint32, 0, len(c))}
-	for k := range c {
+func (b bitset) bits() Bits {
+	out := Bits{K: make([]uint32, 0, len(b))}
+	for k := range b {
 		out.K = append(out.K, k)
 	}
 	sort.Slice(out.K, func(i, j int) bool { return out.K[i] < out.K[j] })
-	out.N, out.S = make([]uint16, len(out.K)), make([]uint8, len(out.K))
+	out.M = make([]Mask, len(out.K))
 	for i, k := range out.K {
-		out.N[i], out.S[i] = uint16(min(c[k][0], 256)), uint8(min(c[k][1], 255))
+		out.M[i] = *b[k]
+	}
+	return out
+}
+
+// building Scored: the highest score an address is given
+type scores map[uint32]int
+
+func (s scores) add(from, to uint32, score int) {
+	if to-from > 65535 {
+		return // IPsum lists single addresses; a range this wide isn't one of them
+	}
+	for a := from; ; a++ {
+		s[a] = max(s[a], score)
+		if a == to {
+			break
+		}
+	}
+}
+
+func (s scores) scored() Scored {
+	out := Scored{A: make([]uint32, 0, len(s))}
+	for a := range s {
+		out.A = append(out.A, a)
+	}
+	sort.Slice(out.A, func(i, j int) bool { return out.A[i] < out.A[j] })
+	out.S = make([]uint8, len(out.A))
+	for i, a := range out.A {
+		out.S[i] = uint8(min(max(s[a], 1), 255))
 	}
 	return out
 }
@@ -230,12 +287,12 @@ func fetch(dir, url string) (string, error) {
 	return f.Name(), nil
 }
 
-func loadPX1(path string, c counter) error {
+func loadPX1(path string, b bitset) error {
 	z, err := zip.OpenReader(path)
 	if err != nil {
 		// a refused token answers with a short text page instead of the zip
-		b, _ := os.ReadFile(path)
-		return fmt.Errorf("not a zip (%q)", strings.TrimSpace(string(b[:min(len(b), 80)])))
+		raw, _ := os.ReadFile(path)
+		return fmt.Errorf("not a zip (%q)", strings.TrimSpace(string(raw[:min(len(raw), 80)])))
 	}
 	defer z.Close()
 	for _, f := range z.File {
@@ -245,7 +302,7 @@ func loadPX1(path string, c counter) error {
 				return err
 			}
 			defer r.Close()
-			return parsePX1(r, func(from, to uint32) { c.add(from, to, 0) })
+			return parsePX1(r, b.add)
 		}
 	}
 	return errors.New("no CSV in the zip")
@@ -276,13 +333,15 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 			errs = append(errs, fmt.Errorf("%s: %w", name, err))
 			continue
 		}
-		c, rs := counter{}, [][2]uint32{}
+		b, sc, rs := bitset{}, scores{}, [][2]uint32{}
 		switch name {
 		case "proxy":
-			err = loadPX1(path, c)
-		case "bad", "tor":
+			err = loadPX1(path, b)
+		case "bad":
+			err = withFile(path, func(r io.Reader) error { return parseLines(r, true, sc.add) })
+		case "tor":
 			err = withFile(path, func(r io.Reader) error {
-				return parseLines(r, name == "bad", func(f, t uint32, s int) { c.add(f, t, s) })
+				return parseLines(r, false, func(f, t uint32, _ int) { b.add(f, t) })
 			})
 		default:
 			err = withFile(path, func(r io.Reader) error {
@@ -290,7 +349,7 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 			})
 		}
 		os.Remove(path)
-		if err == nil && len(c) == 0 && len(rs) == 0 {
+		if err == nil && len(b) == 0 && len(sc) == 0 && len(rs) == 0 {
 			err = errors.New("empty")
 		}
 		if err != nil {
@@ -299,11 +358,11 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 		}
 		switch name {
 		case "proxy":
-			idx.Proxy = c.counts()
+			idx.Proxy = b.bits()
 		case "bad":
-			idx.Bad = c.counts()
+			idx.Bad = sc.scored()
 		case "tor":
-			idx.Tor = c.counts()
+			idx.Tor = b.bits()
 		case "vpn":
 			idx.VPN = merge(rs)
 		case "dc":
@@ -325,7 +384,8 @@ func withFile(path string, fn func(io.Reader) error) error {
 	return fn(f)
 }
 
-const indexFile = "lists.gob"
+// lists2.gob: the per-address index (lists.gob was the first, per-/24 counts only)
+const indexFile = "lists2.gob"
 
 func Save(dir string, idx *Index) error {
 	tmp, err := os.CreateTemp(dir, "lists-*.tmp")
@@ -359,7 +419,17 @@ func Load(dir string) (*Index, time.Time, error) {
 	return &idx, st.ModTime(), nil
 }
 
-// ListsOf: the /24's line for each list; nil for a list never fetched.
+// Per-address flags in an answer
+const (
+	FProxy = 1 << iota
+	FBad
+	FTor
+	FVPN
+	FDC
+	FDrop
+)
+
+// ListsOf: the /24's count for each list; nil for a list never fetched.
 type ListsOf struct {
 	Proxy  *int      `json:"proxy"`  // open proxies among its addresses
 	Bad    *int      `json:"bad"`    // addresses on IPsum
@@ -371,28 +441,37 @@ type ListsOf struct {
 	At     time.Time `json:"at"`     // the oldest list's fetch time
 }
 
-func (idx *Index) Of(seg uint32) ListsOf {
-	var out ListsOf
+// Of: the /24's counts, and for each of its addresses the lists naming it (F* flags) and its IPsum score.
+func (idx *Index) Of(seg uint32) (out ListsOf, flags []int, score []int) {
+	flags, score = make([]int, 256), make([]int, 256)
 	if idx == nil {
-		return out
+		return
 	}
-	p := func(name string, n int) *int {
+	put := func(name string, m Mask, f int) *int {
 		if _, ok := idx.At[name]; !ok {
 			return nil
 		}
 		if out.At.IsZero() || idx.At[name].Before(out.At) {
 			out.At = idx.At[name]
 		}
+		for i := 0; i < 256; i++ {
+			if m.Has(i) {
+				flags[i] |= f
+			}
+		}
+		n := m.Count()
 		return &n
 	}
-	n, _ := idx.Proxy.Get(seg)
-	out.Proxy = p("proxy", n)
-	n, s := idx.Bad.Get(seg)
-	out.Bad, out.BadMax = p("bad", n), s
-	n, _ = idx.Tor.Get(seg)
-	out.Tor = p("tor", n)
-	out.VPN = p("vpn", idx.VPN.Cover(seg))
-	out.DC = p("dc", idx.DC.Cover(seg))
-	out.Drop = p("drop", idx.Drop.Cover(seg))
-	return out
+	bad, sc := idx.Bad.Of(seg)
+	out.Proxy = put("proxy", idx.Proxy.Of(seg), FProxy)
+	out.Bad = put("bad", bad, FBad)
+	out.Tor = put("tor", idx.Tor.Of(seg), FTor)
+	out.VPN = put("vpn", idx.VPN.Of(seg), FVPN)
+	out.DC = put("dc", idx.DC.Of(seg), FDC)
+	out.Drop = put("drop", idx.Drop.Of(seg), FDrop)
+	for i, s := range sc {
+		score[i] = int(s)
+		out.BadMax = max(out.BadMax, int(s))
+	}
+	return
 }

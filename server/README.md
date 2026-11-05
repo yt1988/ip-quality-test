@@ -6,7 +6,7 @@ The service behind ipqs's "/24 portrait" card, on the 1ms.dog VPS. For an IPv4 a
   (hosting, home and mobile access, fixed business lines, VPN/proxy words, mail). The most common domains and a few
   sample names come back with the counts.
 - **Prefix**: the announced prefix holding it and its origin AS (RIPEstat `network-info`).
-- **Public lists**, fetched once a day into a compact index (under 1 MB without IP2Proxy):
+- **Public lists**, fetched once a day into a per-address index (about 10 MB):
   IP2Proxy PX1 LITE (open proxies; free with attribution, needs a free account's download token), IPsum (malicious
   IPs with a 1–10 score; Unlicense), X4BNet lists_vpn (VPN and data-centre ranges; MIT), Spamhaus DROP, the Tor
   Project's exit list. The page credits them under the card.
@@ -25,10 +25,13 @@ own error log, which would name clients.
  "rdns":{"asked":256,"answered":255,"named":255,"kinds":{"hosting":208,"mail":7,"anon":2,"other":38},
          "domains":[{"d":"your-server.de","n":204}],"samples":["static.0.1.216.95.clients.your-server.de"]},
  "prefix":{"prefix":"95.216.0.0/16","asns":[24940]},
- "lists":{"proxy":null,"bad":0,"badMax":0,"tor":0,"vpn":0,"dc":256,"drop":0,"at":"…"}}
+ "lists":{"proxy":8,"bad":0,"badMax":0,"tor":0,"vpn":0,"dc":256,"drop":0,"at":"…"},
+ "names":["static.0.1.216.95.clients.your-server.de", …256], "kinds":"hhhh…", "flags":[16,16,17,…256], "score":[0,…256]}
 ```
 
-A list never fetched is `null` (not "none listed"); `vpn`, `dc` and `drop` count the /24's addresses inside those
+Per address: `names` ("" for none), `kinds` (one letter each: h hosting, d home or mobile, s fixed line, a VPN or proxy
+words, m mail, o other, - no name), `flags` (1 open proxy, 2 IPsum, 4 Tor exit, 8 VPN range, 16 data-centre range,
+32 Spamhaus DROP) and `score` (IPsum: how many blocklists name it). A list never fetched is `null` (not "none listed"); `vpn`, `dc` and `drop` count the /24's addresses inside those
 ranges (0–256). Errors: 400 `bad_ip` (not a public IPv4 address), 429 `rate`, 503 `busy`. `GET /healthz` →
 `{"ok":true,"lists":true}`.
 

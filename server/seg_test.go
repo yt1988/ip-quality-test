@@ -58,32 +58,36 @@ func TestSummarize(t *testing.T) {
 	}
 }
 
-func TestCountsAndRanges(t *testing.T) {
-	c := counter{}
+func TestMasksAndRanges(t *testing.T) {
+	b := bitset{}
 	a, _ := v4("1.2.3.4")
-	c.add(a, a, 3)
-	c.add(a+1, a+1, 7)
+	b.add(a, a+1)
 	// a range across two /24s splits between them
 	f, _ := v4("1.2.4.250")
-	c.add(f, f+9, 0)
-	k := c.counts()
-	if n, s := k.Get(0x010203); n != 2 || s != 7 {
-		t.Fatalf("1.2.3.0/24: %d %d", n, s)
+	b.add(f, f+9)
+	k := b.bits()
+	if m := k.Of(0x010203); m.Count() != 2 || !m.Has(4) || !m.Has(5) || m.Has(6) {
+		t.Fatalf("1.2.3.0/24: %v", m)
 	}
-	if n, _ := k.Get(0x010204); n != 6 {
-		t.Fatalf("1.2.4.0/24: %d", n)
+	if k.Of(0x010204).Count() != 6 || k.Of(0x010205).Count() != 4 || k.Of(0x010206).Count() != 0 {
+		t.Fatal("split")
 	}
-	if n, _ := k.Get(0x010205); n != 4 {
-		t.Fatalf("1.2.5.0/24: %d", n)
+	s := scores{}
+	s.add(a, a, 3)
+	s.add(a, a, 7)
+	s.add(a+9, a+9, 2)
+	m, sc := s.scored().Of(0x010203)
+	if m.Count() != 2 || sc[4] != 7 || sc[13] != 2 {
+		t.Fatalf("scores %v %v", m, sc[:16])
 	}
 	lo, hi, _ := rangeOf("10.0.0.0/23")
 	mid, _, _ := rangeOf("10.0.1.128/25")
 	r := merge([][2]uint32{{lo, hi}, {mid, mid + 127}})
-	if len(r.F) != 1 || r.Cover(0x0a0000) != 256 || r.Cover(0x0a0001) != 256 || r.Cover(0x0a0002) != 0 {
+	if len(r.F) != 1 || r.Of(0x0a0000).Count() != 256 || r.Of(0x0a0001).Count() != 256 || r.Of(0x0a0002).Count() != 0 {
 		t.Fatalf("ranges %+v", r)
 	}
 	half, _, _ := rangeOf("10.9.9.0/25")
-	if h := (Ranges{F: []uint32{half}, T: []uint32{half + 127}}); h.Cover(0x0a0909) != 128 {
+	if h := (Ranges{F: []uint32{half}, T: []uint32{half + 127}}).Of(0x0a0909); h.Count() != 128 || !h.Has(127) || h.Has(128) {
 		t.Fatal("half a /24")
 	}
 }
@@ -107,28 +111,45 @@ func TestPX1(t *testing.T) {
 	w.Write([]byte(`"16909060","16909061","US","United States of America"` + "\n"))
 	z.Close()
 	f.Close()
-	c := counter{}
+	c := bitset{}
 	if err := loadPX1(p, c); err != nil {
 		t.Fatal(err)
 	}
-	if n, _ := c.counts().Get(0x010203); n != 2 {
+	if n := c.bits().Of(0x010203).Count(); n != 2 {
 		t.Fatalf("px1 %d", n)
 	}
 	// a refused token: a text page, named in the error
 	os.WriteFile(p, []byte("THIS FILE CAN ONLY BE DOWNLOADED 5 TIMES PER HOUR"), 0o644)
-	if err := loadPX1(p, counter{}); err == nil || !strings.Contains(err.Error(), "5 TIMES") {
+	if err := loadPX1(p, bitset{}); err == nil || !strings.Contains(err.Error(), "5 TIMES") {
 		t.Fatalf("err %v", err)
 	}
 }
 
 func TestOfNullsWhatWasNeverFetched(t *testing.T) {
 	idx := &Index{At: map[string]time.Time{"bad": time.Now()}}
-	o := idx.Of(0x010203)
-	if o.Bad == nil || *o.Bad != 0 || o.Proxy != nil || o.VPN != nil {
+	o, flags, _ := idx.Of(0x010203)
+	if o.Bad == nil || *o.Bad != 0 || o.Proxy != nil || o.VPN != nil || len(flags) != 256 {
 		t.Fatalf("%+v", o)
 	}
-	if (*Index)(nil).Of(1).Bad != nil {
+	if o, _, _ := (*Index)(nil).Of(1); o.Bad != nil {
 		t.Fatal("nil index")
+	}
+	// flags per address: an IPsum address and a DROP range
+	a, _ := v4("1.2.3.9")
+	d, _, _ := rangeOf("1.2.3.0/25")
+	idx = &Index{At: map[string]time.Time{"bad": time.Now(), "drop": time.Now()}, Bad: scores{a: 5}.scored(), Drop: merge([][2]uint32{{d, d + 127}})}
+	o, flags, score := idx.Of(0x010203)
+	if flags[9] != FBad|FDrop || flags[200] != 0 || score[9] != 5 || *o.Drop != 128 || o.BadMax != 5 {
+		t.Fatalf("%v %v %+v", flags[9], score[9], o)
+	}
+}
+
+func TestKindsOf(t *testing.T) {
+	names := make([]string, 256)
+	names[0], names[1] = "static.1.clients.your-server.de", "ppp-1.dynamic.ocn.ne.jp"
+	k := kindsOf(names)
+	if len(k) != 256 || k[:3] != "hd-" {
+		t.Fatal(k[:3])
 	}
 }
 

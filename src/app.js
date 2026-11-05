@@ -7,7 +7,7 @@ import { assess } from "./score.mjs";
 import { ccOfName, SOURCES } from "./sources.mjs";
 import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
 import { readDns, readConn } from "./conn.mjs";
-import { readSeg } from "./seg.mjs";
+import { readSeg, addrLines } from "./seg.mjs";
 
 (function () {
   "use strict";
@@ -82,7 +82,7 @@ import { readSeg } from "./seg.mjs";
 
   /* ---------- hide the address (for screenshots) ---------- */
   const eye = $("#eye"), masked = () => store.get(K.mask) === "1";
-  const applyMask = () => { $("#facts").classList.toggle("masked", masked()); $("#exList").classList.toggle("masked", masked()); eye.textContent = t(masked() ? "show" : "hide"); };
+  const applyMask = () => { $("#facts").classList.toggle("masked", masked()); $("#exList").classList.toggle("masked", masked()); $("#sgt").classList.toggle("masked", masked()); eye.textContent = t(masked() ? "show" : "hide"); };
   eye.onclick = () => { store.set(K.mask, masked() ? "0" : "1"); applyMask(); };
   applyMask();
 
@@ -483,6 +483,7 @@ import { readSeg } from "./seg.mjs";
       li.onclick = go; li.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
     });
     markExit(CUR ? CUR.ip : null); showLinks();
+    if (SNAP && SNAP.v === 6) segShow();
   }
   // the visitor's own address, with its country when the shell gave one (no lookup needed for it then)
   function noteMine(ip, cc) {
@@ -553,34 +554,68 @@ import { readSeg } from "./seg.mjs";
   function segStart(ip, v) {
     segP = D.seg && !EMBED && v === 4 && ip ? getJ(D.seg + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null) : null;
   }
-  const SG = ["kind", "rdns", "anon", "bad", "tor", "prefix"];
   // the lists' credit (IP2Proxy LITE asks for it), with the oldest list's date
   const SG_SRC = [["proxy", "IP2Proxy LITE", "https://lite.ip2location.com"], ["bad", "IPsum", "https://github.com/stamparm/ipsum"],
     ["vpn", "X4BNet", "https://github.com/X4BNet/lists_vpn"], ["drop", "Spamhaus DROP", "https://www.spamhaus.org/blocklists/do-not-route-or-peer/"],
     ["tor", "Tor Project", "https://www.torproject.org/"]];
+  // the legend: each colour, when its list was read
+  const SG_LEG = { bad: "bad", proxy: "proxy", tor: "tor", vpn: "vpn", ok: null, idle: null };
+  const TAG = { ok: "good", warn: "warn", bad: "bad" };
+  // list parameters read as a list in the page's language; a network type by its name
+  const say = (k, v) => { const q = { ...v }; for (const x in q) if (Array.isArray(q[x])) q[x] = list(q[x]); if (q.type) q.type = typeName(q.type); return t(k, q); };
+  // An IPv6 address has no portrait: a /64 alone is 2^64 addresses, too many to name one by one, and the lists are
+  // IPv4 only. The card says so, and for the visitor's own check offers their IPv4 exit (the one in the address's
+  // country first), whose check then shows its /24.
+  function segV6(snap) {
+    const box = $("#sgt"), v4s = mine() ? [...EX.values()].filter(x => family(x.ip) === 4) : [];
+    const v4 = (v4s.find(x => x.cc && x.cc === snap.r.summary.cc) || v4s[0] || {}).ip;
+    $("#sgN").textContent = ""; $("#sgBody").hidden = true;
+    $("#sgV6T").textContent = t("sg_v6");
+    const go = $("#sgGo"); go.hidden = !v4;
+    if (v4) { go.textContent = t("sg_v6_go", { ip: v4 }); go.onclick = () => { input.value = ""; run(v4, true); }; }
+    $("#sgV6").hidden = false; box.hidden = false;
+  }
+  // the map: one square per address; the one under the pointer (or the last one tapped, or the checked one) is told
+  // under it
+  let sgCells = [], sgPick = -1;
+  const sgSay = i => {
+    const c = sgCells[i]; if (!c) { $("#sgInfo").textContent = t("sg_hint"); return; }
+    $("#sgInfo").innerHTML = `<b>${esc(c.ip)}</b>${c.me ? " · " + esc(t("sg_me")) : ""} · ${esc(c.name || t("sg_a_noname"))} · ${esc(addrLines(c).map(([k, q]) => say(k, q)).join(t("v_join")))}`;
+  };
+  const sgRest = () => sgSay(sgPick >= 0 ? sgPick : sgCells.findIndex(c => c.me));
+  const sgMap = $("#sgMap");
+  sgMap.addEventListener("mouseover", e => { const n = e.target.dataset && e.target.dataset.n; if (n != null) sgSay(+n); });
+  sgMap.addEventListener("mouseleave", sgRest);
+  sgMap.addEventListener("click", e => {
+    const n = e.target.dataset && e.target.dataset.n; if (n == null) return;
+    const old = sgMap.querySelector(".on"); if (old) old.classList.remove("on");
+    sgPick = +n; e.target.classList.add("on"); sgSay(sgPick);
+  });
   async function segShow() {
     const box = $("#sgt"), snap = SNAP, p = segP;
+    if (snap && snap.v === 6 && D.seg && !EMBED) { segV6(snap); return; }
+    $("#sgV6").hidden = true; $("#sgBody").hidden = false;
     if (!snap || !p) { box.hidden = true; return; }
     const j = await p;
     if (snap !== SNAP || p !== segP) return;
     if (!j || !j.rdns) { box.hidden = true; return; }
-    const r = readSeg(j, snap.r.summary.type), L = j.lists || {};
-    // list parameters read as a list in the page's language; a network type by its name
-    const say = (k, v) => { const q = { ...v }; for (const x in q) if (Array.isArray(q[x])) q[x] = list(q[x]); if (q.type) q.type = typeName(q.type); return t(k, q); };
-    for (const f of SG) {
-      const x = r[f];
-      const v = f === "rdns" ? `<span class="num">${x.p.named}/256</span>` + (x.p.top ? ` <span class="m">${esc(x.p.top)}</span>` : "")
-        : f === "prefix" && x.p.prefix ? `<span class="num">${esc(x.p.prefix)}</span>` + (x.p.asns.length ? ` <span class="m">AS${x.p.asns[0]}</span>` : "")
-        : x.lv === "none" ? `<span class="m">${esc(t(x.k))}</span>` : esc(t(x.k, x.p));
-      const lines = x.why.map(([k, q]) => say(k, q));
-      finding("sg_" + f, x.lv, v, lines.join("\n"));
-      $(`[data-f="sg_${f}"] .fc-d`).textContent = lines[0] || "";
-    }
-    $("#sgN").textContent = j.seg;
+    const r = readSeg(j, snap.r.summary.type, snap.ip), L = j.lists || {};
+    $("#sgN").textContent = `${r.base}.0 – ${r.base}.255`;
+    const kt = $("#sgKind"); kt.className = "tag " + (TAG[r.kind.lv] || ""); kt.textContent = t("sg_k_" + r.kind.kind);
+    $("#sgSum").textContent = r.sum.map(([k, q]) => say(k, q)).join(gap);
+    const vs = $("#sgVs"); vs.hidden = !r.vs; vs.textContent = r.vs ? say(...r.vs) : "";
+    sgCells = r.cells; sgPick = -1;
+    sgMap.innerHTML = r.cells.map((c, i) => `<i class="s-${c.st}${c.me ? " me" : ""}" data-n="${i}"></i>`).join("");
+    sgRest();
+    $("#sgLeg").innerHTML = Object.entries(SG_LEG).filter(([, l]) => !l || r.lists[l])
+      .map(([st]) => `<li><i class="s-${st}"></i>${esc(t("sg_l_" + st))} <b>${r.count[st]}</b></li>`).join("");
     const src = SG_SRC.filter(([k]) => L[k] != null).map(([, n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`);
     $("#sgSrc").innerHTML = src.length ? esc(t("sg_src", { at: L.at ? new Date(L.at).toLocaleDateString(LANG) : "" })) + (CJK ? "" : " ") + src.join(esc(t("v_join"))) : "";
     box.hidden = false;
   }
+  // the visitor's own connection: their own check, or a check of one of the exits found for them (the connection
+  // tests below and the IPv6 card's IPv4 exit are for them, not for someone else's address)
+  function mine() { return !SHARED && (!lastIp || EX.has(lastIp)); }
 
   /* ---------- the connection, measured on the 1ms.dog server: the DNS resolver and the TCP handshake ---------- */
   // What the sources above can't see, because it isn't in the address: which DNS resolvers look names up for the
@@ -611,8 +646,8 @@ import { readSeg } from "./seg.mjs";
   };
   async function cnShow() {
     const box = $("#cnt"), snap = SNAP;
-    // a shared result, another address, or no reading from either server: no card
-    if (!CN_ON || !snap || SHARED || lastIp) { box.hidden = true; return; }
+    // a shared result, someone else's address, or no reading from either server: no card
+    if (!CN_ON || !snap || !mine()) { box.hidden = true; return; }
     const [hits, tcp] = await Promise.all([cnDns, cnTcp]);
     if (snap !== SNAP) return;
     const s = snap.r.summary, exit = { ip: snap.ip, asn: s.asn, cc: s.cc, type: s.type, ips: [...EX.keys()] };
@@ -682,7 +717,7 @@ import { readSeg } from "./seg.mjs";
   function cfShow() {
     const box = $("#cft"), res = SNAP && SNAP.cf;
     // a shared result shows the sender's answer when it holds one; a check of another address has nothing to test
-    const can = !!(CFK && SNAP && !SHARED && !lastIp);
+    const can = !!(CFK && SNAP && mine());
     box.hidden = !(res || can);
     if (box.hidden) { $("#cfW").textContent = ""; cfUnhold(); return; }
     if (res) cfCard(res, CF_LV[res], t("cf_v_" + res), t("cf_" + res), cfRead(res));

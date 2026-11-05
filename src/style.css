@@ -125,21 +125,39 @@ h2 { font-size: 15px; font-weight: 700; }
 .cf-w:not(:empty) { margin-top: 6px; }
 .cf-w iframe { max-width: 100%; }
 #cft[hidden], #cfGo[hidden], #cfX[hidden] { display: none; }
-/* the /24 portrait: a card of its own between the hero and the sources, the /24 by its heading, six findings in the
-   findings' cells (each with its first sentence under the answer, the rest on hover), the lists' credit under them */
-#sgt[hidden], #cnt[hidden] { display: none; }
+/* the /24 portrait: a card of its own between the hero and the sources. A line on what the /24 is, then its 256
+   addresses as squares in the colour of their worst listing (32 a row, 16 on a phone), the one checked ringed; the
+   address under the pointer (or the last one tapped) below them, then the legend with each colour's count */
+#sgt[hidden], #cnt[hidden], .sg-v6[hidden], #sgGo[hidden], .sg-body[hidden], #sgVs[hidden] { display: none; }
 .segs { padding: 18px 22px 16px; display: flex; flex-direction: column; gap: 12px; }
 .sg-head { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
 .segs h2 { font-size: 16px; letter-spacing: -.01em; }
-.sg-n { margin-left: auto; color: var(--muted); font-size: 13px; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
-.sg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.fc-d { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.fc-d:empty { display: none; }
+.sg-n { margin-left: auto; color: var(--muted); font-size: 13px; font-family: var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sg-body { display: flex; flex-direction: column; gap: 12px; }
+.sg-sum { margin: 0; font-size: 13.5px; line-height: 1.65; }
+.sg-sum .tag { margin-right: 8px; vertical-align: 1px; }
+.sg-vs { margin: 0; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.55; color: var(--t5); background: color-mix(in srgb, var(--t5) 9%, transparent); }
+.sg-map { --sq: var(--t1); display: grid; grid-template-columns: repeat(32, minmax(0, 1fr)); gap: 3px; }
+.sg-map i { aspect-ratio: 1; border-radius: 3px; background: var(--sq); cursor: pointer; }
+.s-ok { --sq: color-mix(in srgb, var(--t1) 78%, var(--panel)); }
+.s-idle { --sq: var(--soft); box-shadow: inset 0 0 0 1px var(--line); }
+.s-vpn { --sq: var(--t3); } .s-tor { --sq: var(--t0); } .s-proxy { --sq: var(--t4); } .s-bad { --sq: var(--t5); }
+.sg-map i.me { outline: 2px solid var(--fg, currentColor); outline-offset: 1px; }
+.sg-map i.on { transform: scale(1.25); position: relative; z-index: 1; }
+@media (hover: hover) { .sg-map i:hover { transform: scale(1.25); position: relative; z-index: 1; } }
+.sg-info { margin: 0; min-height: 21px; font-size: 13px; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+.sg-info b { color: var(--fg, inherit); font-family: var(--f-num); font-variant-numeric: tabular-nums; font-weight: 600; }
+.sg-leg { list-style: none; margin: 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--muted); }
+.sg-leg li { display: inline-flex; align-items: center; gap: 6px; }
+.sg-leg i { width: 10px; height: 10px; border-radius: 3px; background: var(--sq); }
+.sg-leg b { color: var(--fg, inherit); font-weight: 600; font-variant-numeric: tabular-nums; }
 .sg-src { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
 .sg-src a { color: inherit; }
-@media (max-width: 860px) { .sg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 720px) { .segs { padding: 16px 16px 14px; } }
-@media (max-width: 560px) { .sg-grid { grid-template-columns: minmax(0, 1fr); } }
+.segs.masked .sg-n, .segs.masked .sg-info b { filter: blur(6px); }
+/* an IPv6 address: why there's no portrait, and the visitor's IPv4 exit to look at instead */
+.sg-v6 { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; }
+.sg-v6 p { margin: 0; flex: 1 1 320px; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
+@media (max-width: 720px) { .segs { padding: 16px 16px 14px; } .sg-map { grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 4px; } }
 @media (prefers-reduced-motion: reduce) { .btn .spin { animation: none; } }
 @media (max-width: 420px) { .cfc { grid-template-columns: auto minmax(0, 1fr); } .cfc > .btn { grid-column: 2; justify-self: start; margin-top: 6px; } }
 .ugrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }

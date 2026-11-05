@@ -54,7 +54,7 @@ func main() {
 		return
 	}
 
-	s := &Server{data: *data, cache: NewCache(5000, 7*24*time.Hour), limit: NewLimiter(30, time.Hour), slots: make(chan struct{}, 4)}
+	s := &Server{data: *data, cache: NewCache(3000, 7*24*time.Hour), limit: NewLimiter(30, time.Hour), slots: make(chan struct{}, 4)}
 	s.reload()
 	go func() {
 		for range time.Tick(10 * time.Minute) {
@@ -120,12 +120,19 @@ type Seg struct {
 	Seg    string    `json:"seg"`
 	At     time.Time `json:"at"`
 	RDNS   RDNS      `json:"rdns"`
-	Prefix *Prefix   `json:"prefix"` // null when RIPEstat didn't answer
+	Prefix *Prefix   `json:"prefix"` // null when neither Cymru nor RIPEstat answered
+	Names  []string  `json:"names"`  // each address's reverse name, "" for none
 }
 
+// An answer: the cached part, the lists' counts, and per address what its name says (kinds: one letter each, h hosting,
+// d home or mobile, s fixed line, a VPN or proxy words, m mail, o other, - no name), which lists name it (flags: 1
+// open proxy, 2 IPsum, 4 Tor exit, 8 VPN range, 16 data-centre range, 32 Spamhaus DROP) and its IPsum score.
 type Answer struct {
 	Seg
 	Lists ListsOf `json:"lists"`
+	Kinds string  `json:"kinds"`
+	Flags []int   `json:"flags"`
+	Score []int   `json:"score"`
 }
 
 type flight struct {
@@ -190,9 +197,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.mu.RLock()
-	lists := s.idx.Of(seg)
+	lists, flags, score := s.idx.Of(seg)
 	s.mu.RUnlock()
-	json.NewEncoder(w).Encode(Answer{Seg: *sg, Lists: lists})
+	json.NewEncoder(w).Encode(Answer{Seg: *sg, Lists: lists, Kinds: kindsOf(sg.Names), Flags: flags, Score: score})
 }
 
 func (s *Server) sweep(ctx context.Context, seg uint32, name string) *Seg {
@@ -227,7 +234,7 @@ func (s *Server) sweep(ctx context.Context, seg uint32, name string) *Seg {
 	}()
 	names, answered, dead := Sweep(wctx, seg, 32, 2500*time.Millisecond)
 	<-pdone
-	f.seg = &Seg{Seg: name, At: time.Now().UTC(), RDNS: Summarize(names, answered, dead), Prefix: px}
+	f.seg = &Seg{Seg: name, At: time.Now().UTC(), RDNS: Summarize(names, answered, dead), Prefix: px, Names: names[:]}
 	// a sweep cut short by slow resolvers, or without its prefix, is still shown, but asked again next time rather
 	// than kept for a week
 	if (answered >= 240 || dead) && px != nil {

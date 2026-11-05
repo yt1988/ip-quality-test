@@ -202,3 +202,18 @@ func Summarize(names [256]string, answered int, dead bool) RDNS {
 	}
 	return out
 }
+
+var kindLetter = map[string]byte{"": '-', "hosting": 'h', "dynamic": 'd', "static": 's', "anon": 'a', "mail": 'm', "other": 'o'}
+
+// kindsOf: one letter per address for what its name says (see kindLetter); "-" for no name
+func kindsOf(names []string) string {
+	out := make([]byte, 256)
+	for i := range out {
+		n := ""
+		if i < len(names) {
+			n = names[i]
+		}
+		out[i] = kindLetter[kindOf(n)]
+	}
+	return string(out)
+}
