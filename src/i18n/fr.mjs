@@ -178,6 +178,8 @@ export default {
   sg_v_n: "{n} des 256 voisins sont listés",
   sg_v_n_one: "{n} des 256 voisins est listé",
   sg_v_0: "Aucun des 256 voisins n’est sur une liste publique",
+  sg_v_wait: "Vérification des 256 voisins…",
+  sg_l_me: "L’IP vérifiée",
   sg_src: "Listes publiques (mises à jour chaque jour, {at}) :",
   cn_h: "Test réel : votre connexion",
   fl_dns: "Résolution DNS",

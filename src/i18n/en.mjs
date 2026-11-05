@@ -178,6 +178,8 @@ export default {
   sg_v_n: "{n} of 256 neighbours are listed",
   sg_v_n_one: "{n} of 256 neighbours is listed",
   sg_v_0: "None of the 256 neighbours is on a public list",
+  sg_v_wait: "Checking the 256 neighbours…",
+  sg_l_me: "The IP you checked",
   sg_src: "Public lists (updated daily, {at}):",
   cn_h: "Live test: your connection",
   fl_dns: "DNS lookups",

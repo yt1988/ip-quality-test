@@ -163,11 +163,11 @@ import { readSeg, addrLines } from "./seg.mjs";
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
-    $("#sgt").hidden = true; cnShow(); cfShow();
+    cnShow(); cfShow();
     markExit(ip || selfIp);
   }
   function fail(key) {
-    gauge.classList.remove("busy"); $("#gNum").textContent = "–";
+    gauge.classList.remove("busy"); $("#gNum").textContent = "–"; $("#sgt").hidden = true;
     $("#vHead").textContent = t("err_h");
     const vt = $("#vText"); vt.textContent = t(key); vt.classList.add("err");
     $("#rerun").disabled = false; $("#prog").classList.add("end");
@@ -550,9 +550,26 @@ import { readSeg, addrLines } from "./seg.mjs";
   // Asked as soon as the check knows the address (IPv4 only), drawn when the check is in (src/seg.mjs reads it). The
   // server (server/) reads the /24's 256 reverse names and a few public lists, daily; it contacts no address of the
   // /24. Not in the line check (D.seg empty there too) and absent without the service.
+  // The card takes its place as soon as the check knows the address, as it will look (a grey grid of 256 squares, the
+  // checked one ringed, the legend, the lists' credit), and fills in when the answer comes, so nothing around it moves.
   let segP = null;
   function segStart(ip, v) {
-    segP = D.seg && !EMBED && v === 4 && ip ? getJ(D.seg + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null) : null;
+    segP = null;
+    if (!D.seg || EMBED || !ip) { $("#sgt").hidden = true; return; }
+    if (v === 6) { segV6({ r: { summary: {} } }); return; }
+    segP = getJ(D.seg + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null);
+    const base = ip.split(".").slice(0, 3).join("."), me = +ip.split(".")[3];
+    $("#sgV6").hidden = true; $("#sgBody").hidden = false;
+    $("#sgN").textContent = `${base}.0 – ${base}.255`;
+    const vd = $("#sgVerdict"); vd.className = "sg-verdict wait"; vd.textContent = t("sg_v_wait");
+    $("#sgMeta").innerHTML = "&nbsp;"; $("#sgVs").hidden = true;
+    sgCells = []; sgPick = -1;
+    sgMap.innerHTML = Array.from({ length: 256 }, (_, i) => `<i class="s-wait${i === me ? " me" : ""}"></i>`).join("");
+    $("#sgInfo").textContent = t("sg_hint");
+    $("#sgLeg").innerHTML = sgLegend(null);
+    $("#sgNote").innerHTML = "&nbsp;";
+    $("#sgSrc").innerHTML = sgCredit(null);
+    $("#sgt").hidden = false;
   }
   // the lists' credit (IP2Proxy LITE asks for it), with the oldest list's date
   const SG_SRC = [["proxy", "IP2Proxy LITE", "https://lite.ip2location.com"], ["bad", "IPsum", "https://github.com/stamparm/ipsum"],
@@ -572,17 +589,30 @@ import { readSeg, addrLines } from "./seg.mjs";
     $("#sgN").textContent = ""; $("#sgBody").hidden = true;
     $("#sgV6T").textContent = t("sg_v6");
     const go = $("#sgGo"); go.hidden = !v4;
-    if (v4) { go.textContent = t("sg_v6_go", { ip: v4 }); go.onclick = () => { input.value = ""; run(v4, true); }; }
+    if (v4) {
+      go.innerHTML = esc(t("sg_v6_go", { ip: "\u0000" })).replace("\u0000", `<span class="num">${esc(v4)}</span>`) + " →";
+      go.onclick = () => { input.value = ""; run(v4, true); };
+    }
     $("#sgV6").hidden = false; box.hidden = false;
   }
+  // the legend: each colour (with its count once the answer is in; while it's on its way, a dash), then the ring of the
+  // checked address
+  const sgLegend = r => Object.entries(SG_LEG).filter(([, l]) => !r || !l || r.lists[l])
+    .map(([st]) => `<li${r && !r.count[st] ? ' class="z"' : ""}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${r ? r.count[st] : "–"}</b></li>`).join("") +
+    `<li><i class="dot me"></i>${esc(t("sg_l_me"))}</li>`;
+  // the lists' credit: the lists read (all of them while the answer is on its way), and the oldest one's date
+  const sgCredit = L => {
+    const src = SG_SRC.filter(([k]) => !L || L[k] != null).map(([, n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`);
+    return src.length ? esc(t("sg_src", { at: L && L.at ? new Date(L.at).toLocaleDateString(LANG) : "…" })) + (CJK ? "" : " ") + src.join(esc(t("v_join"))) : "";
+  };
   // the map: one square per address; the one under the pointer (or the last one tapped, or the checked one) is told
   // under it
   let sgCells = [], sgPick = -1;
   const sgSay = i => {
     const c = sgCells[i], box = $("#sgInfo"); if (!c) { box.textContent = t("sg_hint"); return; }
     box.innerHTML = `<span class="ip">${esc(c.ip)}</span>${c.me ? `<span class="tag">${esc(t("sg_me"))}</span>` : ""}` +
-      `<span class="nm">${esc(c.name || t("sg_a_noname"))}</span>` +
-      `<span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([k, q]) => say(k, q)).join(t("v_join")))}</span>`;
+      `<span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([k, q]) => say(k, q)).join(t("v_join")))}</span>` +
+      `<span class="nm" title="${esc(c.name)}">${esc(c.name || t("sg_a_noname"))}</span>`;
   };
   const sgRest = () => sgSay(sgPick >= 0 ? sgPick : sgCells.findIndex(c => c.me));
   const sgMap = $("#sgMap");
@@ -608,18 +638,17 @@ import { readSeg, addrLines } from "./seg.mjs";
     vd.className = "sg-verdict " + v.lv; vd.textContent = v.listed ? t("sg_v_n", { n: v.listed }) : t("sg_v_0");
     const px = r.prefix, d0 = r.domains[0];
     $("#sgMeta").innerHTML = [`<span class="tag ${TAG[r.kind.lv] || ""}">${esc(t("sg_k_" + r.kind.kind))}</span>`,
-      px && (px.none ? esc(t("sg_m_noprefix")) : `<span class="num">${esc(px.prefix)}</span>` + (px.asns.length ? " · " + px.asns.map(a => "AS" + a).join(" ") : "")),
+      px && (px.none ? esc(t("sg_m_noprefix")) : `<span class="num">${esc(px.prefix)}</span>`),
+      px && !px.none && px.asns.length && px.asns.map(a => "AS" + a).join(" "),
       d0 && `${esc(d0.d)} (${d0.n})`].filter(Boolean).join(`<span aria-hidden="true">·</span>`);
     const vs = $("#sgVs"); vs.hidden = !r.vs; vs.textContent = r.vs ? say(...r.vs) : "";
     // the kind's sentence, and anything odd about the names (servers that don't answer, a sweep cut short)
-    $("#sgNote").textContent = r.sum.map(([k, q]) => say(k, q)).join(gap);
+    $("#sgNote").textContent = r.sum.map(([k, q]) => say(k, q)).join(gap) || "\u00a0";
     sgCells = r.cells; sgPick = -1;
     sgMap.innerHTML = r.cells.map((c, i) => `<i class="s-${c.st}${c.me ? " me" : ""}" data-n="${i}"></i>`).join("");
     sgRest();
-    $("#sgLeg").innerHTML = Object.entries(SG_LEG).filter(([, l]) => !l || r.lists[l])
-      .map(([st]) => `<li${r.count[st] ? "" : ' class="z"'}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${r.count[st]}</b></li>`).join("");
-    const src = SG_SRC.filter(([k]) => L[k] != null).map(([, n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`);
-    $("#sgSrc").innerHTML = src.length ? esc(t("sg_src", { at: L.at ? new Date(L.at).toLocaleDateString(LANG) : "" })) + (CJK ? "" : " ") + src.join(esc(t("v_join"))) : "";
+    $("#sgLeg").innerHTML = sgLegend(r);
+    $("#sgSrc").innerHTML = sgCredit(L);
     box.hidden = false;
   }
   // the visitor's own connection: their own check, or a check of one of the exits found for them (the connection
