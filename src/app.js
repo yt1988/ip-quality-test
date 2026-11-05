@@ -611,11 +611,11 @@ import { readDns, readConn } from "./conn.mjs";
   // state: idle | run | ask | err | pass | click | fail. Until the answer the card keeps its question, icon and colour
   // (only the line under it and the button change), so the one big change on the card is the answer itself
   // the card only grows while a test runs (the tallest state it has shown sets its height), so moving from one state
-  // to the next never makes the page below it jump up and back down
+  // to the next never makes the page below it jump up and back down. Held right before each change (each new state,
+  // and the widget leaving): no ResizeObserver, whose callback writing a size it just read sets off another round in
+  // the same frame. The exact height (not offsetHeight, which rounds 109.5 up to 110), so holding never resizes it.
   const cfBox = $("#cfc");
-  const cfHold = () => { const h = cfBox.offsetHeight; if (h > (cfBox._h || 0)) { cfBox._h = h; cfBox.style.minHeight = h + "px"; } };
-  // held before each change (so the next state starts at least this tall) and as the widget grows inside it
-  if (window.ResizeObserver) new ResizeObserver(cfHold).observe(cfBox);
+  const cfHold = () => { const h = cfBox.getBoundingClientRect().height; if (h > (cfBox._h || 0)) { cfBox._h = h; cfBox.style.minHeight = h + "px"; } };
   const cfUnhold = () => { cfBox._h = 0; cfBox.style.minHeight = ""; };
   function cfCard(state, lv, v, d, x) {
     if (state !== "idle") cfHold();
@@ -660,6 +660,8 @@ import { readDns, readConn } from "./conn.mjs";
     let ts = null, asked = false, over = false;
     function end(v) {
       if (over) return; over = true;
+      // held with the widget still in it: the answer then starts at least as tall as the tick box made the card
+      cfHold();
       if (ts && cfId !== null) { try { ts.remove(cfId); } catch (e) {} cfId = null; }
       if (snap !== SNAP) return;
       if (v) { snap.cf = v; cfShow(); }
