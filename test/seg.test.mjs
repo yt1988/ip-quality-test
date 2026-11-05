@@ -44,7 +44,8 @@ test("readSeg: one cell per address, counted by status, the checked one marked",
 test("readSeg: the summary says the kind, the names, the prefix; a home IP in a hosting /24 is flagged", () => {
   const r = readSeg(hetzner, "hosting", "95.216.1.2");
   assert.equal(r.kind.kind, "hosting"); assert.equal(r.kind.lv, "warn"); assert.equal(r.vs, null);
-  assert.deepEqual(r.sum.map(([k]) => k), ["sg_kw_hosting", "sg_rw_top", "sg_pw"]);
+  assert.deepEqual(r.sum.map(([k]) => k), ["sg_kw_hosting"]);
+  assert.deepEqual(r.prefix, { prefix: "95.216.0.0/16", asns: [24940] }); assert.equal(r.domains[0].d, "your-server.de");
   const home = readSeg(hetzner, "residential", "95.216.1.2");
   assert.equal(home.kind.lv, "bad"); assert.equal(home.vs[0], "sg_kw_vs");
 });
@@ -54,7 +55,8 @@ test("readSeg: dead reverse servers, a partial sweep, no prefix, a list never fe
   assert.ok(dead.sum.some(([k]) => k === "sg_rw_dead")); assert.ok(!dead.sum.some(([k]) => k === "sg_rw_part"));
   const part = readSeg({ ...hetzner, rdns: { ...hetzner.rdns, answered: 114 } }, "hosting", "");
   assert.ok(part.sum.some(([k, p]) => k === "sg_rw_part" && p.n === 114));
-  assert.ok(readSeg({ ...hetzner, prefix: { prefix: "", asns: [] } }, "hosting", "").sum.some(([k]) => k === "sg_pw_none"));
-  assert.ok(!readSeg({ ...hetzner, prefix: null }, "hosting", "").sum.some(([k]) => k.startsWith("sg_pw")));
+  assert.deepEqual(readSeg({ ...hetzner, prefix: { prefix: "", asns: [] } }, "hosting", "").prefix, { none: true });
+  assert.equal(readSeg({ ...hetzner, prefix: null }, "hosting", "").prefix, null);
+  assert.deepEqual(dead.domains, []);
   assert.equal(readSeg({ ...hetzner, lists: lists({ proxy: null }) }, "hosting", "").lists.proxy, false);
 });

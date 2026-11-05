@@ -579,8 +579,10 @@ import { readSeg, addrLines } from "./seg.mjs";
   // under it
   let sgCells = [], sgPick = -1;
   const sgSay = i => {
-    const c = sgCells[i]; if (!c) { $("#sgInfo").textContent = t("sg_hint"); return; }
-    $("#sgInfo").innerHTML = `<b>${esc(c.ip)}</b>${c.me ? " · " + esc(t("sg_me")) : ""} · ${esc(c.name || t("sg_a_noname"))} · ${esc(addrLines(c).map(([k, q]) => say(k, q)).join(t("v_join")))}`;
+    const c = sgCells[i], box = $("#sgInfo"); if (!c) { box.innerHTML = `<span class="nm">${esc(t("sg_hint"))}</span>`; return; }
+    box.innerHTML = `<span class="ip"><span>${esc(c.ip)}</span>${c.me ? `<span class="tag">${esc(t("sg_me"))}</span>` : ""}</span>` +
+      `<span class="nm">${esc(c.name || t("sg_a_noname"))}</span>` +
+      `<span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([k, q]) => say(k, q)).join(t("v_join")))}</span>`;
   };
   const sgRest = () => sgSay(sgPick >= 0 ? sgPick : sgCells.findIndex(c => c.me));
   const sgMap = $("#sgMap");
@@ -603,12 +605,18 @@ import { readSeg, addrLines } from "./seg.mjs";
     $("#sgN").textContent = `${r.base}.0 – ${r.base}.255`;
     const kt = $("#sgKind"); kt.className = "tag " + (TAG[r.kind.lv] || ""); kt.textContent = t("sg_k_" + r.kind.kind);
     $("#sgSum").textContent = r.sum.map(([k, q]) => say(k, q)).join(gap);
+    // the prefix (announced in, by) and the common domains, one labelled row each
+    const px = r.prefix, meta = [];
+    if (px) meta.push([t("sg_m_prefix"), px.none ? esc(t("sg_m_noprefix"))
+      : `<span class="num">${esc(px.prefix)}</span>` + (px.asns.length ? ` <span class="m">· ${px.asns.map(a => "AS" + a).join(" ")}</span>` : "")]);
+    if (r.domains.length) meta.push([t("sg_m_dom"), r.domains.map(d => `${esc(d.d)} <span class="m">${d.n}</span>`).join(" · ")]);
+    $("#sgMeta").innerHTML = meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("");
     const vs = $("#sgVs"); vs.hidden = !r.vs; vs.textContent = r.vs ? say(...r.vs) : "";
     sgCells = r.cells; sgPick = -1;
     sgMap.innerHTML = r.cells.map((c, i) => `<i class="s-${c.st}${c.me ? " me" : ""}" data-n="${i}"></i>`).join("");
     sgRest();
     $("#sgLeg").innerHTML = Object.entries(SG_LEG).filter(([, l]) => !l || r.lists[l])
-      .map(([st]) => `<li><i class="s-${st}"></i>${esc(t("sg_l_" + st))} <b>${r.count[st]}</b></li>`).join("");
+      .map(([st]) => `<li${r.count[st] ? "" : ' class="z"'}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${r.count[st]}</b></li>`).join("");
     const src = SG_SRC.filter(([k]) => L[k] != null).map(([, n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`);
     $("#sgSrc").innerHTML = src.length ? esc(t("sg_src", { at: L.at ? new Date(L.at).toLocaleDateString(LANG) : "" })) + (CJK ? "" : " ") + src.join(esc(t("v_join"))) : "";
     box.hidden = false;

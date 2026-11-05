@@ -31,18 +31,18 @@ const LV = { hosting: "warn", dynamic: "ok", static: "info", mixed: "info", unkn
 const KIND = { h: "hosting", d: "dynamic", s: "static", a: "anon", m: "mail", o: "other" };
 
 // j: the server's answer; type: what the IP's own check found its network type to be (summary.type); ip: the checked
-// address. → { base, kind: {kind, lv}, sum: [[key, params]...], vs, cells: [{ip, name, kind, flags, score, st, me}],
-// count: {status: n}, lists: which lists were read }
+// address. → { base, kind: {kind, lv}, sum: [[key, params]...] (the kind and anything odd about the names), vs,
+// prefix: {prefix, asns} | {none: true} | null, domains: [{d, n}] (the most common three), cells: [{ip, name, kind,
+// flags, score, st, me}], count: {status: n}, lists: which lists were read }
 export function readSeg(j, type, ip) {
   const r = j.rdns, L = j.lists || {}, base = j.seg.replace(/\.0\/24$/, "");
   const k = kindOf(r, L.dc || 0);
   const sum = [k.byList ? ["sg_kw_dc", {}] : ["sg_kw_" + k.kind, { n: k.n, named: r.named }]];
   if (r.dead) sum.push(["sg_rw_dead", {}]);
-  else if (r.named && (r.domains || []).length) sum.push(["sg_rw_top", { list: r.domains.slice(0, 3).map(d => `${d.d} (${d.n})`) }]);
   if (r.answered < 240 && !r.dead) sum.push(["sg_rw_part", { n: r.answered }]);
   const px = j.prefix;
-  if (px && px.prefix) sum.push(["sg_pw", { prefix: px.prefix, as: (px.asns || []).map(a => "AS" + a) }]);
-  else if (px) sum.push(["sg_pw_none", {}]);
+  const prefix = px && px.prefix ? { prefix: px.prefix, asns: px.asns || [] } : px ? { none: true } : null;
+  const domains = r.dead ? [] : (r.domains || []).slice(0, 3);
   // the IP's databases call it a home or mobile line, but the /24 around it is servers
   const vs = (type === "residential" || type === "mobile") && k.kind === "hosting" ? ["sg_kw_vs", { type }] : null;
 
@@ -56,7 +56,7 @@ export function readSeg(j, type, ip) {
     cells.push({ ip: a, name, kind: KIND[kinds[i]] || "", flags: f, score: score[i] || 0, st, me: a === ip });
   }
   const lists = { proxy: L.proxy != null, bad: L.bad != null || L.drop != null, tor: L.tor != null, vpn: L.vpn != null };
-  return { base, kind: { kind: k.kind, lv: vs ? "bad" : LV[k.kind] }, sum, vs, cells, count, lists };
+  return { base, kind: { kind: k.kind, lv: vs ? "bad" : LV[k.kind] }, sum, vs, prefix, domains, cells, count, lists };
 }
 
 // what one address is, as [key, params] lines: its listings, worst first, or that it is on none
