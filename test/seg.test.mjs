@@ -1,7 +1,7 @@
 // The /24 portrait: what the server's answer reads as (shapes as the live server gives them, 2026-11-05).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { kindOf, readSeg, statusOf, addrLines, F } from "../src/seg.mjs";
+import { kindOf, readSeg, statusOf, verdictOf, addrLines, F } from "../src/seg.mjs";
 
 const lists = (o = {}) => ({ proxy: 0, bad: 0, badMax: 0, tor: 0, vpn: 0, dc: 256, drop: 0, at: "2026-11-05T08:29:08Z", ...o });
 const names = Array.from({ length: 256 }, (_, i) => i < 254 ? `static.${i}.1.216.95.clients.your-server.de` : "");
@@ -22,11 +22,17 @@ test("kindOf: the largest kind over half the names; the data-centre list when na
   assert.equal(kindOf({ named: 3, kinds: { other: 3 } }, 0).kind, "unknown");
 });
 
-test("statusOf: the worst listing wins; a name tells in use from idle", () => {
-  assert.equal(statusOf(F.proxy | F.drop, true), "bad");
-  assert.equal(statusOf(F.tor | F.vpn, true), "tor");
-  assert.equal(statusOf(F.dc, true), "ok");
-  assert.equal(statusOf(F.dc, false), "idle");
+test("statusOf: the worst listing wins; on no list is ok, named or not", () => {
+  assert.equal(statusOf(F.proxy | F.drop), "bad");
+  assert.equal(statusOf(F.tor | F.vpn), "tor");
+  assert.equal(statusOf(F.dc), "ok");
+  assert.equal(statusOf(0), "ok");
+});
+
+test("verdictOf: how many neighbours are listed, a blocklist the worst", () => {
+  assert.deepEqual(verdictOf({ bad: 0, proxy: 0, tor: 0, vpn: 0, ok: 256 }), { listed: 0, lv: "ok" });
+  assert.deepEqual(verdictOf({ bad: 0, proxy: 8, tor: 0, vpn: 0, ok: 248 }), { listed: 8, lv: "warn" });
+  assert.deepEqual(verdictOf({ bad: 1, proxy: 0, tor: 0, vpn: 0, ok: 255 }), { listed: 1, lv: "bad" });
 });
 
 test("readSeg: one cell per address, counted by status, the checked one marked", () => {
@@ -34,7 +40,8 @@ test("readSeg: one cell per address, counted by status, the checked one marked",
   assert.equal(r.cells.length, 256);
   assert.equal(r.cells[9].me, true); assert.equal(r.cells[9].st, "bad"); assert.equal(r.cells[9].score, 4);
   assert.equal(r.cells[12].st, "bad"); assert.equal(r.cells[7].st, "proxy"); assert.equal(r.cells[30].st, "tor"); assert.equal(r.cells[40].st, "vpn");
-  assert.deepEqual(r.count, { bad: 2, proxy: 1, tor: 1, vpn: 1, ok: 249, idle: 2 });
+  assert.deepEqual(r.count, { bad: 2, proxy: 1, tor: 1, vpn: 1, ok: 251 });
+  assert.deepEqual(r.verdict, { listed: 5, lv: "bad" });
   assert.equal(Object.values(r.count).reduce((a, b) => a + b), 256);
   assert.equal(r.cells[0].kind, "hosting"); assert.equal(r.cells[255].kind, "");
   assert.deepEqual(addrLines(r.cells[12]).map(([k]) => k), ["sg_a_drop", "sg_a_px"]);

@@ -559,7 +559,7 @@ import { readSeg, addrLines } from "./seg.mjs";
     ["vpn", "X4BNet", "https://github.com/X4BNet/lists_vpn"], ["drop", "Spamhaus DROP", "https://www.spamhaus.org/blocklists/do-not-route-or-peer/"],
     ["tor", "Tor Project", "https://www.torproject.org/"]];
   // the legend: each colour, when its list was read
-  const SG_LEG = { bad: "bad", proxy: "proxy", tor: "tor", vpn: "vpn", ok: null, idle: null };
+  const SG_LEG = { bad: "bad", proxy: "proxy", tor: "tor", vpn: "vpn", ok: null };
   const TAG = { ok: "good", warn: "warn", bad: "bad" };
   // list parameters read as a list in the page's language; a network type by its name
   const say = (k, v) => { const q = { ...v }; for (const x in q) if (Array.isArray(q[x])) q[x] = list(q[x]); if (q.type) q.type = typeName(q.type); return t(k, q); };
@@ -579,8 +579,8 @@ import { readSeg, addrLines } from "./seg.mjs";
   // under it
   let sgCells = [], sgPick = -1;
   const sgSay = i => {
-    const c = sgCells[i], box = $("#sgInfo"); if (!c) { box.innerHTML = `<span class="nm">${esc(t("sg_hint"))}</span>`; return; }
-    box.innerHTML = `<span class="ip"><span>${esc(c.ip)}</span>${c.me ? `<span class="tag">${esc(t("sg_me"))}</span>` : ""}</span>` +
+    const c = sgCells[i], box = $("#sgInfo"); if (!c) { box.textContent = t("sg_hint"); return; }
+    box.innerHTML = `<span class="ip">${esc(c.ip)}</span>${c.me ? `<span class="tag">${esc(t("sg_me"))}</span>` : ""}` +
       `<span class="nm">${esc(c.name || t("sg_a_noname"))}</span>` +
       `<span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([k, q]) => say(k, q)).join(t("v_join")))}</span>`;
   };
@@ -603,15 +603,16 @@ import { readSeg, addrLines } from "./seg.mjs";
     if (!j || !j.rdns) { box.hidden = true; return; }
     const r = readSeg(j, snap.r.summary.type, snap.ip), L = j.lists || {};
     $("#sgN").textContent = `${r.base}.0 – ${r.base}.255`;
-    const kt = $("#sgKind"); kt.className = "tag " + (TAG[r.kind.lv] || ""); kt.textContent = t("sg_k_" + r.kind.kind);
-    $("#sgSum").textContent = r.sum.map(([k, q]) => say(k, q)).join(gap);
-    // the prefix (announced in, by) and the common domains, one labelled row each
-    const px = r.prefix, meta = [];
-    if (px) meta.push([t("sg_m_prefix"), px.none ? esc(t("sg_m_noprefix"))
-      : `<span class="num">${esc(px.prefix)}</span>` + (px.asns.length ? ` <span class="m">· ${px.asns.map(a => "AS" + a).join(" ")}</span>` : "")]);
-    if (r.domains.length) meta.push([t("sg_m_dom"), r.domains.map(d => `${esc(d.d)} <span class="m">${d.n}</span>`).join(" · ")]);
-    $("#sgMeta").innerHTML = meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("");
+    // the verdict: how many neighbours the lists name; then the /24's kind, prefix and main domain on one line
+    const vd = $("#sgVerdict"), v = r.verdict;
+    vd.className = "sg-verdict " + v.lv; vd.textContent = v.listed ? t("sg_v_n", { n: v.listed }) : t("sg_v_0");
+    const px = r.prefix, d0 = r.domains[0];
+    $("#sgMeta").innerHTML = [`<span class="tag ${TAG[r.kind.lv] || ""}">${esc(t("sg_k_" + r.kind.kind))}</span>`,
+      px && (px.none ? esc(t("sg_m_noprefix")) : `<span class="num">${esc(px.prefix)}</span>` + (px.asns.length ? " · " + px.asns.map(a => "AS" + a).join(" ") : "")),
+      d0 && `${esc(d0.d)} (${d0.n})`].filter(Boolean).join(`<span aria-hidden="true">·</span>`);
     const vs = $("#sgVs"); vs.hidden = !r.vs; vs.textContent = r.vs ? say(...r.vs) : "";
+    // the kind's sentence, and anything odd about the names (servers that don't answer, a sweep cut short)
+    $("#sgNote").textContent = r.sum.map(([k, q]) => say(k, q)).join(gap);
     sgCells = r.cells; sgPick = -1;
     sgMap.innerHTML = r.cells.map((c, i) => `<i class="s-${c.st}${c.me ? " me" : ""}" data-n="${i}"></i>`).join("");
     sgRest();

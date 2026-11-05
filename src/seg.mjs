@@ -5,15 +5,23 @@
 // the server's per-address list flags
 export const F = { proxy: 1, bad: 2, tor: 4, vpn: 8, dc: 16, drop: 32 };
 // statuses, worst first: on a blocklist (IPsum or Spamhaus DROP), an open proxy, a Tor exit, in a VPN provider's
-// range, named and on no list, no name and on no list
-export const ST = ["bad", "proxy", "tor", "vpn", "ok", "idle"];
+// range, on no list. A square's colour says only what the lists say: whether the address has a reverse name is
+// another question (many home and data-centre ranges name none), told in the summary and for the address picked.
+export const ST = ["bad", "proxy", "tor", "vpn", "ok"];
 
-export function statusOf(flags, named) {
+export function statusOf(flags) {
   if (flags & (F.bad | F.drop)) return "bad";
   if (flags & F.proxy) return "proxy";
   if (flags & F.tor) return "tor";
   if (flags & F.vpn) return "vpn";
-  return named ? "ok" : "idle";
+  return "ok";
+}
+
+// the verdict on the neighbours at a glance: how many are listed, and how badly (a blocklist is worse than an open
+// proxy, a Tor exit or a VPN range)
+export function verdictOf(count) {
+  const listed = 256 - count.ok;
+  return { listed, lv: count.bad ? "bad" : listed ? "warn" : "ok" };
 }
 
 // A /24's kind by its reverse names (at least 32 named, the largest kind over half of them), or by the data-centre
@@ -51,12 +59,12 @@ export function readSeg(j, type, ip) {
   const cells = [];
   for (let i = 0; i < 256; i++) {
     const a = `${base}.${i}`, f = flags[i] || 0, name = names[i] || "";
-    const st = statusOf(f, !!name);
+    const st = statusOf(f);
     count[st]++;
     cells.push({ ip: a, name, kind: KIND[kinds[i]] || "", flags: f, score: score[i] || 0, st, me: a === ip });
   }
   const lists = { proxy: L.proxy != null, bad: L.bad != null || L.drop != null, tor: L.tor != null, vpn: L.vpn != null };
-  return { base, kind: { kind: k.kind, lv: vs ? "bad" : LV[k.kind] }, sum, vs, prefix, domains, cells, count, lists };
+  return { base, kind: { kind: k.kind, lv: vs ? "bad" : LV[k.kind] }, sum, vs, prefix, domains, cells, count, verdict: verdictOf(count), lists };
 }
 
 // what one address is, as [key, params] lines: its listings, worst first, or that it is on none
