@@ -22,3 +22,8 @@ simple = { limit = 20, period = 60 }
 #   PROXYCHECK_KEY  IPAPI_IS_KEY  IP2LOCATION_KEY  IPINFO_TOKEN   (raise those sources' free quotas or add fields)
 # Cloudflare's human check on the page (a Turnstile widget, managed mode): set both, or the test stays hidden:
 #   TURNSTILE_SITEKEY  TURNSTILE_SECRET
+
+# A measurement (src/probe.mjs): how often each source answers the visitor's browser and the Worker. Counts only.
+[[analytics_engine_datasets]]
+binding = "PROBE"
+dataset = "ipqs_probe"

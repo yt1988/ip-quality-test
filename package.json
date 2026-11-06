@@ -8,7 +8,8 @@
     "test": "node scripts/build.mjs --check && node --test \"test/*.test.mjs\"",
     "dev": "wrangler dev --port 8792",
     "deploy": "wrangler deploy",
-    "og": "node scripts/og.mjs"
+    "og": "node scripts/og.mjs",
+    "probe": "node --env-file-if-exists=../1ms-shell/.env scripts/probe.mjs"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",

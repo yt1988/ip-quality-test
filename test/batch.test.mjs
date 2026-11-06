@@ -46,3 +46,10 @@ test("sortRows: by score high first, unknown last, ties by place", () => {
   assert.deepEqual(sortRows(rows, "score", 1).map(r => r.i), [0, 3, 2, 1]);
   assert.deepEqual(sortRows(rows, "i", -1).map(r => r.i), [3, 2, 1, 0]);
 });
+
+import { readBeacon, PROBE } from "../src/probe.mjs";
+test("readBeacon: known sources, 0 or 1, a time; anything else is dropped", () => {
+  assert.deepEqual(readBeacon(JSON.stringify({ r: [["geojs", 1, 120.4], ["doh", 0, 99999]] })), [{ id: "geojs", ok: true, ms: 120 }, { id: "doh", ok: false, ms: 30000 }]);
+  for (const bad of ["x", "{}", JSON.stringify({ r: [["evil", 1, 1]] }), JSON.stringify({ r: [["geojs", 2, 1]] }), JSON.stringify({ r: Array(PROBE.length + 1).fill(["geojs", 1, 1]) })])
+    assert.equal(readBeacon(bad), null);
+});

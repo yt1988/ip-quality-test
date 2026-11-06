@@ -8,6 +8,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
 import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
 import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
+import { PROBE, BROWSER_RATE, DOH_TEST } from "./probe.mjs";
 
 (function () {
   "use strict";
@@ -282,7 +283,23 @@ import { readSeg, addrLines } from "./seg.mjs";
       // no source answering at all is a failed check, not a clean address
       const cur = CUR;
       Promise.allSettled(PEND).then(() => { if (CUR !== cur) return; if (RES.length) finish({ ...m, ...assess(RES, BLR) }); else fail("err_net"); });
+      if (cur.self && !SHARED && !EMBED && Math.random() < BROWSER_RATE) setTimeout(() => probe(cur.ip), 3000);
     } else if (m.t === "error") fail("err_net");
+  }
+
+  // The measurement in src/probe.mjs, on a sample of the visitor's own checks, once the result is in: each source the
+  // browser could ask itself, asked once more from here, and whether it answered (counts only: nothing about the
+  // address or the visitor is sent)
+  async function probe(ip) {
+    const v4 = family(ip) === 4;
+    const doh = async () => {
+      const t0 = Date.now();
+      try { const j = await getJ(DOH_TEST, 5000); return ["doh", j.Status === 0 ? 1 : 0, Date.now() - t0]; }
+      catch (e) { return ["doh", 0, Date.now() - t0]; }
+    };
+    const ids = PROBE.filter(id => SRCDEF[id] && (v4 || SRCDEF[id].v6 !== false));
+    const r = await Promise.all([...ids.map(id => inBrowser(id, ip).then(x => [id, x.ok ? 1 : 0, x.ms])), ...(v4 ? [doh()] : [])]);
+    fetch("/api/probe", { method: "POST", body: JSON.stringify({ r }), keepalive: true, credentials: "omit" }).catch(() => {});
   }
 
   function blRow(m) {
