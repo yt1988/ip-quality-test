@@ -372,3 +372,14 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt-acts { gap: 14px; }
 #shareBtn svg { width: 14px; height: 14px; }
 [data-shared] .bt-res { border-top: 0; padding-top: 0; margin-top: 0; }
+/* the batch page's /24: the portrait's grid, then picking addresses for the table */
+.bt-seg { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+.bt-seg[hidden] { display: none; }
+.bt-seg-h { display: flex; align-items: baseline; gap: 12px; }
+.bt-seg h2 { font-size: 15px; }
+.bt-seg .sg-verdict { font-size: 16px; }
+.bt-seg-a { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.bt-seg-p { margin-right: auto; font-size: 13px; color: var(--muted); }
+.bt-seg-a .btn[hidden] { display: none; }
+.bt-rep { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 5px; font-size: 11.5px; line-height: 18px; background: var(--soft); color: var(--muted); cursor: help; }
+@media (max-width: 720px) { .bt-seg-p { width: 100%; } }

@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/ko.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IP 일괄 조회 · 1ms.dog","url":"https://ipqs.1ms.dog/ko/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"IPv4 또는 IPv6 주소를 최대 20개 붙여 넣으면 하나의 표로 보여 줍니다: 품질 점수와 등급, 가정용 회선인지 데이터센터인지, 네이티브 IP인지 브로드캐스트 IP인지, VPN·프록시·Tor 표시, AI 서비스와 스트리밍 사용 가능 여부. 어느 열로든 정렬할 수 있고, 공유 링크에는 기본적으로 IP가 들어가지 않습니다. 무료, 가입 불필요.","inLanguage":"ko","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.cffa7d7de5.css">
+<link rel="stylesheet" href="/assets/app.d8930122d9.css">
 </head>
 <body>
 <div class="app">
@@ -68,13 +68,25 @@
         <a class="ul" href="/ko/" data-i="b_one">← IP 하나 조회</a>
       </div>
       <form class="bt-ask" id="ask" autocomplete="off">
-        <label class="sr" for="ips" data-i="b_ph">IP 주소를 붙여 넣으세요(한 줄에 하나, 또는 공백·쉼표로 구분)</label>
+        <label class="sr" for="ips" data-i="b_ph">IP 주소나 대역을 붙여 넣으세요(한 줄에 하나, 또는 공백·쉼표로 구분)</label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go">조회</button>
         </div>
       </form>
+      <div class="bt-seg" id="seg" hidden>
+        <div class="bt-seg-h"><h2 data-i="sg_h">/24 이웃 분석</h2><span class="sg-n" id="segN"></span></div>
+        <p class="sg-verdict" id="segV"></p>
+        <div class="sg-map" id="segMap"></div>
+        <p class="sg-info" id="segInfo" aria-live="polite"></p>
+        <ul class="sg-leg" id="segLeg"></ul>
+        <div class="bt-seg-a">
+          <span class="bt-seg-p" id="segPick"></span>
+          <button class="btn sm" id="segListed" type="button"></button>
+          <button class="btn sm pri" id="segGo" type="button" disabled></button>
+        </div>
+      </div>
       <div class="bt-res" id="res" hidden>
         <div class="bt-bar">
           <span class="bt-prog" id="prog" aria-live="polite"></span>
@@ -106,8 +118,8 @@
   </main>
 </div>
 
-<script type="application/json" id="data">{"lang":"ko","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.ko.c6f31197c0.js"></script>
-<script src="/assets/batch.65b0e78d7d.js"></script>
+<script type="application/json" id="data">{"lang":"ko","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
+<script src="/assets/l.ko.7041040a06.js"></script>
+<script src="/assets/batch.2be1a195cb.js"></script>
 </body>
 </html>

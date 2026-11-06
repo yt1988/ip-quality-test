@@ -1,26 +1,62 @@
 // The batch page, read: the list a visitor pastes, one table row per address from the API's `done` event, and the
 // shared link's payload. Pure, shared by the page (src/batch.js) and the tests.
-import { canon, isPublic } from "./ip.mjs";
+import { canon, isPublic, family, v6words } from "./ip.mjs";
 
 // one batch: as many fresh lookups as the Worker allows one visitor a minute (wrangler.toml, LIMIT)
 export const MAX = 20;
 
-// The addresses in a pasted list: split on spaces, commas, semicolons and new lines (CJK ones too), each with any
-// port or brackets taken off (1.2.3.4:443, [2001:db8::1]:443), in canonical form, once each, public ones only.
-// → { ips, skipped (not an address, private or a repeat), over (public addresses past MAX, left out) }
+// An IPv6 prefix: the network in short form and the one address that stands for it (the network's first host).
+// The sources key IPv6 by block (a /48, a /32, the whole AS), so every address in it reads the same; checking one
+// tells the block. → { net: "2001:db8:1::/48", ip } or null
+export function v6net(addr, bits) {
+  const w = v6words(addr);
+  if (!w || !(bits >= 0 && bits <= 128)) return null;
+  const m = w.map((x, i) => { const keep = Math.max(0, Math.min(16, bits - 16 * i)); return keep === 16 ? x : x & ((0xffff << (16 - keep)) & 0xffff); });
+  const str = a => canon(a.map(x => x.toString(16)).join(":"));
+  const host = m.slice(); if (bits < 128) host[7] |= 1;
+  return { net: str(m) + "/" + bits, ip: str(host) };
+}
+
+// The pasted list: split on spaces, commas, semicolons and new lines (CJK ones too). Each piece is
+//   an address, with any port or brackets taken off (1.2.3.4:443, [2001:db8::1]:443): a row;
+//   an IPv4 /24 (or a longer prefix, read as the /24 it is in): the /24's portrait, the first one only;
+//   an IPv6 prefix: a row for the one address that stands for it;
+// in canonical form, once each, public ones only.
+// → { items: [{ ip, net? }], ips, seg (the /24, as its .0 address) | null, segMore (further /24s left out),
+//     big (IPv4 prefixes wider than a /24), skipped (not an address, private or a repeat), over (rows past MAX) }
 export function parseList(text) {
-  const ips = [], seen = new Set();
-  let skipped = 0, over = 0;
+  const items = [], seen = new Set(), big = [];
+  let skipped = 0, over = 0, seg = null, segMore = 0;
+  const add = (ip, net) => {
+    if (!ip || !isPublic(ip) || seen.has(net || ip)) { skipped++; return; }
+    seen.add(net || ip);
+    if (items.length >= MAX) { over++; return; }
+    items.push(net ? { ip, net } : { ip });
+  };
   for (let tok of String(text || "").split(/[\s,;，；、]+/)) {
     if (!tok) continue;
+    const p = /^(.+)\/(\d{1,3})$/.exec(tok);
+    if (p) {
+      const bits = +p[2], f = family(p[1]);
+      if (f === 4 && bits <= 32) {
+        if (bits === 32) add(p[1]);
+        else if (bits < 24) big.push(tok);
+        else {
+          const base = p[1].split(".").slice(0, 3).join(".") + ".0";
+          if (!isPublic(base)) skipped++;
+          else if (!seg) seg = base;
+          else if (seg !== base) segMore++;
+        }
+      } else if (f === 6 && bits <= 128) {
+        if (bits === 128) add(canon(p[1]));
+        else { const n = v6net(p[1], bits); if (n) add(n.ip, n.net); else skipped++; }
+      } else skipped++;
+      continue;
+    }
     tok = tok.replace(/^\[([0-9a-f:.]+)\](?::\d+)?$/i, "$1").replace(/^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/, "$1");
-    const ip = canon(tok);
-    if (!ip || !isPublic(ip) || seen.has(ip)) { skipped++; continue; }
-    seen.add(ip);
-    if (ips.length >= MAX) { over++; continue; }
-    ips.push(ip);
+    add(canon(tok));
   }
-  return { ips, skipped, over };
+  return { items, ips: items.map(x => x.ip), seg, segMore, big, skipped, over };
 }
 
 // What one row shows, from the `done` event: score and grade, where, the network type, native or broadcast, the
@@ -48,8 +84,8 @@ const unb64u = s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(
 const idx = (a, v) => (v == null ? -1 : a.indexOf(v));
 
 export function packRows(rows, { at, withIp = false } = {}) {
-  const R = rows.filter(r => r.r).map(({ ip, r }) => [r.score, r.cc || "", idx(TYPES, r.type), r.native == null ? -1 : +r.native, r.regCc || "",
-    r.anon.reduce((m, a) => m | (1 << ANON.indexOf(a)), 0), idx(LV, r.ai), idx(LV, r.stream), r.aiWhy || "", r.streamWhy || "", ...(withIp ? [ip] : [])]);
+  const R = rows.filter(r => r.r).map(({ ip, net, r }) => [r.score, r.cc || "", idx(TYPES, r.type), r.native == null ? -1 : +r.native, r.regCc || "",
+    r.anon.reduce((m, a) => m | (1 << ANON.indexOf(a)), 0), idx(LV, r.ai), idx(LV, r.stream), r.aiWhy || "", r.streamWhy || "", ...(withIp ? [ip, net || ""] : [])]);
   return b64u(JSON.stringify({ v: 1, at, R }));
 }
 
@@ -63,7 +99,8 @@ export function unpackRows(code) {
     if (!Array.isArray(x) || !Number.isInteger(x[0]) || x[0] < 0 || x[0] > 100) return null;
     const cc = /^[A-Z]{2}$/.test(x[1]) ? x[1] : null, reg = /^[A-Z]{2}$/.test(x[4]) ? x[4] : null;
     const ip = typeof x[10] === "string" ? canon(x[10]) : null;
-    return { i, ip: ip && isPublic(ip) ? ip : null, st: "ok", r: {
+    const net = typeof x[11] === "string" && /^[0-9a-f:]+\/\d{1,3}$/.test(x[11]) ? x[11] : null;
+    return { i, ip: ip && isPublic(ip) ? ip : null, ...(net && ip ? { net } : {}), st: "ok", r: {
       score: x[0], grade: grade(x[0]), cc, type: TYPES[x[2]] || null, native: x[3] === 1 ? true : x[3] === 0 ? false : null, regCc: reg,
       anon: ANON.filter((a, k) => x[5] & (1 << k)), ai: LV[x[6]] || null, stream: LV[x[7]] || null,
       aiWhy: ok(x[8]) && /^u_ai_\w+$/.test(x[8]) ? x[8] : null, streamWhy: ok(x[9]) && /^u_stream_\w+$/.test(x[9]) ? x[9] : null,

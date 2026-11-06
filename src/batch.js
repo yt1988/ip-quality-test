@@ -4,13 +4,16 @@
 // a shared link carries the rows in its #fragment, without the addresses unless the visitor ticks the box.
 // Strings: window.L1MS (the main page's, plus the b_* ones).
 import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.mjs";
+import { readSeg, addrLines, ST } from "./seg.mjs";
 
 (function () {
   "use strict";
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const D = JSON.parse($("#data").textContent);
   const L = window.L1MS || {}, LANG = D.lang;
-  const t = (k, v) => { let s = L[k] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
+  // a count of one picks the key_one sentence where there is one (as on the main page)
+  const PLURAL = new Intl.PluralRules(LANG), plural = (k, v) => { const c = v && v.n, r = c != null && k + "_" + PLURAL.select(+c); return r && L[r] != null ? r : k; };
+  const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   const K = { theme: "ipqs:theme", lang: "ipqs:lang" };
@@ -42,8 +45,10 @@ import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.m
   const tag = (lv, why) => lv ? `<span class="tag ${lv}"${why ? ` data-why="${esc(t(why))}" title="${esc(t(why))}"` : ""}>${esc(t("lv_" + lv))}</span>` : "–";
   const ANON = { tor: () => "Tor", vpn: () => "VPN", proxy: () => t("tag_proxy") };
   function cells(row) {
-    const r = row.r, ip = row.ip
-      ? (shared ? `<span class="ip">${esc(row.ip)}</span>` : `<a class="ip" href="${HOME}?ip=${encodeURIComponent(row.ip)}" target="_blank" rel="noopener">${esc(row.ip)}</a>`)
+    // an IPv6 prefix shows the prefix, with the address that stands for it in the link
+    const label = row.net || row.ip, r = row.r, ip = row.ip
+      ? (shared ? `<span class="ip">${esc(label)}</span>` : `<a class="ip" href="${HOME}?ip=${encodeURIComponent(row.ip)}" target="_blank" rel="noopener"${row.net ? ` title="${esc(row.ip)}"` : ""}>${esc(label)}</a>`) +
+        (row.net ? ` <span class="bt-rep" title="${esc(t("b_v6_rep_d", { ip: row.ip }))}">${esc(t("b_v6_rep"))}</span>` : "")
       : `<span class="m">${esc(t("b_hidden"))}</span>`;
     const head = `<td class="n">${row.i + 1}</td><td class="ipc">${ip}</td>`;
     if (!r) {
@@ -95,10 +100,11 @@ import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.m
     }
     throw new Error("rate");
   }
-  async function start(ips) {
+  let items = [], note = "";
+  async function start(list) {
     const me = ++run;
-    shared = false; at = new Date().toISOString();
-    rows = ips.map((ip, i) => ({ i, ip, st: "wait", r: null }));
+    shared = false; at = new Date().toISOString(); items = list;
+    rows = list.map((x, i) => ({ i, ip: x.ip, ...(x.net ? { net: x.net } : {}), st: "wait", r: null }));
     sort = { col: "i", dir: 1 };
     $("#res").hidden = false; go.disabled = true;
     draw();
@@ -115,16 +121,79 @@ import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.m
     if (me !== run) return;
     go.disabled = false;
     const bad = rows.filter(r => r.st === "err").length;
-    if (bad) say("b_errs", { n: bad }); else say("b_done", { n: rows.length });
+    // what the list left out stays said after the result
+    hint.textContent = t(bad ? "b_errs" : "b_done", { n: bad || rows.length }) + (note ? " " + note : "");
   }
   $("#ask").onsubmit = e => {
     e.preventDefault();
-    const { ips, skipped, over } = parseList(box.value);
-    if (!ips.length) { say("b_none"); box.focus(); return; }
+    const P = parseList(box.value);
+    if (!P.items.length && !P.seg) { say(P.big.length ? "b_seg_big" : "b_none", { p: P.big[0] }); box.focus(); return; }
     if (history.replaceState && location.hash) history.replaceState(null, "", SELF + location.search);
-    start(ips);
-    const parts = [over && t("b_cut", { n: MAX, over }), skipped && t("b_skip", { n: skipped })].filter(Boolean);
-    hint.textContent = parts.length ? parts.join(" ") : t("b_hint", { n: MAX });
+    if (P.seg) segShow(P.seg); else { $("#seg").hidden = true; seg = null; }
+    if (P.items.length) start(P.items); else { run++; items = []; rows = []; $("#res").hidden = true; go.disabled = false; }
+    const parts = [P.over && t("b_cut", { n: MAX, over: P.over }), P.skipped && t("b_skip", { n: P.skipped }),
+      P.big.length && t("b_seg_big", { p: P.big[0] }), P.segMore && t("b_seg_more", { n: P.segMore })].filter(Boolean);
+    note = parts.join(" ");
+    hint.textContent = note || t(P.seg && !P.items.length ? "b_seg_hint" : "b_hint", { n: MAX });
+  };
+
+  /* ---------- a /24: its portrait from the 1ms.dog server (as on the main page), and picking addresses to score ---------- */
+  // The portrait is one request for all 256 addresses (public lists and reverse names, read on the server: no source's
+  // quota); the visitor picks the ones worth a full check, up to what the table has room for.
+  let seg = null, picked = new Set();
+  const inSeg = ip => !!seg && seg.cells.some(c => c.ip === ip);
+  const room = () => MAX - items.filter(x => !inSeg(x.ip)).length;
+  function segPickUi() {
+    $$("#segMap i").forEach((el, i) => el.classList.toggle("on", picked.has(i)));
+    $("#segPick").textContent = t("b_seg_pick", { n: picked.size, max: room() - picked.size });
+    const go2 = $("#segGo"); go2.disabled = !picked.size; go2.textContent = t("b_seg_go", { n: picked.size });
+    const listed = seg ? seg.cells.filter(c => c.st !== "ok").length : 0;
+    const lb = $("#segListed"); lb.hidden = !listed; lb.textContent = t("b_seg_listed", { n: Math.min(listed, room()) });
+  }
+  const segSay = i => {
+    const c = seg && seg.cells[i], el = $("#segInfo");
+    if (!c) { el.textContent = t("sg_hint"); return; }
+    el.innerHTML = `<span class="ip">${esc(c.ip)}</span><span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([k, q]) => t(k, q)).join(t("v_join")))}</span>` +
+      `<span class="nm" title="${esc(c.name)}">${esc(c.name || t("sg_a_noname"))}</span>`;
+  };
+  async function segShow(base) {
+    const label = base.split(".").slice(0, 3).join(".") + ".0/24";
+    seg = null; picked = new Set();
+    $("#seg").hidden = false; $("#segN").textContent = label;
+    const v = $("#segV"); v.className = "sg-verdict wait"; v.textContent = t("sg_v_wait");
+    $("#segMap").innerHTML = Array.from({ length: 256 }, () => `<i class="s-wait"></i>`).join("");
+    $("#segLeg").innerHTML = ""; $("#segInfo").textContent = t("sg_hint"); $("#segListed").hidden = true; $("#segGo").disabled = true; $("#segPick").textContent = "";
+    let j = null;
+    try { const res = await fetch(D.seg + "/v1/seg?ip=" + encodeURIComponent(base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); if (res.ok) j = await res.json(); } catch (e) {}
+    if ($("#segN").textContent !== label) return;
+    if (!j || !j.seg) { v.className = "sg-verdict"; v.textContent = t("b_seg_fail"); $("#segMap").innerHTML = ""; return; }
+    seg = readSeg(j, null, null);
+    v.className = "sg-verdict " + seg.verdict.lv;
+    v.textContent = seg.verdict.listed ? t("sg_v_n", { n: seg.verdict.listed }) : t("sg_v_0");
+    $("#segMap").innerHTML = seg.cells.map((c, i) => `<i class="s-${c.st}" data-c="${i}" aria-label="${esc(c.ip)}"></i>`).join("");
+    $("#segLeg").innerHTML = ST.map(st => `<li${seg.count[st] ? "" : ' class="z"'}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${seg.count[st]}</b></li>`).join("");
+    segPickUi();
+  }
+  const segMap = $("#segMap");
+  segMap.addEventListener("mouseover", e => { const i = e.target.dataset && e.target.dataset.c; if (i != null) segSay(+i); });
+  segMap.addEventListener("click", e => {
+    const i = e.target.dataset && e.target.dataset.c; if (i == null || !seg) return;
+    segSay(+i);
+    if (picked.has(+i)) picked.delete(+i); else if (picked.size < room()) picked.add(+i);
+    segPickUi();
+  });
+  // the listed neighbours, worst first, as many as there is room for
+  $("#segListed").onclick = () => {
+    if (!seg) return;
+    const order = seg.cells.map((c, i) => [i, ST.indexOf(c.st)]).filter(([, k]) => ST[k] !== "ok").sort((a, b) => a[1] - b[1]);
+    picked = new Set(order.slice(0, room()).map(([i]) => i));
+    segPickUi();
+  };
+  // the picked addresses join the table (rows already checked come back from the Worker's cache)
+  $("#segGo").onclick = () => {
+    if (!seg || !picked.size) return;
+    const mine = items.filter(x => !inSeg(x.ip)); note = "";
+    start([...mine, ...[...picked].sort((a, b) => a - b).map(i => ({ ip: seg.cells[i].ip }))].slice(0, MAX));
   };
 
   /* ---------- sharing: the 1ms.dog dialog (/assets/share/, copied from 1ms-shell), as on the main page ---------- */
@@ -164,7 +233,7 @@ import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.m
     R.forEach((row, i) => {
       const r = row.r, yy = y + 18 + (i + 1) * ROW - 18;
       font(500, 22, true); text(String(row.i + 1), X.n, yy, C.mu);
-      if (show) { font(600, 22, true); text(kit.clip(g, row.ip || t("b_hidden"), Wd.ip), X.ip, yy, row.ip ? C.fg : C.mu); }
+      if (show) { font(600, 22, true); text(kit.clip(g, row.net || row.ip || t("b_hidden"), Wd.ip), X.ip, yy, row.ip ? C.fg : C.mu); }
       font(500, 22, true); text(r.cc || "–", X.cc, yy, C.fg);
       font(700, 26, true); const sc = String(r.score); text(sc, X.score, yy, GC[r.grade]);
       const sw = g.measureText(sc).width; font(700, 20); text(r.grade, X.score + sw + 8, yy, GC[r.grade]);

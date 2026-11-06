@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/de.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Mehrere IPs prüfen · 1ms.dog","url":"https://ipqs.1ms.dog/de/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Bis zu 20 IPv4- oder IPv6-Adressen einfügen und eine Tabelle erhalten: Qualitätswert und Note, Privatanschluss oder Rechenzentrum, native oder Broadcast-IP, VPN-, Proxy- oder Tor-Markierungen und ob KI-Dienste und Streaming funktionieren. Nach jeder Spalte sortierbar; geteilte Links enthalten die IPs standardmäßig nicht. Kostenlos, ohne Anmeldung.","inLanguage":"de","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.cffa7d7de5.css">
+<link rel="stylesheet" href="/assets/app.d8930122d9.css">
 </head>
 <body>
 <div class="app">
@@ -68,13 +68,25 @@
         <a class="ul" href="/de/" data-i="b_one">← Eine IP prüfen</a>
       </div>
       <form class="bt-ask" id="ask" autocomplete="off">
-        <label class="sr" for="ips" data-i="b_ph">IP-Adressen einfügen, eine pro Zeile oder durch Leerzeichen oder Kommas getrennt</label>
+        <label class="sr" for="ips" data-i="b_ph">IP-Adressen oder Bereiche einfügen, eine pro Zeile oder durch Leerzeichen oder Kommas getrennt</label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go">Prüfen</button>
         </div>
       </form>
+      <div class="bt-seg" id="seg" hidden>
+        <div class="bt-seg-h"><h2 data-i="sg_h">Nachbarschaft (/24)</h2><span class="sg-n" id="segN"></span></div>
+        <p class="sg-verdict" id="segV"></p>
+        <div class="sg-map" id="segMap"></div>
+        <p class="sg-info" id="segInfo" aria-live="polite"></p>
+        <ul class="sg-leg" id="segLeg"></ul>
+        <div class="bt-seg-a">
+          <span class="bt-seg-p" id="segPick"></span>
+          <button class="btn sm" id="segListed" type="button"></button>
+          <button class="btn sm pri" id="segGo" type="button" disabled></button>
+        </div>
+      </div>
       <div class="bt-res" id="res" hidden>
         <div class="bt-bar">
           <span class="bt-prog" id="prog" aria-live="polite"></span>
@@ -106,8 +118,8 @@
   </main>
 </div>
 
-<script type="application/json" id="data">{"lang":"de","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"}}</script>
-<script src="/assets/l.de.75fd495c3c.js"></script>
-<script src="/assets/batch.65b0e78d7d.js"></script>
+<script type="application/json" id="data">{"lang":"de","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
+<script src="/assets/l.de.6c4d98b0d3.js"></script>
+<script src="/assets/batch.2be1a195cb.js"></script>
 </body>
 </html>

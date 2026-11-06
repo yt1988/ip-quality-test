@@ -164,7 +164,7 @@ export async function build({ check = false } = {}) {
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
       .replace("{{prepaint}}", PREPAINT).replace("{{head}}", bhead).replace("{{css}}", cssName).replace("{{js}}", bjsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("b_h1")))
-      .replace("{{data}}", JSON.stringify({ lang, paths }).replace(/</g, "\\u003c"));
+      .replace("{{data}}", JSON.stringify({ lang, paths, seg: SEG }).replace(/</g, "\\u003c"));
     if (/\{\{\w+\}\}/.test(bhtml)) throw new Error("unfilled placeholder in batch " + path(slug) + ": " + /\{\{\w+\}\}/.exec(bhtml)[0]);
     files[(slug ? slug + "/" : "") + "batch/index.html"] = bhtml;
   }

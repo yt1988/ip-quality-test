@@ -53,3 +53,17 @@ test("readBeacon: known sources, 0 or 1, a time; anything else is dropped", () =
   for (const bad of ["x", "{}", JSON.stringify({ r: [["evil", 1, 1]] }), JSON.stringify({ r: [["geojs", 2, 1]] }), JSON.stringify({ r: Array(PROBE.length + 1).fill(["geojs", 1, 1]) })])
     assert.equal(readBeacon(bad), null);
 });
+
+import { parseList as parse2, v6net } from "../src/batch.mjs";
+test("parseList: a /24 (or longer) becomes the portrait, wider ones are refused, IPv6 prefixes one row each", () => {
+  const r = parse2("95.216.1.0/24 95.216.1.128/25 8.8.8.0/24 1.0.0.0/16 2400:cb00:2049:1::/64 2400:cb00:2049:1::5/64 1.1.1.1/32 10.0.0.0/24");
+  assert.equal(r.seg, "95.216.1.0");
+  assert.equal(r.segMore, 1);
+  assert.deepEqual(r.big, ["1.0.0.0/16"]);
+  assert.deepEqual(r.items, [{ ip: "2400:cb00:2049:1::1", net: "2400:cb00:2049:1::/64" }, { ip: "1.1.1.1" }]);
+  assert.equal(r.skipped, 2);   // the repeated prefix, the private /24
+});
+test("v6net: masks to the prefix, the first host stands for it", () => {
+  assert.deepEqual(v6net("2001:4860:4860::8888", 48), { net: "2001:4860:4860::/48", ip: "2001:4860:4860::1" });
+  assert.deepEqual(v6net("2001:4860:4861:ffff::1", 47), { net: "2001:4860:4860::/47", ip: "2001:4860:4860::1" });
+});
