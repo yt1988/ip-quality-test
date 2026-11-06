@@ -140,4 +140,144 @@
     <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/"/>
   </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/zh-cn/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/zh-tw/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/ja/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/ko/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/es/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/fr/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/de/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/pt/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
+  <url>
+    <loc>https://ipqs.1ms.dog/ru/batch/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ipqs.1ms.dog/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ipqs.1ms.dog/zh-cn/batch/"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://ipqs.1ms.dog/zh-tw/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ipqs.1ms.dog/ja/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ipqs.1ms.dog/ko/batch/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ipqs.1ms.dog/es/batch/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ipqs.1ms.dog/fr/batch/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ipqs.1ms.dog/de/batch/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://ipqs.1ms.dog/pt/batch/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ipqs.1ms.dog/ru/batch/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ipqs.1ms.dog/batch/"/>
+  </url>
 </urlset>

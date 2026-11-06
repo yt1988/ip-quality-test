@@ -7,6 +7,7 @@
 
 - Page: https://ipqs.1ms.dog/ (also /zh-cn/, /zh-tw/, /ja/, /ko/, /es/, /fr/, /de/, /pt/, /ru/)
 - Any address: https://ipqs.1ms.dog/?ip=8.8.8.8
+- Up to 20 addresses at once, as one table: https://ipqs.1ms.dog/batch/
 - API (NDJSON stream, one line per source, then the score): https://ipqs.1ms.dog/api/check?ip=8.8.8.8
 - Source code: https://github.com/yt1988/ip-quality-test
 

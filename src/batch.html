@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="{{lang}}" data-paths="{{pathsAttr}}"{{rootAttr}}>
+<head>
+<meta charset="utf-8">
+<script>{{prepaint}}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{{head}}
+<link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/{{css}}">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <a class="brand" href="{{homeHref}}">
+      <span class="logo"><img class="logo-light" src="/assets/logo-light.svg" width="90" height="36" alt="1ms"><img class="logo-dark" src="/assets/logo-dark.svg" width="90" height="36" alt="1ms"></span>
+      <span class="brand-name" data-i="app_name"></span>
+    </a>
+    <div class="top-acts">
+      <label class="sel"><span class="sr" data-i="lang_label"></span>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4 2.8 6.5S10 12.5 8 14.5C6 12.5 5.2 10.5 5.2 8S6 3.5 8 1.5z"/></svg>
+        <select id="lang">{{langOpts}}</select>
+      </label>
+      <a class="icon-btn gh" href="https://github.com/yt1988/ip-quality-test" target="_blank" rel="noopener noreferrer" title="GitHub" aria-label="GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 .2a8 8 0 0 0-2.5 15.6c.4 0 .5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.4.7 0-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.4 7.4 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.7-3.6 3.9.3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 8 .2z"/></svg></a>
+      <button class="icon-btn" id="theme" type="button" aria-label="{{a:a_theme}}">
+        <svg class="i-sys" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/></svg>
+        <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg>
+        <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="bt card">
+      <div class="bt-h">
+        <h1>{{h1}}</h1>
+        <a class="ul" href="{{homeHref}}" data-i="b_one"></a>
+      </div>
+      <form class="bt-ask" id="ask" autocomplete="off">
+        <label class="sr" for="ips" data-i="b_ph"></label>
+        <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
+        <div class="bt-row">
+          <p class="bt-hint" id="hint" aria-live="polite"></p>
+          <button class="btn pri" id="go" type="submit" data-i="b_go"></button>
+        </div>
+      </form>
+      <div class="bt-shared" id="sharedNote" hidden><p id="sharedT"></p><a class="btn sm" id="sharedGo" data-i="b_mine"></a></div>
+      <div class="bt-res" id="res" hidden>
+        <div class="bt-bar">
+          <span class="bt-prog" id="prog" aria-live="polite"></span>
+          <div class="bt-acts">
+            <label class="bt-chk"><input type="checkbox" id="withIp"><span data-i="b_share_ip"></span></label>
+            <button class="btn sm pri" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="b_share"></span></button>
+          </div>
+        </div>
+        <div class="bt-wrap">
+          <table class="bt-t" id="tbl">
+            <thead><tr>
+              <th class="n"><button type="button" data-sort="i">#</button></th>
+              <th><button type="button" data-sort="ip" data-i="b_c_ip"></button></th>
+              <th><button type="button" data-sort="cc" data-i="b_c_loc"></button></th>
+              <th class="sc"><button type="button" data-sort="score" data-i="b_c_score"></button></th>
+              <th><button type="button" data-sort="type" data-i="b_c_type"></button></th>
+              <th><button type="button" data-sort="native" data-i="b_c_native"></button></th>
+              <th><button type="button" data-sort="anon" data-i="b_c_anon"></button></th>
+              <th><button type="button" data-sort="ai" data-i="b_c_ai"></button></th>
+              <th><button type="button" data-sort="stream" data-i="b_c_stream"></button></th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <p class="bt-note" data-i="b_note"></p>
+      </div>
+    </section>
+
+    <div data-ms-more></div>
+  </main>
+</div>
+
+<script type="application/json" id="data">{{data}}</script>
+<script src="/assets/{{strings}}"></script>
+<script src="/assets/{{js}}"></script>
+</body>
+</html>

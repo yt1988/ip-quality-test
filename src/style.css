@@ -313,3 +313,59 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
   .pr { grid-template-columns: minmax(0, 6fr) minmax(0, 11fr) 30px; }
   .pms { display: none; }
 }
+
+/* the batch page (/batch/): the list box, then one table row per address; the table scrolls sideways on phones */
+.bt { padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 14px; }
+.bt-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; }
+.bt h1 { font-size: clamp(20px, 2.6vw, 26px); line-height: 1.25; letter-spacing: -.015em; font-weight: 700; }
+.bt-h .ul { font-size: 13px; color: var(--muted); }
+.bt-ask { display: flex; flex-direction: column; gap: 10px; }
+.bt-ask[hidden], .bt-res[hidden], .bt-shared[hidden], .bt-acts[hidden] { display: none; }
+.bt-ask textarea { width: 100%; min-height: 120px; resize: vertical; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: 14px/1.6 var(--f-num); outline: none; }
+.bt-ask textarea::placeholder { font-family: var(--f-ui); }
+.bt-ask textarea:focus { border-color: var(--ink); }
+.bt-row { display: flex; align-items: center; gap: 12px; }
+.bt-hint { margin: 0; flex: 1; min-width: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.bt-shared { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 12px 14px; border-radius: 10px; background: var(--soft); }
+.bt-shared p { margin: 0; flex: 1 1 260px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.bt-res { display: flex; flex-direction: column; gap: 10px; }
+.bt-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; min-height: 30px; }
+.bt-prog { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bt-acts { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.bt-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.bt-wrap { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
+.bt-t { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.bt-t th { text-align: left; font-weight: 600; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); padding: 0; }
+.bt-t th button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 8px 10px; cursor: pointer; }
+.bt-t th button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; border-radius: 4px; }
+.bt-t th[aria-sort="ascending"] button::after { content: " ↑"; color: var(--fg); }
+.bt-t th[aria-sort="descending"] button::after { content: " ↓"; color: var(--fg); }
+.bt-t td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.bt-t tr:last-child td { border-bottom: 0; }
+.bt-t .n { width: 1%; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bt-t .ip { font-family: var(--f-num); font-variant-numeric: tabular-nums; color: var(--fg); }
+.bt-t a.ip { text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.bt-t a.ip:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.bt-t .m { color: var(--muted); font-size: 12px; }
+.bt-t td.sc { font-variant-numeric: tabular-nums; }
+.bt-sc { font: 700 15px var(--f-num); color: var(--gc, var(--fg)); }
+.bt-g { margin-left: 6px; font-size: 12px; font-weight: 600; color: var(--gc, var(--muted)); }
+.bt-sc[data-g="A"], .bt-g[data-g="A"] { --gc: var(--t1); } .bt-sc[data-g="B"], .bt-g[data-g="B"] { --gc: var(--t2); }
+.bt-sc[data-g="C"], .bt-g[data-g="C"] { --gc: var(--t3); } .bt-sc[data-g="D"], .bt-g[data-g="D"] { --gc: var(--t4); }
+.bt-sc[data-g="F"], .bt-g[data-g="F"] { --gc: var(--t5); }
+.bt-t .bt-st .skl { width: 40%; max-width: 360px; }
+.bt-t .tag { height: 20px; }
+.bt-note { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+@media (max-width: 720px) {
+  .bt { padding: 16px 16px 14px; }
+  .bt-wrap { margin: 0 -16px; padding: 0 16px; }
+  .bt-row { flex-wrap: wrap; } .bt-row .btn { width: 100%; }
+  .bt-acts { margin-left: 0; width: 100%; justify-content: space-between; }
+}
+.acts a.btn { text-decoration: none; color: inherit; }
+.bt-t td > .flag { margin-right: 5px; }
+@media (max-width: 720px) {
+  /* phones: the table scrolls sideways under a fixed address column, so every row stays named */
+  .bt-t .n { display: none; }
+  .bt-t th:nth-child(2), .bt-t td.ipc { position: sticky; left: -16px; z-index: 1; background: var(--panel); box-shadow: 1px 0 0 var(--line); padding-left: 16px; }
+}

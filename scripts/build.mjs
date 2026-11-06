@@ -3,6 +3,7 @@
 //   index.html, <lang>/index.html              the page per language
 //   assets/app.<hash>.js, assets/app.<hash>.css the page's code and styles, shared by every language
 //   assets/l.<lang>.<hash>.js                    the strings the browser code needs, per language
+//   batch/, <lang>/batch/, assets/batch.<hash>.js the batch page (src/batch.html, src/batch.js)
 //   sitemap.xml, robots.txt, llms.txt, _headers  SEO and security headers (CSP)
 // The link-preview images in public/og/ come from scripts/og.mjs (run it when the strings or the look change).
 // The Worker (src/worker.js) is deployed from source by wrangler; it isn't built here.
@@ -54,13 +55,13 @@ async function loadI18n() {
 }
 
 // Strings only the build uses (the page already shows them); everything else goes to the browser
-const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "docs", "lang_label", "faq_h"]);
+const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "docs", "lang_label", "faq_h", "b_seo_title", "b_seo_desc", "b_h1"]);
 
 export async function build({ check = false } = {}) {
   const I = await loadI18n(), en = I.en;
   const langs = LANGS.filter(([l]) => I[l]);
   for (const [l] of langs) for (const k of Object.keys(en)) if (!(k in I[l])) throw new Error(`i18n/${l}.mjs is missing "${k}"`);
-  const tpl = await readFile(new URL("page.html", src), "utf8");
+  const tpl = await readFile(new URL("page.html", src), "utf8"), btpl = await readFile(new URL("batch.html", src), "utf8");
 
   const root = fileURLToPath(new URL("..", import.meta.url));
   const js = (await bundle({ entryPoints: [fileURLToPath(new URL("app.js", src))], bundle: true, minify: true, format: "iife", target: "es2020",
@@ -68,8 +69,10 @@ export async function build({ check = false } = {}) {
     external: ["/assets/share/*"], legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
   const cssFull = (await Promise.all(["fonts.css", "base.css", "style.css"].map(f => readFile(new URL(f, src), "utf8")))).join("\n");
   const css = (await transform(cssFull, { loader: "css", minify: true, legalComments: "none" })).code;
-  const jsName = `app.${hash(js)}.js`, cssName = `app.${hash(css)}.css`;
-  const files = { ["assets/" + jsName]: js, ["assets/" + cssName]: css };
+  const bjs = (await bundle({ entryPoints: [fileURLToPath(new URL("batch.js", src))], bundle: true, minify: true, format: "iife", target: "es2020",
+    legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
+  const jsName = `app.${hash(js)}.js`, cssName = `app.${hash(css)}.css`, bjsName = `batch.${hash(bjs)}.js`;
+  const files = { ["assets/" + jsName]: js, ["assets/" + cssName]: css, ["assets/" + bjsName]: bjs };
 
   const path = slug => "/" + (slug ? slug + "/" : "");
   for (const [lang, slug, locale] of langs) {
@@ -135,11 +138,40 @@ export async function build({ check = false } = {}) {
       .replace("{{helpNav}}", helpNav).replace("{{helpC}}", helpC).replace("{{data}}", JSON.stringify(data).replace(/</g, "\\u003c"));
     if (/\{\{\w+\}\}/.test(html)) throw new Error("unfilled placeholder in " + path(slug) + ": " + /\{\{\w+\}\}/.exec(html)[0]);
     files[(slug ? slug + "/" : "") + "index.html"] = html;
+
+    // the batch page: its own title and description, the same header, the main page's strings and styles
+    const burl = url + "batch/";
+    const balts = langs.map(([l, sl]) => `<link rel="alternate" hreflang="${l}" href="${SITE + path(sl)}batch/">`).join("\n") + `\n<link rel="alternate" hreflang="x-default" href="${SITE}/batch/">`;
+    const bld = { "@context": "https://schema.org", "@type": "WebApplication", name: T("b_h1") + " · 1ms.dog", url: burl, applicationCategory: "UtilitiesApplication",
+      operatingSystem: "Any", browserRequirements: "Requires JavaScript", description: T("b_seo_desc"), inLanguage: lang, isAccessibleForFree: true,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } };
+    const og = `${SITE}/og/${slug || "en"}.png`;
+    const bhead = [
+      `<title>${esc(T("b_seo_title"))}</title>`, `<meta name="description" content="${esc(T("b_seo_desc"))}">`,
+      `<meta name="robots" content="index, follow, max-image-preview:large">`, `<meta name="application-name" content="${esc(T("app_name"))}">`,
+      `<meta name="theme-color" content="#f6f6f7" media="(prefers-color-scheme: light)">`, `<meta name="theme-color" content="#1c1c1c" media="(prefers-color-scheme: dark)">`,
+      `<link rel="canonical" href="${burl}">`, balts,
+      `<link rel="icon" href="/favicon.ico" sizes="any">`, `<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">`, `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`,
+      `<meta property="og:type" content="website">`, `<meta property="og:site_name" content="1ms.dog">`,
+      `<meta property="og:title" content="${esc(T("b_seo_title"))}">`, `<meta property="og:description" content="${esc(T("b_seo_desc"))}">`, `<meta property="og:url" content="${burl}">`,
+      `<meta property="og:locale" content="${locale}">`, `<meta property="og:image" content="${og}">`, `<meta property="og:image:width" content="1200">`, `<meta property="og:image:height" content="630">`,
+      `<meta name="twitter:card" content="summary_large_image">`, `<meta name="twitter:image" content="${og}">`,
+      `<script type="application/ld+json">${JSON.stringify(bld).replace(/</g, "\\u003c")}</script>`,
+    ].join("\n");
+    const bhtml = btpl
+      .replace(/(<(\w+)\b[^>]*\sdata-i="(\w+)"[^>]*>)([^<]*)(<\/\2>)/g, (m, open, tag, k, inner, close) => open + esc(T(k)) + close)
+      .replace(/\{\{a:(\w+)\}\}/g, (m, k) => esc(T(k)))
+      .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
+      .replace("{{prepaint}}", PREPAINT).replace("{{head}}", bhead).replace("{{css}}", cssName).replace("{{js}}", bjsName).replace("{{strings}}", sName)
+      .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("b_h1")))
+      .replace("{{data}}", JSON.stringify({ lang, paths }).replace(/</g, "\\u003c"));
+    if (/\{\{\w+\}\}/.test(bhtml)) throw new Error("unfilled placeholder in batch " + path(slug) + ": " + /\{\{\w+\}\}/.exec(bhtml)[0]);
+    files[(slug ? slug + "/" : "") + "batch/index.html"] = bhtml;
   }
 
   files["sitemap.xml"] = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n` +
-    langs.map(([, s]) => `  <url>\n    <loc>${SITE + path(s)}</loc>\n` + langs.map(([l, s2]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE + path(s2)}"/>`).join("\n") +
-      `\n    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE}/"/>\n  </url>`).join("\n") + "\n</urlset>\n";
+    ["", "batch/"].flatMap(p => langs.map(([, s]) => `  <url>\n    <loc>${SITE + path(s) + p}</loc>\n` + langs.map(([l, s2]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE + path(s2) + p}"/>`).join("\n") +
+      `\n    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE}/${p}"/>\n  </url>`)).join("\n") + "\n</urlset>\n";
   files["robots.txt"] = `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE}/sitemap.xml\n`;
   files["llms.txt"] = `# IP Quality Test (IPQS) · 1ms.dog
 
@@ -150,6 +182,7 @@ export async function build({ check = false } = {}) {
 
 - Page: ${SITE}/ (also ${langs.slice(1).map(([, s]) => "/" + s + "/").join(", ")})
 - Any address: ${SITE}/?ip=8.8.8.8
+- Up to 20 addresses at once, as one table: ${SITE}/batch/
 - API (NDJSON stream, one line per source, then the score): ${SITE}/api/check?ip=8.8.8.8
 - Source code: https://github.com/yt1988/ip-quality-test
 
@@ -201,7 +234,7 @@ export async function build({ check = false } = {}) {
 `;
 
   // generated files that are no longer produced (old hashes) are stale too
-  const gen = async () => (await readdir(new URL("assets/", pub))).filter(f => /^(app|l)\..+\.(js|css)$/.test(f)).map(f => "assets/" + f);
+  const gen = async () => (await readdir(new URL("assets/", pub))).filter(f => /^(app|l|batch)\..+\.(js|css)$/.test(f)).map(f => "assets/" + f);
   const stale = [];
   for (const [f, body] of Object.entries(files)) {
     let cur = null; try { cur = await readFile(new URL(f, pub), "utf8"); } catch (e) {}
