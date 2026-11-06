@@ -257,6 +257,7 @@ export default {
   b_share: "Teilen",
   b_share_ip: "IPs mitteilen",
   b_copied: "Link kopiert.",
+  b_copied_b: "Link kopiert",
   b_shared: "Jemand hat diese Prüfung mehrerer IPs mit dir geteilt.",
   b_shared_at: "Jemand hat diese Prüfung mehrerer IPs mit dir geteilt, durchgeführt am {at}.",
   b_mine: "Meine eigene Liste prüfen",

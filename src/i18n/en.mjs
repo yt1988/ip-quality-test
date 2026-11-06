@@ -257,6 +257,7 @@ export default {
   b_share: "Share",
   b_share_ip: "Include the IPs",
   b_copied: "Link copied.",
+  b_copied_b: "Link copied",
   b_shared: "Someone shared this bulk check with you.",
   b_shared_at: "Someone shared this bulk check with you, run {at}.",
   b_mine: "Check my own list",

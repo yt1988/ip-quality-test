@@ -129,11 +129,18 @@ import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.m
   };
 
   /* ---------- sharing: the rows go in the link's #fragment, so the server never sees them ---------- */
-  $("#shareBtn").onclick = async () => {
+  // the button itself says the link is copied (a tick, for two seconds), where the visitor is looking
+  const shareBtn = $("#shareBtn"), shareLabel = shareBtn.querySelector("span"), SHARE_T = shareLabel.textContent;
+  let flashT = 0;
+  const flash = () => {
+    shareBtn.classList.add("done"); shareLabel.textContent = t("b_copied_b");
+    clearTimeout(flashT); flashT = setTimeout(() => { shareBtn.classList.remove("done"); shareLabel.textContent = SHARE_T; }, 2000);
+  };
+  shareBtn.onclick = async () => {
     const url = location.origin + SELF + "#b=" + packRows(rows, { at, withIp: $("#withIp").checked });
     try {
       if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ title: document.title, url });
-      else { await navigator.clipboard.writeText(url); say("b_copied"); }
+      else { await navigator.clipboard.writeText(url); flash(); }
     } catch (e) {
       if (e && e.name === "AbortError") return;
       window.prompt(t("b_share"), url);

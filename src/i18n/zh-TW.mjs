@@ -257,6 +257,7 @@ export default {
   b_share: "分享結果",
   b_share_ip: "分享時帶上 IP",
   b_copied: "連結已複製。",
+  b_copied_b: "已複製連結",
   b_shared: "這是別人分享的批次查詢結果。",
   b_shared_at: "這是別人分享的批次查詢結果，查於 {at}。",
   b_mine: "查我自己的清單",

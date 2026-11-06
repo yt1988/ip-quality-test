@@ -42,7 +42,7 @@
 <meta name="twitter:description" content="十幾個 IP 資料庫加 8 個黑名單，一個分數看懂">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP 品質測試 · 1ms.dog","url":"https://ipqs.1ms.dog/zh-tw/","image":"https://ipqs.1ms.dog/og/zh-tw.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"一次查詢十幾個 IP 資料庫和 8 個郵件黑名單，替你的 IP 打一個 0–100 的純淨度分數：是家用寬頻還是機房 IP、原生 IP 還是廣播 IP、有沒有被標成 VPN、代理或 Tor。也會告訴你能不能看 Netflix、用 ChatGPT，會不會一直跳驗證碼。免費，不用註冊。","inLanguage":"zh-TW","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"分數是怎麼算的？","acceptedAnswer":{"@type":"Answer","text":"每個位址從 100 分起算，各來源發現問題就扣分：機房網路最多扣 20 分，企業網路最多扣 5 分；被標為代理扣 20 分，VPN 扣 15 分，Tor 扣 40 分；有濫用回報扣 10 分；平均詐騙分數最多扣 35 分；每上一個郵件黑名單扣 6 分，最多扣 24 分。這些標記會依來源的多數意見折算：只有一個來源這樣說，只扣一部分。 詐騙分數是風控資料庫替一個 IP 打的可疑程度，0–100，越高越可疑。 等級：85 分以上是 A，70 分以上是 B，50 分以上是 C，30 分以上是 D，低於 30 分是 F。結論下方會列出每一項扣了幾分。"}},{"@type":"Question","name":"用了哪些資料來源？","acceptedAnswer":{"@type":"Answer","text":"不需要金鑰的有：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各洲的 IP 位址註冊機構）、ip.guide、Shodan InternetDB、Tor 專案的出口清單，以及 Cloudflare（只能查你自己的 IP）。站長設定免費的 API 金鑰後，還會加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。 每一列都連結到該來源自己的查詢頁，你可以過去核對它的結果。"}},{"@type":"Question","name":"原生 IP 和廣播 IP 是什麼？","acceptedAnswer":{"@type":"Answer","text":"原生 IP：在哪個國家註冊，就在哪個國家使用。廣播 IP：在一個國家註冊（通常是機房業者註冊的），卻拿到另一個國家使用。 對你的影響：大部分定位資料庫看的是實際位置，但也有服務看註冊地。用廣播 IP 時，這些服務可能會把你當成在註冊的那個國家。要用某個國家的串流影音或 AI 服務，原生 IP 比較穩。 本站比較的是位址註冊機構的紀錄（RDAP）和多數資料庫給出的位置。註冊紀錄裡沒有寫國家時（ARIN 管理的位址很常見），改用這段位址所屬網路的註冊國家。"}},{"@type":"Question","name":"家用寬頻和機房 IP，差在哪裡？","acceptedAnswer":{"@type":"Answer","text":"網站會把機房 IP 當成伺服器、VPN 和代理，而不是真人。串流影音、售票、銀行和註冊頁面會封鎖它們，或要求更多驗證。 家用寬頻和行動網路的位址就像一般使用者。行動網路的一個位址還會同時有很多人共用（電信級 NAT），網站通常不會封鎖。"}},{"@type":"Question","name":"為什麼各來源的結果不一樣？","acceptedAnswer":{"@type":"Answer","text":"每家的資料都不一樣：有的只知道哪些網段屬於機房，有的自己架設誘捕系統（蜜罐），或蒐集客戶回報的詐騙紀錄。同一台 VPN 伺服器，可能一家已經發現，另一家還不知道。 所以本站看的是有多少來源意見一致，而不是只相信一家。"}},{"@type":"Question","name":"分數很低該怎麼辦？","acceptedAnswer":{"@type":"Answer","text":"如果是家裡的寬頻：濫用回報或黑名單紀錄，常常代表你網路裡有裝置中毒，或被別人拿去當代理。先把裝置清乾淨，再到黑名單申請移除（每個黑名單都有連結到它的查詢和移除頁面）。 如果是 VPN 或伺服器：分數主要反映網路類型，你改變不了。可以換一家提供家用寬頻 IP、或使用人數較少的位址的業者。"}},{"@type":"Question","name":"會儲存我的資料嗎？","acceptedAnswer":{"@type":"Answer","text":"查詢時，你要查的 IP 會傳給上面列出的資料來源，其中幾個由你的瀏覽器直接查詢。每個位址的結果會在本站快取 6 小時，免得同一個位址一直重複去問免費的資料來源。除此之外，本站不儲存任何東西。 尋找你的出口 IP 時，你的瀏覽器會直接連到幾個 IP 查詢服務。 如果你按了「開始實測」，Cloudflare 會讀取你的瀏覽器資訊來判斷你是不是真人，本站只會收到有沒有通過。 「實測：你的連線」由本站自己的伺服器來測：你的瀏覽器會查幾個隨機網域，再連一次 probe.1ms.dog。伺服器只看是哪個 DNS 解析器來查的，以及 TCP 交握的參數；結果只在記憶體裡放 2 分鐘，不寫入磁碟。 C 段畫像由本站的伺服器來查：查你要查的 IP 所在 /24 的 256 個反向解析，再對照幾份公開名單；不會連線這一段裡的任何位址。結果在伺服器記憶體裡快取 7 天，不記錄是誰查的。"}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.1d7476787b.css">
+<link rel="stylesheet" href="/assets/app.e152ae6daf.css">
 </head>
 <body>
 <div class="app">
@@ -176,7 +176,7 @@
 
 
 <script type="application/json" id="data">{"lang":"zh-TW","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.zh-tw.314f4a311a.js"></script>
+<script src="/assets/l.zh-tw.de297087c9.js"></script>
 <script src="/assets/app.4fa71aa2d2.js"></script>
 </body>
 </html>

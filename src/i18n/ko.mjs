@@ -257,6 +257,7 @@ export default {
   b_share: "결과 공유",
   b_share_ip: "IP도 함께 공유",
   b_copied: "링크를 복사했습니다.",
+  b_copied_b: "링크 복사됨",
   b_shared: "다른 사람이 공유한 일괄 조회 결과입니다.",
   b_shared_at: "다른 사람이 공유한 일괄 조회 결과입니다({at} 조회).",
   b_mine: "내 목록 조회",

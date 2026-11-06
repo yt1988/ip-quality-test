@@ -257,6 +257,7 @@ export default {
   b_share: "分享结果",
   b_share_ip: "分享时带上 IP",
   b_copied: "链接已复制。",
+  b_copied_b: "已复制链接",
   b_shared: "这是别人分享的批量查询结果。",
   b_shared_at: "这是别人分享的批量查询结果，查于 {at}。",
   b_mine: "查我自己的列表",

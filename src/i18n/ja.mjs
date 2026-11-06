@@ -257,6 +257,7 @@ export default {
   b_share: "結果を共有",
   b_share_ip: "IP も含めて共有",
   b_copied: "リンクをコピーしました。",
+  b_copied_b: "リンクをコピーしました",
   b_shared: "他の人が共有した一括チェックの結果です。",
   b_shared_at: "他の人が共有した一括チェックの結果です（{at} に実行）。",
   b_mine: "自分のリストを調べる",
