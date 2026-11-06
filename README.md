@@ -42,7 +42,7 @@ Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are ask
 | ipapi.is | optional `IPAPI_IS_KEY` | network; with a key, VPN/proxy/abuser flags and network abuse level |
 | IPinfo | optional `IPINFO_TOKEN` | location, network, anycast (asked from the browser without a token) |
 | ipwho.is | – | location, network (asked from the browser) |
-| IP.SB | – | location, network |
+| IP.SB | – | location, network (asked from the browser) |
 | iplocation.net | – | location, ISP |
 | GeoJS | – | location, network |
 | RDAP (RIR) | – | registration country, net name, range |

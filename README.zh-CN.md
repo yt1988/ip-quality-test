@@ -42,7 +42,7 @@
 | ipapi.is | 可选 `IPAPI_IS_KEY` | 网络信息；有密钥时加上 VPN/代理/滥用标记和网段滥用等级 |
 | IPinfo | 可选 `IPINFO_TOKEN` | 位置、网络、任播（没有密钥时由浏览器查询） |
 | ipwho.is | 否 | 位置、网络（由浏览器查询） |
-| IP.SB | 否 | 位置、网络 |
+| IP.SB | 否 | 位置、网络（由浏览器查询） |
 | iplocation.net | 否 | 位置、运营商 |
 | GeoJS | 否 | 位置、网络 |
 | RDAP（各 RIR） | 否 | 注册国家、网络名、地址段 |

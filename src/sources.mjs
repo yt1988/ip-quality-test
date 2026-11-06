@@ -167,7 +167,8 @@ export const SOURCES = [
     },
   },
   {
-    id: "ipsb", name: "IP.SB",
+    // answers Cloudflare's shared addresses with 429 every time, so only the browser asks it
+    id: "ipsb", name: "IP.SB", browser: "only",
     site: ip => "https://ip.sb/ip/" + ip,
     async run(ip) {
       const j = await getJSON(`https://api.ip.sb/geoip/${ip}`);
