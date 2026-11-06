@@ -3,7 +3,7 @@
 // location, network type, native or broadcast, anonymity flags, AI and streaming verdicts. Sortable by any column;
 // a shared link carries the rows in its #fragment, without the addresses unless the visitor ticks the box.
 // Strings: window.L1MS (the main page's, plus the b_* ones).
-import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.mjs";
+import { parseList, rowOf, packRows, unpackRows, sortRows, MAX, SEGS } from "./batch.mjs";
 import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
 
 (function () {
@@ -66,9 +66,12 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   function draw() {
     $("#rows").innerHTML = sortRows(rows, sort.col, sort.dir).map(row => `<tr data-st="${row.st}">${cells(row)}</tr>`).join("");
     $$("th [data-sort]").forEach(b => { const on = b.dataset.sort === sort.col; b.parentElement.setAttribute("aria-sort", on ? (sort.dir > 0 ? "ascending" : "descending") : "none"); });
-    const done = rows.filter(r => r.st === "ok" || r.st === "err").length;
-    $("#prog").textContent = shared ? t("b_n", { n: rows.length }) : t("b_prog", { n: done, of: rows.length });
-    $("#shareBtn").disabled = shared || !rows.length || done < rows.length || !rows.some(r => r.r);
+    const done = rows.filter(r => r.st === "ok" || r.st === "err").length, segOk = segs.some(g => g.d);
+    // a list of /24s only: no table yet, the bar still says what there is and shares it
+    $("#res").hidden = !rows.length && !segs.length;
+    $(".bt-wrap").hidden = $(".bt-note").hidden = !rows.length;
+    $("#prog").textContent = !rows.length ? t("b_sr_count", { n: segs.length }) : shared ? t("b_n", { n: rows.length }) : t("b_prog", { n: done, of: rows.length });
+    $("#shareBtn").disabled = shared || done < rows.length || (!rows.some(r => r.r) && !segOk);
   }
   $$("th [data-sort]").forEach(b => {
     b.onclick = () => {
@@ -124,128 +127,183 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     go.disabled = false;
     const bad = rows.filter(r => r.st === "err").length;
     // what the list left out stays said after the result
-    hint.textContent = t(bad ? "b_errs" : "b_done", { n: bad || rows.length }) + (note ? " " + note : "");
+    // with /24s, the count is every address looked at: the 256 of each /24 (read against the lists) and the rows
+    // outside them (scored in full)
+    const inSegs = ip => segs.some(g => g.base && ip.startsWith(g.base.slice(0, -1)) && ip.split(".").length === 4);
+    const out = rows.filter(r => !inSegs(r.ip)).length;
+    const done = segs.length ? t("b_done_seg", { all: segs.length * 256 + out, n: rows.length, s: segs.length, a: segs.length * 256 }) : t("b_done", { n: rows.length });
+    hint.textContent = (bad ? t("b_errs", { n: bad }) : done) + (note ? " " + note : "");
   }
   $("#ask").onsubmit = e => {
     e.preventDefault();
     const P = parseList(box.value);
-    if (!P.items.length && !P.seg) { say(P.big.length ? "b_seg_big" : "b_none", { p: P.big[0] }); box.focus(); return; }
+    if (!P.items.length && !P.segs.length) { say(P.big.length ? "b_seg_big" : "b_none", { p: P.big[0], n: SEGS }); box.focus(); return; }
     if (history.replaceState && location.hash) history.replaceState(null, "", SELF + location.search);
-    if (P.seg) segShow(P.seg); else { $("#seg").hidden = true; seg = null; }
-    if (P.items.length) start(P.items); else { run++; items = []; rows = []; $("#res").hidden = true; go.disabled = false; }
+    listItems = P.items;
+    segsStart(P.segs);
+    if (P.items.length) start(P.items); else { run++; items = []; rows = []; go.disabled = false; draw(); }
     const parts = [P.over && t("b_cut", { n: MAX, over: P.over }), ...["priv", "dup", "bad"].map(k => P.skip[k].length && t("b_skip_" + k, { list: names(P.skip[k]) })),
-      P.big.length && t("b_seg_big", { p: P.big[0] }), P.segMore && t("b_seg_more", { n: P.segMore })].filter(Boolean);
+      P.big.length && t("b_seg_big", { p: names(P.big), n: SEGS }), P.segMore.length && t("b_seg_more", { n: SEGS, list: names(P.segMore) })].filter(Boolean);
     note = parts.join(" ");
-    hint.textContent = note || t(P.seg && !P.items.length ? "b_seg_hint" : "b_hint", { n: MAX });
+    hint.textContent = note || t(P.segs.length && !P.items.length ? "b_seg_hint" : "b_hint", { n: MAX });
   };
 
-  /* ---------- a /24: its portrait from the 1ms.dog server (as on the main page), and picking addresses to score ---------- */
-  // The portrait is one request for all 256 addresses (public lists and reverse names, read on the server: no source's
-  // quota); the visitor picks the ones worth a full check, up to what the table has room for.
-  let seg = null, picked = new Set();
-  const inSeg = ip => !!seg && seg.cells.some(c => c.ip === ip);
-  const room = () => MAX - items.filter(x => !inSeg(x.ip)).length;
-  function segPickUi() {
-    $$("#segMap i").forEach((el, i) => el.classList.toggle("on", picked.has(i)));
-    $("#segPick").textContent = t("b_seg_pick", { n: picked.size, max: room() - picked.size });
-    const go2 = $("#segGo"); go2.disabled = !picked.size; go2.textContent = t("b_seg_go", { n: picked.size });
-    const listed = seg ? seg.cells.filter(c => c.st !== "ok").length : 0;
-    const lb = $("#segListed"); lb.hidden = !listed; lb.textContent = t("b_seg_listed", { n: Math.min(listed, room()) });
+  /* ---------- /24s: each one's portrait from the 1ms.dog server, compared a row each; one opened to pick from ---------- */
+  // A portrait is one request for all 256 addresses (public lists and reverse names, read on the server: no source's
+  // quota). Up to SEGS of them are compared in a list; the one opened under it shows its grid, where the visitor picks
+  // addresses for the table: every /24's picks together, with the list's own addresses, up to MAX.
+  // segs: [{ base, label, st: "wait" | "ok" | "err", why, d: the portrait (readSeg), picked: Set of indexes }]
+  let segs = [], cur = -1, listItems = [];
+  const KIND_LV = { hosting: "warn", dynamic: "ok", static: "info", mixed: "info", unknown: "none" };
+  const TAGC = { ok: "good", warn: "warn", bad: "bad" };
+  const pickedN = () => segs.reduce((a, g) => a + g.picked.size, 0);
+  const room = () => MAX - listItems.length - pickedN();
+  const labelOf = (g, i) => g.base ? g.base.replace(/\.0$/, ".0/24") : t("b_seg_n", { n: i + 1 });
+  const inList = ip => listItems.some(x => x.ip === ip);
+  const verdictText = d => d.verdict.listed ? t("b_sr_n", { n: d.verdict.listed }) : t("b_sr_0");
+  // one row of the comparison: the range, what kind of network it is, how many of its addresses are listed (by list),
+  // the 256 squares small, and how many are picked from it
+  function segRow(g, i) {
+    let body;
+    if (g.st === "wait") body = `<span class="bt-sr-v m">${esc(t("b_sr_wait"))}</span><span class="bt-mini wait">${"<i></i>".repeat(256)}</span>`;
+    else if (g.st === "err") body = `<span class="bt-sr-v m">${esc(t(g.why === "rate" ? "b_sr_rate" : "b_sr_err"))}</span><span class="bt-mini"></span>`;
+    else {
+      const d = g.d, px = d.prefix && !d.prefix.none ? d.prefix : null;
+      const meta = [`<span class="tag ${TAGC[KIND_LV[d.kind.kind]] || ""}">${esc(t("sg_k_" + d.kind.kind))}</span>`,
+        px && `<span class="m">${esc(px.prefix)}${px.asns && px.asns.length ? " · AS" + px.asns.join(" AS") : ""}</span>`].filter(Boolean).join(" ");
+      const by = ST.filter(s => s !== "ok" && d.count[s]).map(s => `<span class="bt-sr-c"><i class="dot s-${s}"></i>${d.count[s]}</span>`).join("");
+      body = `<span class="bt-sr-k">${meta}</span><span class="bt-sr-v ${d.verdict.lv}">${esc(verdictText(d))}${by}</span>` +
+        `<span class="bt-mini">${d.cells.map(c => `<i class="s-${c.st}"></i>`).join("")}</span>`;
+    }
+    const pk = g.picked.size ? `<span class="bt-sr-p">${esc(t("b_sr_picked", { n: g.picked.size }))}</span>` : "";
+    return `<li class="bt-sr${i === cur ? " on" : ""}"><button type="button" data-s="${i}" aria-expanded="${i === cur}"><span class="bt-sr-n ip">${esc(labelOf(g, i))}</span>${body}${pk}</button></li>`;
   }
-  const segSay = i => {
-    const c = seg && seg.cells[i], el = $("#segInfo");
+  function segList() {
+    $("#seg").hidden = !segs.length;
+    $("#segN").textContent = segs.length > 1 ? t("b_sr_count", { n: segs.length }) : "";
+    $("#segList").innerHTML = segs.map(segRow).join("");
+    $("#segList").hidden = segs.length < 2;   // one /24 needs no list: its grid is the whole story
+    draw();
+  }
+  // the opened /24: its verdict, its grid (the list's own addresses ringed, the picked ones marked), its legend
+  function segOpen(i) {
+    cur = i; const g = segs[i];
+    $("#segXN").textContent = labelOf(g, i);
+    const v = $("#segV"), map = $("#segMap");
+    if (!g || g.st !== "ok") {
+      v.className = "sg-verdict" + (g && g.st === "wait" ? " wait" : ""); v.textContent = t(!g ? "sg_v_wait" : g.st === "wait" ? "sg_v_wait" : g.why === "rate" ? "b_sr_rate" : "b_seg_fail");
+      map.innerHTML = g && g.st === "wait" ? `<i class="s-wait"></i>`.repeat(256) : "";
+      $("#segLeg").innerHTML = ""; $("#segInfo").textContent = "";
+    } else {
+      const d = g.d;
+      v.className = "sg-verdict " + d.verdict.lv; v.textContent = d.verdict.listed ? t("sg_v_n", { n: d.verdict.listed }) : t("sg_v_0");
+      map.innerHTML = d.cells.map((c, k) => `<i class="s-${c.st}${c.ip && inList(c.ip) ? " me" : ""}${g.picked.has(k) ? " on" : ""}" data-c="${k}"${c.ip ? ` aria-label="${esc(c.ip)}"` : ""}></i>`).join("");
+      $("#segLeg").innerHTML = ST.map(st => `<li${d.count[st] ? "" : ' class="z"'}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${d.count[st]}</b></li>`).join("") +
+        (d.cells.some(c => c.ip && inList(c.ip)) ? `<li><i class="dot me"></i>${esc(t("b_seg_inlist"))}</li>` : "");
+      $("#segInfo").textContent = t("sg_hint");
+    }
+    $$("#segList [data-s]").forEach(b => { const on = +b.dataset.s === i; b.parentElement.classList.toggle("on", on); b.setAttribute("aria-expanded", on); });
+    segPickUi();
+  }
+  function segPickUi() {
+    const g = segs[cur], ok = !!(g && g.st === "ok") && !shared;
+    $(".bt-seg-a").hidden = shared || !segs.some(x => x.st === "ok");
+    $("#segPick").textContent = t("b_seg_pick", { n: pickedN(), max: Math.max(0, room()) });
+    const go2 = $("#segGo"); go2.disabled = !pickedN(); go2.textContent = t("b_seg_go", { n: pickedN() });
+    const listed = ok ? g.d.cells.filter((c, k) => c.st !== "ok" && !g.picked.has(k)).length : 0;
+    const lb = $("#segListed"); lb.hidden = !listed || room() <= 0; lb.textContent = t("b_seg_listed", { n: Math.min(listed, Math.max(0, room())) });
+  }
+  const segSay = k => {
+    const g = segs[cur], c = g && g.d && g.d.cells[k], el = $("#segInfo");
     if (!c) { el.textContent = t("sg_hint"); return; }
     // a shared portrait carries each address's colour only (and the addresses only when they were shared)
-    if (c.flags == null) { el.innerHTML = `<span class="ip">${esc(c.ip || "#" + i)}</span><span class="st2"><i class="dot s-${c.st}"></i>${esc(t("sg_l_" + c.st))}</span>`; return; }
-    el.innerHTML = `<span class="ip">${esc(c.ip)}</span><span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([k, q]) => t(k, q)).join(t("v_join")))}</span>` +
+    if (c.flags == null) { el.innerHTML = `<span class="ip">${esc(c.ip || "#" + k)}</span><span class="st2"><i class="dot s-${c.st}"></i>${esc(t("sg_l_" + c.st))}</span>`; return; }
+    el.innerHTML = `<span class="ip">${esc(c.ip)}</span>${inList(c.ip) ? `<span class="tag">${esc(t("b_seg_inlist"))}</span>` : ""}<span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([a, q]) => t(a, q)).join(t("v_join")))}</span>` +
       `<span class="nm" title="${esc(c.name)}">${esc(c.name || t("sg_a_noname"))}</span>`;
   };
-  // the verdict, the grid and the legend, for the portrait just read or one carried by a shared link
-  function segDraw() {
-    const v = $("#segV");
-    v.className = "sg-verdict " + seg.verdict.lv;
-    v.textContent = seg.verdict.listed ? t("sg_v_n", { n: seg.verdict.listed }) : t("sg_v_0");
-    $("#segMap").innerHTML = seg.cells.map((c, i) => `<i class="s-${c.st}" data-c="${i}"${c.ip ? ` aria-label="${esc(c.ip)}"` : ""}></i>`).join("");
-    $("#segLeg").innerHTML = ST.map(st => `<li${seg.count[st] ? "" : ' class="z"'}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${seg.count[st]}</b></li>`).join("");
+  // a /24's portrait from the server, two at a time; a busy server is asked again, a used-up allowance is said so
+  async function segFetch(g, me) {
+    for (let tries = 0; tries < 4; tries++) {
+      let res = null;
+      try { res = await fetch(D.seg + "/v1/seg?ip=" + encodeURIComponent(g.base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); } catch (e) {}
+      if (me !== segRun) return;
+      if (res && res.ok) { try { const j = await res.json(); if (j && j.seg) { g.d = readSeg(j, null, null); g.st = "ok"; return; } } catch (e) {} break; }
+      if (res && res.status === 429) { g.why = "rate"; break; }
+      await sleep(2000 * (tries + 1));
+    }
+    g.st = "err";
   }
-  // a shared link's portrait: its 256 colours, and its range when the addresses were shared
-  function segShared(S) {
-    const b3 = S.base ? S.base.split(".").slice(0, 3).join(".") : null;
-    const count = Object.fromEntries(ST.map(s => [s, 0]));
-    const cells = S.sts.map((st, i) => { count[st]++; return { ip: b3 ? `${b3}.${i}` : null, st }; });
-    seg = { base: S.base, cells, count, verdict: verdictOf(count) };
-    $("#seg").hidden = false; $("#segN").textContent = b3 ? `${b3}.0/24` : t("b_hidden");
-    $(".bt-seg-a").hidden = true; $("#segInfo").textContent = t("sg_hint");
-    segDraw();
+  let segRun = 0;
+  async function segsStart(bases) {
+    const me = ++segRun;
+    segs = bases.map(base => ({ base, st: "wait", d: null, picked: new Set() }));
+    cur = segs.length ? 0 : -1;
+    segList(); if (segs.length) segOpen(0);
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(2, segs.length) }, async () => {
+      while (next < segs.length && me === segRun) {
+        const g = segs[next++];
+        await segFetch(g, me);
+        if (me !== segRun) return;
+        segList(); if (segs[cur] === g) segOpen(cur); else segPickUi();
+      }
+    }));
   }
-  async function segShow(base) {
-    const label = base.split(".").slice(0, 3).join(".") + ".0/24";
-    seg = null; picked = new Set();
-    $("#seg").hidden = false; $("#segN").textContent = label; $(".bt-seg-a").hidden = false;
-    const v = $("#segV"); v.className = "sg-verdict wait"; v.textContent = t("sg_v_wait");
-    $("#segMap").innerHTML = Array.from({ length: 256 }, () => `<i class="s-wait"></i>`).join("");
-    $("#segLeg").innerHTML = ""; $("#segInfo").textContent = t("sg_hint"); $("#segListed").hidden = true; $("#segGo").disabled = true; $("#segPick").textContent = "";
-    let j = null;
-    try { const res = await fetch(D.seg + "/v1/seg?ip=" + encodeURIComponent(base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); if (res.ok) j = await res.json(); } catch (e) {}
-    if ($("#segN").textContent !== label) return;
-    if (!j || !j.seg) { v.className = "sg-verdict"; v.textContent = t("b_seg_fail"); $("#segMap").innerHTML = ""; return; }
-    seg = { ...readSeg(j, null, null), base };
-    segDraw();
-    segPickUi();
-  }
+  $("#segList").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (b) segOpen(+b.dataset.s); });
   const segMap = $("#segMap");
-  segMap.addEventListener("mouseover", e => { const i = e.target.dataset && e.target.dataset.c; if (i != null) segSay(+i); });
+  segMap.addEventListener("mouseover", e => { const k = e.target.dataset && e.target.dataset.c; if (k != null) segSay(+k); });
   segMap.addEventListener("click", e => {
-    const i = e.target.dataset && e.target.dataset.c; if (i == null || !seg) return;
-    segSay(+i);
+    const k = e.target.dataset && e.target.dataset.c, g = segs[cur]; if (k == null || !g || !g.d) return;
+    segSay(+k);
     if (shared) return;
-    if (picked.has(+i)) picked.delete(+i); else if (picked.size < room()) picked.add(+i);
-    segPickUi();
+    if (g.picked.has(+k)) g.picked.delete(+k); else if (room() > 0 && !inList(g.d.cells[+k].ip)) g.picked.add(+k);
+    e.target.classList.toggle("on", g.picked.has(+k));
+    segList(); segPickUi();
   });
-  // the listed neighbours, worst first, as many as there is room for
+  // this /24's listed addresses, worst first, as many as there is room for
   $("#segListed").onclick = () => {
-    if (!seg) return;
-    const order = seg.cells.map((c, i) => [i, ST.indexOf(c.st)]).filter(([, k]) => ST[k] !== "ok").sort((a, b) => a[1] - b[1]);
-    picked = new Set(order.slice(0, room()).map(([i]) => i));
-    segPickUi();
+    const g = segs[cur]; if (!g || !g.d) return;
+    const order = g.d.cells.map((c, k) => [k, ST.indexOf(c.st)]).filter(([k, s]) => ST[s] !== "ok" && !g.picked.has(k) && !inList(g.d.cells[k].ip)).sort((a, b) => a[1] - b[1]);
+    for (const [k] of order.slice(0, Math.max(0, room()))) g.picked.add(k);
+    segList(); segOpen(cur);
   };
-  // the picked addresses join the table (rows already checked come back from the Worker's cache)
+  // the picked addresses join the table after the list's own (rows already checked come back from the Worker's cache)
   $("#segGo").onclick = () => {
-    if (!seg || !picked.size) return;
-    const mine = items.filter(x => !inSeg(x.ip)); note = "";
-    start([...mine, ...[...picked].sort((a, b) => a - b).map(i => ({ ip: seg.cells[i].ip }))].slice(0, MAX));
+    if (!pickedN()) return;
+    note = "";
+    const picks = segs.flatMap(g => g.d ? [...g.picked].sort((a, b) => a - b).map(k => ({ ip: g.d.cells[k].ip })) : []);
+    start([...listItems, ...picks].slice(0, MAX));
   };
 
   /* ---------- sharing: the 1ms.dog dialog (/assets/share/, copied from 1ms-shell), as on the main page ---------- */
-  // The link carries the rows after #b= (never sent to the server); the dialog's box adds the addresses, to the link
-  // and to the card alike. The card is the table, drawn in the page's theme.
+  // The link carries the rows and the /24s after #b= (never sent to the server); the dialog's box adds the addresses
+  // (and the /24s' ranges, prefixes and ASes), to the link and to the card alike. The card is the /24s' comparison and
+  // the table, drawn in the page's theme.
   const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const stamp = () => new Date(at).toISOString().slice(0, 16).replace(/[-:T]/g, "");
-  const ROW = 56, HEAD = 150;
+  const ROW = 56, HEAD = 150, SROW = 100;
   const okRows = () => rows.filter(r => r.r);
-  // the /24's block on the card: its title and verdict, the 256 squares 32 a row, the legend
-  const SQG = 5, sqOf = kit => (kit.W - 2 * kit.P - 31 * SQG) / 32;
-  const segH = kit => seg && seg.cells ? 134 + 8 * (sqOf(kit) + SQG) + 56 : 0;
+  const okSegs = () => segs.filter(g => g.d);
+  const segH = () => okSegs().length ? 56 + okSegs().length * SROW + 24 : 0;
   // a status's colour as the page draws it (the squares' colours are mixed in CSS; the canvas takes the result)
   const stColor = st => {
     const el = document.createElement("i"); el.className = "s-" + st; el.style.cssText = "position:absolute;width:1px;height:1px;background:var(--sq)";
     $("#segMap").appendChild(el); const c = getComputedStyle(el).backgroundColor; el.remove(); return c;
   };
-  function drawSeg(g, kit, y0, font, text, C) {
-    const { W, P } = kit, s = sqOf(kit), b3 = seg.base ? seg.base.split(".").slice(0, 3).join(".") : null;
-    const SC = Object.fromEntries(ST.map(st => [st, stColor(st)]));
+  // the /24s on the card: one row each, the range (when shown) and what it is on the left, the 256 squares 64 a row
+  function drawSegs(g, kit, y0, font, text, C) {
+    const { W, P } = kit, show = kit.show, SC = Object.fromEntries(ST.map(st => [st, stColor(st)]));
     const VC = { ok: cssVar("--t1"), warn: cssVar("--t3"), bad: cssVar("--t5") };
-    font(700, 26); text(t("sg_h") + (kit.show && b3 ? ` · ${b3}.0/24` : ""), P, y0 + 26, C.fg);
-    font(700, 24); text(seg.verdict.listed ? t("sg_v_n", { n: seg.verdict.listed }) : t("sg_v_0"), P, y0 + 66, VC[seg.verdict.lv] || C.fg);
-    const gy = y0 + 88;
-    seg.cells.forEach((c, i) => { g.fillStyle = SC[c.st]; kit.roundRect(g, P + (i % 32) * (s + SQG), gy + Math.floor(i / 32) * (s + SQG), s, s, 4); g.fill(); });
-    let lx = P; const ly = gy + 8 * (s + SQG) + 30;
-    for (const st of ST) {
-      g.globalAlpha = seg.count[st] ? 1 : 0.45;
-      g.fillStyle = SC[st]; kit.roundRect(g, lx, ly - 15, 16, 16, 4); g.fill();
-      font(500, 20); const lab = `${t("sg_l_" + st)} ${seg.count[st]}`; text(lab, lx + 24, ly, C.mu);
-      lx += 24 + g.measureText(lab).width + 28; g.globalAlpha = 1;
-    }
+    const GX = P + 380, GW = W - P - GX, GAP = 2, sq = (GW - 63 * GAP) / 64;
+    font(700, 26); text(t("sg_h"), P, y0 + 26, C.fg);
+    okSegs().forEach((s, i) => {
+      const y = y0 + 56 + i * SROW, d = s.d, px = d.prefix && !d.prefix.none ? d.prefix : null;
+      font(600, 22, !!(show && s.base)); text(kit.clip(g, show && s.base ? labelOf(s, i) : t("b_seg_n", { n: i + 1 }), 360), P, y + 26, C.fg);
+      font(500, 19); text(kit.clip(g, [t("sg_k_" + d.kind.kind), show && px ? px.prefix + (px.asns.length ? " · AS" + px.asns[0] : "") : ""].filter(Boolean).join(" · "), 360), P, y + 56, C.mu);
+      font(700, 20); text(kit.clip(g, verdictText(d), 360), P, y + 84, VC[d.verdict.lv] || C.fg);
+      d.cells.forEach((c, k) => { g.fillStyle = SC[c.st]; kit.roundRect(g, GX + (k % 64) * (sq + GAP), y + 18 + Math.floor(k / 64) * (sq + GAP), sq, sq, 2); g.fill(); });
+      if (i < okSegs().length - 1) { g.fillStyle = C.line; g.fillRect(P, y + SROW - 2, W - 2 * P, 1); }
+    });
   }
   function drawCard(g, kit) {
     const { W, P } = kit, show = kit.show, R = sortRows(okRows(), sort.col, sort.dir);
@@ -263,10 +321,10 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     const HD = { n: "#", ip: t("b_c_ip"), cc: t("b_c_loc"), score: t("b_c_score"), type: t("b_c_type"), native: t("b_c_native"), anon: t("b_c_anon"), ai: t("b_c_ai"), stream: t("b_c_stream") };
     let y = kit.top + 56;
     font(700, 40); text(t("b_h1"), P, y, C.fg);
-    font(500, 24); text(t("b_n", { n: R.length }), P, y + 42, C.mu);
-    if (segH(kit)) drawSeg(g, kit, kit.top + HEAD - 10, font, text, C);
+    font(500, 24); text([R.length && t("b_n", { n: R.length }), okSegs().length && t("b_sr_count", { n: okSegs().length })].filter(Boolean).join(" · "), P, y + 42, C.mu);
+    if (segH()) drawSegs(g, kit, kit.top + HEAD - 10, font, text, C);
     if (!R.length) return;
-    y = kit.top + HEAD + segH(kit);
+    y = kit.top + HEAD + segH() + (segH() ? 30 : 0);
     font(600, 20);
     for (const [k] of COLS) text(kit.clip(g, HD[k], Wd[k]), X[k], y, C.mu);
     g.fillStyle = C.line; g.fillRect(P, y + 16, W - 2 * P, 2);
@@ -292,36 +350,43 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     });
   }
   $("#shareBtn").onclick = async () => {
-    if (!okRows().length && !(seg && seg.cells)) return;
+    if (!okRows().length && !okSegs().length) return;
     const { share } = await import("/assets/share/share.js?v=8");
-    // the /24 goes along as its colours; its range, like the addresses, only when the box is ticked
-    const S = seg && seg.cells ? { base: seg.base, sts: seg.cells.map(c => c.st) } : null;
-    const links = { false: location.origin + SELF + "#b=" + packRows(rows, { at, seg: S }), true: location.origin + SELF + "#b=" + packRows(rows, { at, withIp: true, seg: S }) };
+    const S = okSegs().map(g => ({ base: g.base, sts: g.d.cells.map(c => c.st), kind: g.d.kind.kind, prefix: g.d.prefix && !g.d.prefix.none ? g.d.prefix : null }));
+    const link = withIp => location.origin + SELF + "#b=" + packRows(rows, { at: at || new Date().toISOString(), withIp, segs: S });
+    const links = { false: link(false), true: link(true) };
     share({
       lang: LANG, name: t("app_name"), file: `ipqs-batch-${stamp()}`,
-      // the addresses stay out of the link and the card unless the box is ticked
+      // the addresses (and the /24s' ranges) stay out of the link and the card unless the box is ticked
       show: ["ip"], canShow: true,
       link: show => links[!!show], home: location.origin + SELF,
-      text: () => t("b_h1") + " · " + t("b_n", { n: okRows().length }),
-      height: (m, kit) => kit.top + HEAD + segH(kit) + (okRows().length ? okRows().length * ROW + 130 : 40),
+      text: () => t("b_h1") + " · " + [okRows().length && t("b_n", { n: okRows().length }), okSegs().length && t("b_sr_count", { n: okSegs().length })].filter(Boolean).join(" · "),
+      height: (m, kit) => kit.top + HEAD + segH() + (okRows().length ? (segH() ? 30 : 0) + okRows().length * ROW + 130 : 60),
       draw: drawCard,
       foot: () => [t("card_cta")],
-      ts: Date.parse(at),
+      ts: Date.parse(at) || Date.now(),
     }).open();
   };
 
-  // a shared link: the rows it carries, read only, under the shared banner (whose button checks a list of one's own)
+  // a shared link: the rows and /24s it carries, read only, under the shared banner (whose button checks a list of
+  // one's own)
   const m = /^#b=([\w-]+)$/.exec(location.hash);
   if (m) {
     const P = unpackRows(m[1]);
     if (P) {
       shared = true; at = P.at; rows = P.rows; document.documentElement.setAttribute("data-shared", "");
       $(".bt-acts").hidden = true; $("#ask").hidden = true;
-      if (P.seg) segShared(P.seg);
-      $("#res").hidden = !rows.length;
+      segs = P.segs.map(s => {
+        const b3 = s.base ? s.base.split(".").slice(0, 3).join(".") : null;
+        const count = Object.fromEntries(ST.map(x => [x, 0]));
+        const cells = s.sts.map((st, k) => { count[st]++; return { ip: b3 ? `${b3}.${k}` : null, st }; });
+        return { base: s.base, st: "ok", picked: new Set(), d: { cells, count, verdict: verdictOf(count), kind: { kind: s.kind }, prefix: s.prefix } };
+      });
+      cur = segs.length ? 0 : -1;
+      segList(); if (segs.length) segOpen(0);
       if (rows.length) draw();
       import("/assets/share/share.js?v=8").then(({ received }) =>
-        received({ lang: LANG, ts: Date.parse(P.at) || Date.now(), at: P.seg ? $("#seg") : $("#res"), test: () => { location.href = SELF; } }), () => {});
+        received({ lang: LANG, ts: Date.parse(P.at) || Date.now(), at: segs.length ? $("#seg") : $("#res"), test: () => { location.href = SELF; } }), () => {});
     }
   }
 })();

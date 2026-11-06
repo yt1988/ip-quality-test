@@ -17,18 +17,31 @@ export function v6net(addr, bits) {
   return { net: str(m) + "/" + bits, ip: str(host) };
 }
 
+// how many /24s one list compares (a /22 is four)
+export const SEGS = 4;
+
+// The /24s an IPv4 prefix covers, as their .0 addresses: one for a /24 or longer (the /24 it is in), two for a /23,
+// four for a /22; null for anything wider
+export function v4segs(addr, bits) {
+  if (family(addr) !== 4 || !(bits >= 22 && bits <= 32)) return null;
+  const o = addr.split(".").map(Number), n = (o[0] << 16) | (o[1] << 8) | o[2];
+  const keep = Math.min(24, bits), first = n & ~((1 << (24 - keep)) - 1);
+  return Array.from({ length: 1 << (24 - keep) }, (_, i) => { const x = first + i; return `${x >>> 16 & 255}.${x >>> 8 & 255}.${x & 255}.0`; });
+}
+
 // The pasted list: split on spaces, commas, semicolons and new lines (CJK ones too). Each piece is
 //   an address, with any port or brackets taken off (1.2.3.4:443, [2001:db8::1]:443): a row;
-//   an IPv4 /24 (or a longer prefix, read as the /24 it is in): the /24's portrait, the first one only;
+//   an IPv4 /24 (a longer prefix is read as the /24 it is in; a /23 or /22 as its two or four): a /24 portrait,
+//     up to SEGS of them;
 //   an IPv6 prefix: a row for the one address that stands for it;
 // in canonical form, once each, public ones only.
-// → { items: [{ ip, net? }], ips, seg (the /24, as its .0 address) | null, segMore (further /24s left out),
-//     big (IPv4 prefixes wider than a /24), skipped (how many were left out, and as `skip` which ones and why:
+// → { items: [{ ip, net? }], ips, segs: [.0 addresses], segMore: [/24s past SEGS, as "a.b.c.0/24"],
+//     big (IPv4 prefixes wider than a /22), skipped (how many were left out, and as `skip` which ones and why:
 //     { priv: [...] private or reserved, with no public data; dup: [...] repeats; bad: [...] not an address }),
 //     over (rows past MAX) }
 export function parseList(text) {
-  const items = [], seen = new Set(), big = [], skip = { priv: [], dup: [], bad: [] };
-  let over = 0, seg = null, segMore = 0;
+  const items = [], seen = new Set(), big = [], skip = { priv: [], dup: [], bad: [] }, segs = [], segMore = [];
+  let over = 0;
   const add = (tok, ip, net) => {
     if (!ip) { skip.bad.push(tok); return; }
     if (!isPublic(ip)) { skip.priv.push(tok); return; }
@@ -44,12 +57,12 @@ export function parseList(text) {
       const bits = +p[2], f = family(p[1]);
       if (f === 4 && bits <= 32) {
         if (bits === 32) add(tok, p[1]);
-        else if (bits < 24) big.push(tok);
+        else if (bits < 22) big.push(tok);
         else {
-          const base = p[1].split(".").slice(0, 3).join(".") + ".0";
-          if (!isPublic(base)) skip.priv.push(tok);
-          else if (!seg) seg = base;
-          else if (seg !== base) segMore++;
+          const bases = v4segs(p[1], bits), fresh = bases.filter(b => !segs.includes(b) && !segMore.includes(b + "/24"));
+          if (!bases.some(isPublic)) skip.priv.push(tok);
+          else if (!fresh.length) skip.dup.push(tok);
+          else for (const b of fresh) { if (!isPublic(b)) continue; if (segs.length < SEGS) segs.push(b); else segMore.push(b + "/24"); }
         }
       } else if (f === 6 && bits <= 128) {
         if (bits === 128) add(tok, canon(p[1]));
@@ -62,7 +75,7 @@ export function parseList(text) {
     add(t0, canon(tok));
   }
   const skipped = skip.priv.length + skip.dup.length + skip.bad.length;
-  return { items, ips: items.map(x => x.ip), seg, segMore, big, skipped, skip, over };
+  return { items, ips: items.map(x => x.ip), segs, segMore, big, skipped, skip, over };
 }
 
 // What one row shows, from the `done` event: score and grade, where, the network type, native or broadcast, the
@@ -107,12 +120,15 @@ export function unpackSeg(runs) {
   return sts.length === 256 ? sts : null;
 }
 
-// seg: { base: "1.2.3.0", sts: [256 statuses] } when the list had a /24
-export function packRows(rows, { at, withIp = false, seg = null } = {}) {
+// segs: [{ base: "1.2.3.0", sts: [256 statuses], kind, prefix: { prefix, asns } | null }] for the list's /24s. Each
+// travels as its colours and its kind; its range, prefix and AS only with the addresses
+const KINDS = ["hosting", "dynamic", "static", "mixed", "unknown"];
+export function packRows(rows, { at, withIp = false, segs = [] } = {}) {
   const R = rows.filter(r => r.r).map(({ ip, net, r }) => [r.score, r.cc || "", idx(TYPES, r.type), r.native == null ? -1 : +r.native, r.regCc || "",
     r.anon.reduce((m, a) => m | (1 << ANON.indexOf(a)), 0), idx(LV, r.ai), idx(LV, r.stream), r.aiWhy || "", r.streamWhy || "", ...(withIp ? [ip, net || ""] : [])]);
-  const S = seg ? { r: packSeg(seg.sts), ...(withIp ? { b: seg.base } : {}) } : undefined;
-  return b64u(JSON.stringify({ v: 1, at, R, ...(S ? { S } : {}) }));
+  const S = segs.map(g => ({ r: packSeg(g.sts), k: idx(KINDS, g.kind),
+    ...(withIp ? { b: g.base, ...(g.prefix && g.prefix.prefix ? { p: g.prefix.prefix, a: (g.prefix.asns || []).slice(0, 3) } : {}) } : {}) }));
+  return b64u(JSON.stringify({ v: 1, at, R, ...(S.length ? { S } : {}) }));
 }
 
 export function unpackRows(code) {
@@ -133,15 +149,17 @@ export function unpackRows(code) {
     } };
   });
   if (rows.some(r => !r)) return null;
-  let seg = null;
-  if (P.S) {
-    const sts = unpackSeg(P.S.r);
+  // the /24s (a link from before there could be several carries one, as an object)
+  const segs = [];
+  for (const g of (Array.isArray(P.S) ? P.S : P.S ? [P.S] : []).slice(0, SEGS)) {
+    const sts = g && unpackSeg(g.r);
     if (!sts) return null;
-    const b = typeof P.S.b === "string" && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.0$/.test(P.S.b) && isPublic(P.S.b) ? P.S.b : null;
-    seg = { base: b, sts };
+    const b = typeof g.b === "string" && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.0$/.test(g.b) && isPublic(g.b) ? g.b : null;
+    const p = b && typeof g.p === "string" && /^[\d.]+\/\d{1,2}$/.test(g.p) ? { prefix: g.p, asns: (Array.isArray(g.a) ? g.a : []).filter(Number.isInteger).slice(0, 3) } : null;
+    segs.push({ base: b, sts, kind: KINDS[g.k] || "unknown", prefix: p });
   }
-  if (!rows.length && !seg) return null;
-  return { at: typeof P.at === "string" ? P.at : null, rows, seg };
+  if (!rows.length && !segs.length) return null;
+  return { at: typeof P.at === "string" ? P.at : null, rows, segs };
 }
 
 // sort keys: the column's value as a number (unknown last whichever way), the row's place to break ties

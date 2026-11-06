@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/zh-cn.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"批量查 IP · 1ms.dog","url":"https://ipqs.1ms.dog/zh-cn/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"一次粘贴最多 20 个 IPv4 或 IPv6 地址，列成一张表：纯净度分数和等级、家宽还是机房、原生 IP 还是广播 IP、有没有被标成 VPN、代理或 Tor，能不能用 AI 和流媒体。可以按任意一列排序，分享时默认不带 IP。免费，不用注册。","inLanguage":"zh-CN","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.58267595c5.css">
+<link rel="stylesheet" href="/assets/app.635f2d11aa.css">
 </head>
 <body>
 <div class="app">
@@ -77,10 +77,13 @@
       </form>
       <div class="bt-seg" id="seg" hidden>
         <div class="bt-seg-h"><h2 data-i="sg_h">C 段画像</h2><span class="sg-n" id="segN"></span></div>
-        <p class="sg-verdict" id="segV"></p>
-        <div class="sg-map" id="segMap"></div>
-        <p class="sg-info" id="segInfo" aria-live="polite"></p>
-        <ul class="sg-leg" id="segLeg"></ul>
+        <ul class="bt-segs" id="segList"></ul>
+        <div class="bt-seg-x" id="segX">
+          <div class="bt-seg-xh"><b class="ip" id="segXN"></b><p class="sg-verdict" id="segV"></p></div>
+          <div class="sg-map" id="segMap"></div>
+          <p class="sg-info" id="segInfo" aria-live="polite"></p>
+          <ul class="sg-leg" id="segLeg"></ul>
+        </div>
         <div class="bt-seg-a">
           <span class="bt-seg-p" id="segPick"></span>
           <button class="btn sm" id="segListed" type="button"></button>
@@ -119,7 +122,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"zh-CN","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.zh-cn.4182a50c73.js"></script>
-<script src="/assets/batch.75e9dcc6bb.js"></script>
+<script src="/assets/l.zh-cn.e88b25faf0.js"></script>
+<script src="/assets/batch.f1c8be47cc.js"></script>
 </body>
 </html>
