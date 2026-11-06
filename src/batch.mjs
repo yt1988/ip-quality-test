@@ -29,13 +29,22 @@ export function v4segs(addr, bits) {
   return Array.from({ length: 1 << (24 - keep) }, (_, i) => { const x = first + i; return `${x >>> 16 & 255}.${x >>> 8 & 255}.${x & 255}.0`; });
 }
 
+// An IPv4 range of a /24 or narrower, as the batch page compares it: the /24 it is in (its portrait is read whole,
+// for the neighbours), and which of the 256 addresses are the range: { base: "a.b.c.0", lo, bits, n }
+export function v4range(addr, bits) {
+  const base = v4segs(addr, bits)[0], n = 2 ** (32 - Math.max(24, bits)), last = +addr.split(".")[3];
+  return { base, lo: bits > 24 ? last - (last % n) : 0, bits: Math.max(24, bits), n };
+}
+export const rangeLabel = g => g.base.replace(/\.0$/, "." + g.lo) + "/" + g.bits;
+export const inRange = (g, k) => k >= g.lo && k < g.lo + g.n;
+
 // The pasted list: split on spaces, commas, semicolons and new lines (CJK ones too). Each piece is
 //   an address, with any port or brackets taken off (1.2.3.4:443, [2001:db8::1]:443): a row;
-//   an IPv4 /24 (a longer prefix is read as the /24 it is in; a /23 or /22 as its two or four): a /24 portrait,
-//     up to SEGS of them;
+//   an IPv4 range, a /22 to a /31: a /24 portrait each, up to SEGS of them (a /23 or /22 is two or four /24s; a
+//     narrower range is its own addresses inside its /24, as v4range);
 //   an IPv6 prefix: a row for the one address that stands for it;
 // in canonical form, once each, public ones only.
-// → { items: [{ ip, net? }], ips, segs: [.0 addresses], segMore: [/24s past SEGS, as "a.b.c.0/24"],
+// → { items: [{ ip, net? }], ips, segs: [v4range ranges], segMore: [ranges past SEGS, as "a.b.c.d/n"],
 //     big (IPv4 prefixes wider than a /22), skipped (how many were left out, and as `skip` which ones and why:
 //     { priv: [...] private or reserved, with no public data; dup: [...] repeats; bad: [...] not an address }),
 //     over (rows past MAX) }
@@ -59,10 +68,13 @@ export function parseList(text) {
         if (bits === 32) add(tok, p[1]);
         else if (bits < 22) big.push(tok);
         else {
-          const bases = v4segs(p[1], bits), fresh = bases.filter(b => !segs.includes(b) && !segMore.includes(b + "/24"));
-          if (!bases.some(isPublic)) skip.priv.push(tok);
+          const ranges = bits > 24 ? [v4range(p[1], bits)] : v4segs(p[1], bits).map(base => ({ base, lo: 0, bits: 24, n: 256 }));
+          // a range already there, or inside a whole /24 already there, is a repeat
+          const have = g => [...segs.map(rangeLabel), ...segMore].some(l => l === rangeLabel(g) || l === g.base + "/24");
+          const fresh = ranges.filter(g => !have(g));
+          if (!ranges.some(g => isPublic(g.base))) skip.priv.push(tok);
           else if (!fresh.length) skip.dup.push(tok);
-          else for (const b of fresh) { if (!isPublic(b)) continue; if (segs.length < SEGS) segs.push(b); else segMore.push(b + "/24"); }
+          else for (const g of fresh) { if (!isPublic(g.base)) continue; if (segs.length < SEGS) segs.push(g); else segMore.push(rangeLabel(g)); }
         }
       } else if (f === 6 && bits <= 128) {
         if (bits === 128) add(tok, canon(p[1]));
@@ -126,7 +138,7 @@ const KINDS = ["hosting", "dynamic", "static", "mixed", "unknown"];
 export function packRows(rows, { at, withIp = false, segs = [] } = {}) {
   const R = rows.filter(r => r.r).map(({ ip, net, r }) => [r.score, r.cc || "", idx(TYPES, r.type), r.native == null ? -1 : +r.native, r.regCc || "",
     r.anon.reduce((m, a) => m | (1 << ANON.indexOf(a)), 0), idx(LV, r.ai), idx(LV, r.stream), r.aiWhy || "", r.streamWhy || "", ...(withIp ? [ip, net || ""] : [])]);
-  const S = segs.map(g => ({ r: packSeg(g.sts), k: idx(KINDS, g.kind),
+  const S = segs.map(g => ({ r: packSeg(g.sts), k: idx(KINDS, g.kind), ...(g.bits > 24 ? { l: g.lo, m: g.bits } : {}),
     ...(withIp ? { b: g.base, ...(g.prefix && g.prefix.prefix ? { p: g.prefix.prefix, a: (g.prefix.asns || []).slice(0, 3) } : {}) } : {}) }));
   return b64u(JSON.stringify({ v: 1, at, R, ...(S.length ? { S } : {}) }));
 }
@@ -156,7 +168,10 @@ export function unpackRows(code) {
     if (!sts) return null;
     const b = typeof g.b === "string" && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.0$/.test(g.b) && isPublic(g.b) ? g.b : null;
     const p = b && typeof g.p === "string" && /^[\d.]+\/\d{1,2}$/.test(g.p) ? { prefix: g.p, asns: (Array.isArray(g.a) ? g.a : []).filter(Number.isInteger).slice(0, 3) } : null;
-    segs.push({ base: b, sts, kind: KINDS[g.k] || "unknown", prefix: p });
+    // a range narrower than its /24: where it starts and its prefix length, aligned
+    const m = Number.isInteger(g.m) && g.m > 24 && g.m <= 31 ? g.m : 24, n = 2 ** (32 - m);
+    const lo = m > 24 && Number.isInteger(g.l) && g.l >= 0 && g.l < 256 && g.l % n === 0 ? g.l : 0;
+    segs.push({ base: b, sts, kind: KINDS[g.k] || "unknown", prefix: p, lo, bits: m, n });
   }
   if (!rows.length && !segs.length) return null;
   return { at: typeof P.at === "string" ? P.at : null, rows, segs };

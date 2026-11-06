@@ -284,6 +284,9 @@ export default {
   b_sr_count: "{n} rangos",
   b_sr_picked: "{n} elegidas",
   b_seg_inlist: "IP de tu lista",
-  b_done_seg: "{all} direcciones en total: {n} con puntuación completa y las {a} de {s} /24 cotejadas con las listas públicas. Pulsa un encabezado para ordenar.",
+  b_done_seg: "{all} direcciones en total: {n} con puntuación completa y las {a} direcciones de {s} rangos cotejadas con las listas públicas. Pulsa un encabezado para ordenar.",
+  b_rg_v_n: "{n} de estas {m} direcciones están en listas",
+  b_rg_v_0: "Ninguna de estas {m} direcciones está en una lista pública",
+  b_rg_out: "Vecinos fuera del rango (como referencia)",
   b_note: "Cada IP se puntúa exactamente igual que en la comprobación individual; pulsa una IP para ver su informe completo. Un enlace compartido solo lleva los resultados de la tabla, tras el # del enlace, así que nunca llega al servidor.",
 };

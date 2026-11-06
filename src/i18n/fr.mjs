@@ -284,6 +284,9 @@ export default {
   b_sr_count: "{n} plages",
   b_sr_picked: "{n} choisies",
   b_seg_inlist: "IP de votre liste",
-  b_done_seg: "{all} adresses au total : {n} notées en entier, et les {a} de {s} /24 comparées aux listes publiques. Cliquez sur un en-tête pour trier.",
+  b_done_seg: "{all} adresses au total : {n} notées en entier, et les {a} adresses de {s} plages comparées aux listes publiques. Cliquez sur un en-tête pour trier.",
+  b_rg_v_n: "{n} de ces {m} adresses sont listées",
+  b_rg_v_0: "Aucune de ces {m} adresses n’est sur une liste publique",
+  b_rg_out: "Voisins hors de la plage (pour référence)",
   b_note: "Chaque IP est notée exactement comme pour la vérification simple ; cliquez sur une IP pour son rapport complet. Un lien partagé ne contient que les résultats du tableau, après le # du lien : ils n’atteignent jamais le serveur.",
 };

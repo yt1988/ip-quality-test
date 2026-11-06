@@ -3,7 +3,7 @@
 // location, network type, native or broadcast, anonymity flags, AI and streaming verdicts. Sortable by any column;
 // a shared link carries the rows in its #fragment, without the addresses unless the visitor ticks the box.
 // Strings: window.L1MS (the main page's, plus the b_* ones).
-import { parseList, rowOf, packRows, unpackRows, sortRows, MAX, SEGS } from "./batch.mjs";
+import { parseList, rowOf, packRows, unpackRows, sortRows, MAX, SEGS, inRange, rangeLabel } from "./batch.mjs";
 import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
 
 (function () {
@@ -129,9 +129,9 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     // what the list left out stays said after the result
     // with /24s, the count is every address looked at: the 256 of each /24 (read against the lists) and the rows
     // outside them (scored in full)
-    const inSegs = ip => segs.some(g => g.base && ip.startsWith(g.base.slice(0, -1)) && ip.split(".").length === 4);
-    const out = rows.filter(r => !inSegs(r.ip)).length;
-    const done = segs.length ? t("b_done_seg", { all: segs.length * 256 + out, n: rows.length, s: segs.length, a: segs.length * 256 }) : t("b_done", { n: rows.length });
+    const inSegs = ip => segs.some(g => g.base && ip.split(".").length === 4 && ip.startsWith(g.base.slice(0, -1)) && inRange(g, +ip.split(".")[3]));
+    const out = rows.filter(r => !inSegs(r.ip)).length, a = segs.reduce((x, g) => x + g.n, 0);
+    const done = segs.length ? t("b_done_seg", { all: a + out, n: rows.length, s: segs.length, a }) : t("b_done", { n: rows.length });
     hint.textContent = (bad ? t("b_errs", { n: bad }) : done) + (note ? " " + note : "");
   }
   $("#ask").onsubmit = e => {
@@ -152,15 +152,24 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   // A portrait is one request for all 256 addresses (public lists and reverse names, read on the server: no source's
   // quota). Up to SEGS of them are compared in a list; the one opened under it shows its grid, where the visitor picks
   // addresses for the table: every /24's picks together, with the list's own addresses, up to MAX.
-  // segs: [{ base, label, st: "wait" | "ok" | "err", why, d: the portrait (readSeg), picked: Set of indexes }]
+  // segs: [{ base, lo, bits, n (the range in its /24: all 256 for a /24), st: "wait" | "ok" | "err", why,
+  //          d: the /24's portrait (readSeg), v: what the range's own addresses say ({ count, verdict }), picked }]
+  // A range narrower than a /24 is counted, picked from and shared as its own addresses; the rest of its /24 stays in
+  // view, faint, for the neighbours.
   let segs = [], cur = -1, listItems = [];
+  const viewOf = g => {
+    const count = Object.fromEntries(ST.map(s => [s, 0]));
+    g.d.cells.forEach((c, k) => { if (inRange(g, k)) count[c.st]++; });
+    const listed = g.n - count.ok;
+    return { count, verdict: { listed, lv: count.bad ? "bad" : listed ? "warn" : "ok" } };
+  };
   const KIND_LV = { hosting: "warn", dynamic: "ok", static: "info", mixed: "info", unknown: "none" };
   const TAGC = { ok: "good", warn: "warn", bad: "bad" };
   const pickedN = () => segs.reduce((a, g) => a + g.picked.size, 0);
   const room = () => MAX - listItems.length - pickedN();
-  const labelOf = (g, i) => g.base ? g.base.replace(/\.0$/, ".0/24") : t("b_seg_n", { n: i + 1 });
+  const labelOf = (g, i) => g.base ? rangeLabel(g) : t("b_seg_n", { n: i + 1 }) + (g.bits > 24 ? ` (/${g.bits})` : "");
   const inList = ip => listItems.some(x => x.ip === ip);
-  const verdictText = d => d.verdict.listed ? t("b_sr_n", { n: d.verdict.listed }) : t("b_sr_0");
+  const verdictText = v => v.verdict.listed ? t("b_sr_n", { n: v.verdict.listed }) : t("b_sr_0");
   // one row of the comparison: the range, what kind of network it is, how many of its addresses are listed (by list),
   // the 256 squares small, and how many are picked from it
   function segRow(g, i) {
@@ -171,9 +180,9 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
       const d = g.d, px = d.prefix && !d.prefix.none ? d.prefix : null;
       const meta = [`<span class="tag ${TAGC[KIND_LV[d.kind.kind]] || ""}">${esc(t("sg_k_" + d.kind.kind))}</span>`,
         px && `<span class="m">${esc(px.prefix)}${px.asns && px.asns.length ? " · AS" + px.asns.join(" AS") : ""}</span>`].filter(Boolean).join(" ");
-      const by = ST.filter(s => s !== "ok" && d.count[s]).map(s => `<span class="bt-sr-c"><i class="dot s-${s}"></i>${d.count[s]}</span>`).join("");
-      body = `<span class="bt-sr-k">${meta}</span><span class="bt-sr-v ${d.verdict.lv}">${esc(verdictText(d))}${by}</span>` +
-        `<span class="bt-mini">${d.cells.map(c => `<i class="s-${c.st}"></i>`).join("")}</span>`;
+      const v = g.v, by = ST.filter(s => s !== "ok" && v.count[s]).map(s => `<span class="bt-sr-c"><i class="dot s-${s}"></i>${v.count[s]}</span>`).join("");
+      body = `<span class="bt-sr-k">${meta}</span><span class="bt-sr-v ${v.verdict.lv}">${esc(verdictText(v))}${by}</span>` +
+        `<span class="bt-mini">${d.cells.map((c, k) => `<i class="s-${c.st}${inRange(g, k) ? "" : " x"}"></i>`).join("")}</span>`;
     }
     const pk = g.picked.size ? `<span class="bt-sr-p">${esc(t("b_sr_picked", { n: g.picked.size }))}</span>` : "";
     return `<li class="bt-sr${i === cur ? " on" : ""}"><button type="button" data-s="${i}" aria-expanded="${i === cur}"><span class="bt-sr-n ip">${esc(labelOf(g, i))}</span>${body}${pk}</button></li>`;
@@ -195,10 +204,15 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
       map.innerHTML = g && g.st === "wait" ? `<i class="s-wait"></i>`.repeat(256) : "";
       $("#segLeg").innerHTML = ""; $("#segInfo").textContent = "";
     } else {
-      const d = g.d;
-      v.className = "sg-verdict " + d.verdict.lv; v.textContent = d.verdict.listed ? t("sg_v_n", { n: d.verdict.listed }) : t("sg_v_0");
-      map.innerHTML = d.cells.map((c, k) => `<i class="s-${c.st}${c.ip && inList(c.ip) ? " me" : ""}${g.picked.has(k) ? " on" : ""}" data-c="${k}"${c.ip ? ` aria-label="${esc(c.ip)}"` : ""}></i>`).join("");
-      $("#segLeg").innerHTML = ST.map(st => `<li${d.count[st] ? "" : ' class="z"'}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${d.count[st]}</b></li>`).join("") +
+      const d = g.d, vw = g.v, part = g.n < 256;
+      v.className = "sg-verdict " + vw.verdict.lv;
+      v.textContent = part ? t(vw.verdict.listed ? "b_rg_v_n" : "b_rg_v_0", { n: vw.verdict.listed, m: g.n }) : vw.verdict.listed ? t("sg_v_n", { n: vw.verdict.listed }) : t("sg_v_0");
+      // outside the range: faint, and not for picking
+      map.innerHTML = d.cells.map((c, k) => inRange(g, k)
+        ? `<i class="s-${c.st}${c.ip && inList(c.ip) ? " me" : ""}${g.picked.has(k) ? " on" : ""}" data-c="${k}"${c.ip ? ` aria-label="${esc(c.ip)}"` : ""}></i>`
+        : `<i class="s-${c.st} x" data-c="${k}"></i>`).join("");
+      $("#segLeg").innerHTML = ST.map(st => `<li${vw.count[st] ? "" : ' class="z"'}><i class="dot s-${st}"></i>${esc(t("sg_l_" + st))} <b>${vw.count[st]}</b></li>`).join("") +
+        (part ? `<li class="z"><i class="dot x"></i>${esc(t("b_rg_out"))}</li>` : "") +
         (d.cells.some(c => c.ip && inList(c.ip)) ? `<li><i class="dot me"></i>${esc(t("b_seg_inlist"))}</li>` : "");
       $("#segInfo").textContent = t("sg_hint");
     }
@@ -210,7 +224,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     $(".bt-seg-a").hidden = shared || !segs.some(x => x.st === "ok");
     $("#segPick").textContent = t("b_seg_pick", { n: pickedN(), max: Math.max(0, room()) });
     const go2 = $("#segGo"); go2.disabled = !pickedN(); go2.textContent = t("b_seg_go", { n: pickedN() });
-    const listed = ok ? g.d.cells.filter((c, k) => c.st !== "ok" && !g.picked.has(k)).length : 0;
+    const listed = ok ? g.d.cells.filter((c, k) => inRange(g, k) && c.st !== "ok" && !g.picked.has(k) && !inList(c.ip)).length : 0;
     const lb = $("#segListed"); lb.hidden = !listed || room() <= 0; lb.textContent = t("b_seg_listed", { n: Math.min(listed, Math.max(0, room())) });
   }
   const segSay = k => {
@@ -227,7 +241,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
       let res = null;
       try { res = await fetch(D.seg + "/v1/seg?ip=" + encodeURIComponent(g.base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); } catch (e) {}
       if (me !== segRun) return;
-      if (res && res.ok) { try { const j = await res.json(); if (j && j.seg) { g.d = readSeg(j, null, null); g.st = "ok"; return; } } catch (e) {} break; }
+      if (res && res.ok) { try { const j = await res.json(); if (j && j.seg) { g.d = readSeg(j, null, null); g.v = viewOf(g); g.st = "ok"; return; } } catch (e) {} break; }
       if (res && res.status === 429) { g.why = "rate"; break; }
       await sleep(2000 * (tries + 1));
     }
@@ -236,7 +250,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   let segRun = 0;
   async function segsStart(bases) {
     const me = ++segRun;
-    segs = bases.map(base => ({ base, st: "wait", d: null, picked: new Set() }));
+    segs = bases.map(r => ({ ...r, st: "wait", d: null, picked: new Set() }));
     cur = segs.length ? 0 : -1;
     segList(); if (segs.length) segOpen(0);
     let next = 0;
@@ -255,7 +269,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   segMap.addEventListener("click", e => {
     const k = e.target.dataset && e.target.dataset.c, g = segs[cur]; if (k == null || !g || !g.d) return;
     segSay(+k);
-    if (shared) return;
+    if (shared || !inRange(g, +k)) return;
     if (g.picked.has(+k)) g.picked.delete(+k); else if (room() > 0 && !inList(g.d.cells[+k].ip)) g.picked.add(+k);
     e.target.classList.toggle("on", g.picked.has(+k));
     segList(); segPickUi();
@@ -263,7 +277,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   // this /24's listed addresses, worst first, as many as there is room for
   $("#segListed").onclick = () => {
     const g = segs[cur]; if (!g || !g.d) return;
-    const order = g.d.cells.map((c, k) => [k, ST.indexOf(c.st)]).filter(([k, s]) => ST[s] !== "ok" && !g.picked.has(k) && !inList(g.d.cells[k].ip)).sort((a, b) => a[1] - b[1]);
+    const order = g.d.cells.map((c, k) => [k, ST.indexOf(c.st)]).filter(([k, s]) => inRange(g, k) && ST[s] !== "ok" && !g.picked.has(k) && !inList(g.d.cells[k].ip)).sort((a, b) => a[1] - b[1]);
     for (const [k] of order.slice(0, Math.max(0, room()))) g.picked.add(k);
     segList(); segOpen(cur);
   };
@@ -298,10 +312,12 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     font(700, 26); text(t("sg_h"), P, y0 + 26, C.fg);
     okSegs().forEach((s, i) => {
       const y = y0 + 56 + i * SROW, d = s.d, px = d.prefix && !d.prefix.none ? d.prefix : null;
-      font(600, 22, !!(show && s.base)); text(kit.clip(g, show && s.base ? labelOf(s, i) : t("b_seg_n", { n: i + 1 }), 360), P, y + 26, C.fg);
+      font(600, 22, !!(show && s.base)); text(kit.clip(g, show && s.base ? labelOf(s, i) : labelOf({ ...s, base: null }, i), 360), P, y + 26, C.fg);
       font(500, 19); text(kit.clip(g, [t("sg_k_" + d.kind.kind), show && px ? px.prefix + (px.asns.length ? " · AS" + px.asns[0] : "") : ""].filter(Boolean).join(" · "), 360), P, y + 56, C.mu);
-      font(700, 20); text(kit.clip(g, verdictText(d), 360), P, y + 84, VC[d.verdict.lv] || C.fg);
-      d.cells.forEach((c, k) => { g.fillStyle = SC[c.st]; kit.roundRect(g, GX + (k % 64) * (sq + GAP), y + 18 + Math.floor(k / 64) * (sq + GAP), sq, sq, 2); g.fill(); });
+      font(700, 20); text(kit.clip(g, verdictText(s.v), 360), P, y + 84, VC[s.v.verdict.lv] || C.fg);
+      // outside a narrower range: faint
+      d.cells.forEach((c, k) => { g.globalAlpha = inRange(s, k) ? 1 : 0.22; g.fillStyle = SC[c.st]; kit.roundRect(g, GX + (k % 64) * (sq + GAP), y + 18 + Math.floor(k / 64) * (sq + GAP), sq, sq, 2); g.fill(); });
+      g.globalAlpha = 1;
       if (i < okSegs().length - 1) { g.fillStyle = C.line; g.fillRect(P, y + SROW - 2, W - 2 * P, 1); }
     });
   }
@@ -352,7 +368,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   $("#shareBtn").onclick = async () => {
     if (!okRows().length && !okSegs().length) return;
     const { share } = await import("/assets/share/share.js?v=8");
-    const S = okSegs().map(g => ({ base: g.base, sts: g.d.cells.map(c => c.st), kind: g.d.kind.kind, prefix: g.d.prefix && !g.d.prefix.none ? g.d.prefix : null }));
+    const S = okSegs().map(g => ({ base: g.base, lo: g.lo, bits: g.bits, sts: g.d.cells.map(c => c.st), kind: g.d.kind.kind, prefix: g.d.prefix && !g.d.prefix.none ? g.d.prefix : null }));
     const link = withIp => location.origin + SELF + "#b=" + packRows(rows, { at: at || new Date().toISOString(), withIp, segs: S });
     const links = { false: link(false), true: link(true) };
     share({
@@ -380,7 +396,9 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
         const b3 = s.base ? s.base.split(".").slice(0, 3).join(".") : null;
         const count = Object.fromEntries(ST.map(x => [x, 0]));
         const cells = s.sts.map((st, k) => { count[st]++; return { ip: b3 ? `${b3}.${k}` : null, st }; });
-        return { base: s.base, st: "ok", picked: new Set(), d: { cells, count, verdict: verdictOf(count), kind: { kind: s.kind }, prefix: s.prefix } };
+        const g = { base: s.base, lo: s.lo, bits: s.bits, n: s.n, st: "ok", picked: new Set(), d: { cells, count, verdict: verdictOf(count), kind: { kind: s.kind }, prefix: s.prefix } };
+        g.v = viewOf(g);
+        return g;
       });
       cur = segs.length ? 0 : -1;
       segList(); if (segs.length) segOpen(0);

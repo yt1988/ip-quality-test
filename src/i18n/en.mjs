@@ -284,6 +284,9 @@ export default {
   b_sr_count: "{n} ranges",
   b_sr_picked: "{n} picked",
   b_seg_inlist: "IP from your list",
-  b_done_seg: "{all} addresses looked at: {n} scored in full, the {a} of {s} /24s read against the public lists. Click a column header to sort.",
+  b_done_seg: "{all} addresses looked at: {n} scored in full, the {a} addresses of {s} ranges read against the public lists. Click a column header to sort.",
+  b_rg_v_n: "{n} of these {m} addresses are listed",
+  b_rg_v_0: "None of these {m} addresses is on a public list",
+  b_rg_out: "Neighbours outside the range (for reference)",
   b_note: "Each IP is scored exactly as on the single check; click an IP for its full report. A shared link carries only the table's results, after the # in the link, so it never reaches the server.",
 };

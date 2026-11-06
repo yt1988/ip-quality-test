@@ -284,6 +284,9 @@ export default {
   b_sr_count: "{n} Bereiche",
   b_sr_picked: "{n} ausgewählt",
   b_seg_inlist: "IP aus deiner Liste",
-  b_done_seg: "{all} Adressen insgesamt: {n} voll bewertet, die {a} aus {s} /24 mit den öffentlichen Listen abgeglichen. Zum Sortieren auf eine Spaltenüberschrift klicken.",
+  b_done_seg: "{all} Adressen insgesamt: {n} voll bewertet, die {a} Adressen aus {s} Bereichen mit den öffentlichen Listen abgeglichen. Zum Sortieren auf eine Spaltenüberschrift klicken.",
+  b_rg_v_n: "{n} dieser {m} Adressen stehen auf Listen",
+  b_rg_v_0: "Keine dieser {m} Adressen steht auf einer öffentlichen Liste",
+  b_rg_out: "Nachbarn außerhalb des Bereichs (zum Vergleich)",
   b_note: "Jede IP wird genau wie bei der Einzelprüfung bewertet; ein Klick auf die IP öffnet den vollständigen Bericht. Ein geteilter Link enthält nur die Ergebnisse der Tabelle, hinter dem # im Link, und erreicht daher nie den Server.",
 };

@@ -54,15 +54,23 @@ test("readBeacon: known sources, 0 or 1, a time; anything else is dropped", () =
     assert.equal(readBeacon(bad), null);
 });
 
-import { parseList as parse2, v6net, v4segs } from "../src/batch.mjs";
+import { parseList as parse2, v6net, v4segs, rangeLabel, inRange } from "../src/batch.mjs";
 test("parseList: /24s (longer prefixes as their /24, a /23 or /22 as two or four) up to SEGS, wider ones refused, IPv6 prefixes one row each", () => {
   const r = parse2("95.216.1.0/24 95.216.1.128/25 8.8.8.0/24 1.0.0.0/16 2400:cb00:2049:1::/64 2400:cb00:2049:1::5/64 1.1.1.1/32 10.0.0.0/24 4.2.2.0/23 9.9.9.0/24");
-  assert.deepEqual(r.segs, ["95.216.1.0", "8.8.8.0", "4.2.2.0", "4.2.3.0"]);
+  assert.deepEqual(r.segs.map(rangeLabel), ["95.216.1.0/24", "8.8.8.0/24", "4.2.2.0/24", "4.2.3.0/24"]);
   assert.deepEqual(r.segMore, ["9.9.9.0/24"]);
   assert.deepEqual(r.big, ["1.0.0.0/16"]);
   assert.deepEqual(r.items, [{ ip: "2400:cb00:2049:1::1", net: "2400:cb00:2049:1::/64" }, { ip: "1.1.1.1" }]);
+  // a /25 inside a /24 already there is a repeat
   assert.deepEqual(r.skip.dup, ["95.216.1.128/25", "2400:cb00:2049:1::5/64"]);
   assert.deepEqual(r.skip.priv, ["10.0.0.0/24"]);
+});
+test("parseList: a range narrower than a /24 is its own addresses, aligned", () => {
+  const r = parse2("4.2.2.1/28 4.2.2.20/28 4.2.2.1/28");
+  assert.deepEqual(r.segs, [{ base: "4.2.2.0", lo: 0, bits: 28, n: 16 }, { base: "4.2.2.0", lo: 16, bits: 28, n: 16 }]);
+  assert.deepEqual(r.skip.dup, ["4.2.2.1/28"]);
+  assert.equal(inRange(r.segs[1], 31), true);
+  assert.equal(inRange(r.segs[1], 32), false);
 });
 test("v4segs: the /24s a prefix covers", () => {
   assert.deepEqual(v4segs("1.2.3.77", 26), ["1.2.3.0"]);
@@ -87,9 +95,10 @@ test("the /24 in a shared link: run-length coded colours, the range only with th
   assert.deepEqual(unpackSeg(packSeg(sts)), sts);
   assert.equal(packSeg(sts).length, 5);
   const rows = [{ i: 0, ip: "8.8.8.8", st: "ok", r: rowOf(done) }];
-  const S = [{ base: "95.216.1.0", sts, kind: "hosting", prefix: { prefix: "95.216.0.0/16", asns: [24940] } }, { base: "8.8.8.0", sts, kind: "unknown", prefix: null }];
+  const S = [{ base: "95.216.1.0", lo: 0, bits: 24, sts, kind: "hosting", prefix: { prefix: "95.216.0.0/16", asns: [24940] } }, { base: "8.8.8.0", lo: 16, bits: 28, sts, kind: "unknown", prefix: null }];
   const a = unpackRows(packRows(rows, { segs: S }));
-  assert.deepEqual(a.segs[0], { base: null, sts, kind: "hosting", prefix: null });
+  assert.deepEqual(a.segs[0], { base: null, sts, kind: "hosting", prefix: null, lo: 0, bits: 24, n: 256 });
+  assert.deepEqual([a.segs[1].lo, a.segs[1].bits, a.segs[1].n], [16, 28, 16]);
   assert.equal(a.segs.length, 2);
   const b = unpackRows(packRows(rows, { withIp: true, segs: S }));
   assert.deepEqual([b.segs[0].base, b.segs[0].prefix], ["95.216.1.0", { prefix: "95.216.0.0/16", asns: [24940] }]);

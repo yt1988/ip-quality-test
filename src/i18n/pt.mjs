@@ -284,6 +284,9 @@ export default {
   b_sr_count: "{n} faixas",
   b_sr_picked: "{n} escolhidos",
   b_seg_inlist: "IP da sua lista",
-  b_done_seg: "{all} endereços no total: {n} com nota completa e os {a} de {s} /24 comparados às listas públicas. Clique num cabeçalho para ordenar.",
+  b_done_seg: "{all} endereços no total: {n} com nota completa e os {a} endereços de {s} faixas comparados às listas públicas. Clique num cabeçalho para ordenar.",
+  b_rg_v_n: "{n} destes {m} endereços estão em listas",
+  b_rg_v_0: "Nenhum destes {m} endereços está em uma lista pública",
+  b_rg_out: "Vizinhos fora da faixa (para referência)",
   b_note: "Cada IP recebe a nota exatamente como na verificação individual; clique num IP para ver o relatório completo. Um link compartilhado leva só os resultados da tabela, depois do # do link, então nunca chega ao servidor.",
 };

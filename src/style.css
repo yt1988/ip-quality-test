@@ -415,3 +415,5 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
   .bt-sr-v { grid-column: 1; } .bt-sr-p { grid-column: 2; grid-row: 1; }
 }
 .bt-seg-h .sg-n { font-family: var(--f-ui); }
+.sg-map i.x, .bt-mini i.x { opacity: .22; cursor: default; box-shadow: none !important; }
+.dot.x { background: var(--muted); opacity: .3; }
