@@ -320,19 +320,16 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt h1 { font-size: clamp(20px, 2.6vw, 26px); line-height: 1.25; letter-spacing: -.015em; font-weight: 700; }
 .bt-h .ul { font-size: 13px; color: var(--muted); }
 .bt-ask { display: flex; flex-direction: column; gap: 10px; }
-.bt-ask[hidden], .bt-res[hidden], .bt-shared[hidden], .bt-acts[hidden] { display: none; }
+.bt-ask[hidden], .bt-res[hidden], .bt-acts[hidden] { display: none; }
 .bt-ask textarea { width: 100%; min-height: 120px; resize: vertical; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: 14px/1.6 var(--f-num); outline: none; }
 .bt-ask textarea::placeholder { font-family: var(--f-ui); }
 .bt-ask textarea:focus { border-color: var(--ink); }
 .bt-row { display: flex; align-items: center; gap: 12px; }
 .bt-hint { margin: 0; flex: 1; min-width: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
-.bt-shared { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 12px 14px; border-radius: 10px; background: var(--soft); }
-.bt-shared p { margin: 0; flex: 1 1 260px; font-size: 13px; line-height: 1.6; color: var(--muted); }
 .bt-res { display: flex; flex-direction: column; gap: 10px; }
 .bt-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; min-height: 30px; }
 .bt-prog { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .bt-acts { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-.bt-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
 .bt-wrap { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
 .bt-t { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
 .bt-t th { text-align: left; font-weight: 600; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); padding: 0; }
@@ -374,6 +371,4 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt-prog { font-size: 14px; font-weight: 600; color: var(--fg); }
 .bt-acts { gap: 14px; }
 #shareBtn svg { width: 14px; height: 14px; }
-#shareBtn.done { color: var(--t1); border-color: color-mix(in srgb, var(--t1) 45%, transparent); background: color-mix(in srgb, var(--t1) 10%, transparent); }
-#shareBtn.done svg { display: none; }
-#shareBtn.done::before { content: "✓"; font-weight: 700; }
+[data-shared] .bt-res { border-top: 0; padding-top: 0; margin-top: 0; }

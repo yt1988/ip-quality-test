@@ -122,44 +122,87 @@ import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "./batch.m
     const { ips, skipped, over } = parseList(box.value);
     if (!ips.length) { say("b_none"); box.focus(); return; }
     if (history.replaceState && location.hash) history.replaceState(null, "", SELF + location.search);
-    $("#sharedNote").hidden = true; $("#ask").hidden = false;
     start(ips);
     const parts = [over && t("b_cut", { n: MAX, over }), skipped && t("b_skip", { n: skipped })].filter(Boolean);
     hint.textContent = parts.length ? parts.join(" ") : t("b_hint", { n: MAX });
   };
 
-  /* ---------- sharing: the rows go in the link's #fragment, so the server never sees them ---------- */
-  // the button itself says the link is copied (a tick, for two seconds), where the visitor is looking
-  const shareBtn = $("#shareBtn"), shareLabel = shareBtn.querySelector("span"), SHARE_T = shareLabel.textContent;
-  let flashT = 0;
-  const flash = () => {
-    shareBtn.classList.add("done"); shareLabel.textContent = t("b_copied_b");
-    clearTimeout(flashT); flashT = setTimeout(() => { shareBtn.classList.remove("done"); shareLabel.textContent = SHARE_T; }, 2000);
-  };
-  shareBtn.onclick = async () => {
-    const url = location.origin + SELF + "#b=" + packRows(rows, { at, withIp: $("#withIp").checked });
-    try {
-      if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ title: document.title, url });
-      else { await navigator.clipboard.writeText(url); flash(); }
-    } catch (e) {
-      if (e && e.name === "AbortError") return;
-      window.prompt(t("b_share"), url);
-    }
+  /* ---------- sharing: the 1ms.dog dialog (/assets/share/, copied from 1ms-shell), as on the main page ---------- */
+  // The link carries the rows after #b= (never sent to the server); the dialog's box adds the addresses, to the link
+  // and to the card alike. The card is the table, drawn in the page's theme.
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const stamp = () => new Date(at).toISOString().slice(0, 16).replace(/[-:T]/g, "");
+  const ROW = 56, HEAD = 150;
+  const okRows = () => rows.filter(r => r.r);
+  function drawCard(g, kit) {
+    const { W, P } = kit, show = kit.show, R = sortRows(okRows(), sort.col, sort.dir);
+    const C = { fg: cssVar("--fg"), mu: cssVar("--muted"), line: cssVar("--line") };
+    const LV = { good: cssVar("--t1"), warn: cssVar("--t3"), bad: cssVar("--t5") };
+    const GC = { A: cssVar("--t1"), B: cssVar("--t2"), C: cssVar("--t3"), D: cssVar("--t4"), F: cssVar("--t5") };
+    const FF = cssVar("--f-ui") || kit.F, FN = cssVar("--f-num") || kit.M;
+    const font = (wt, sz, mono) => { g.font = `${wt} ${sz}px ${mono ? FN : FF}`; };
+    const text = (str, x, y, color) => { g.fillStyle = color; g.textAlign = "left"; g.fillText(str, x, y); };
+    // the columns, by weight across the card's width; the address column only when the box is ticked
+    const COLS = [["n", 0.5], ...(show ? [["ip", 3.4]] : []), ["cc", 1], ["score", 1.3], ["type", 1.3], ["native", 1.7], ["anon", 1.7], ["ai", 1.2], ["stream", 1.2]];
+    const sum = COLS.reduce((a, [, w]) => a + w, 0), X = {}, Wd = {};
+    let x = P;
+    for (const [k, w] of COLS) { X[k] = x; Wd[k] = (W - 2 * P) * w / sum - 14; x += (W - 2 * P) * w / sum; }
+    const HD = { n: "#", ip: t("b_c_ip"), cc: t("b_c_loc"), score: t("b_c_score"), type: t("b_c_type"), native: t("b_c_native"), anon: t("b_c_anon"), ai: t("b_c_ai"), stream: t("b_c_stream") };
+    let y = kit.top + 56;
+    font(700, 40); text(t("b_h1"), P, y, C.fg);
+    font(500, 24); text(t("b_n", { n: R.length }), P, y + 42, C.mu);
+    y = kit.top + HEAD;
+    font(600, 20);
+    for (const [k] of COLS) text(kit.clip(g, HD[k], Wd[k]), X[k], y, C.mu);
+    g.fillStyle = C.line; g.fillRect(P, y + 16, W - 2 * P, 2);
+    const pill = (lv, x0, y0) => {
+      if (!lv) { font(500, 22); text("–", x0, y0, C.mu); return; }
+      font(700, 20); const s = t("lv_" + lv), w = g.measureText(s).width + 20;
+      g.globalAlpha = 0.16; g.fillStyle = LV[lv]; kit.roundRect(g, x0, y0 - 22, w, 32, 8); g.fill(); g.globalAlpha = 1;
+      text(s, x0 + 10, y0, LV[lv]);
+    };
+    R.forEach((row, i) => {
+      const r = row.r, yy = y + 18 + (i + 1) * ROW - 18;
+      font(500, 22, true); text(String(row.i + 1), X.n, yy, C.mu);
+      if (show) { font(600, 22, true); text(kit.clip(g, row.ip || t("b_hidden"), Wd.ip), X.ip, yy, row.ip ? C.fg : C.mu); }
+      font(500, 22, true); text(r.cc || "–", X.cc, yy, C.fg);
+      font(700, 26, true); const sc = String(r.score); text(sc, X.score, yy, GC[r.grade]);
+      const sw = g.measureText(sc).width; font(700, 20); text(r.grade, X.score + sw + 8, yy, GC[r.grade]);
+      font(500, 22); text(kit.clip(g, r.type ? t("t_" + r.type) : "–", Wd.type), X.type, yy, C.fg);
+      text(kit.clip(g, r.native == null ? "–" : r.native ? t("fs_native") : t("fs_broadcast") + (r.regCc ? " " + r.regCc : ""), Wd.native), X.native, yy, C.fg);
+      const an = r.anon.map(a => a === "proxy" ? t("tag_proxy") : a === "tor" ? "Tor" : "VPN").join(" · ");
+      text(kit.clip(g, an || t("fs_clean"), Wd.anon), X.anon, yy, an ? LV.bad : C.mu);
+      pill(r.ai, X.ai, yy); pill(r.stream, X.stream, yy);
+      if (i < R.length - 1) { g.fillStyle = C.line; g.fillRect(P, yy + 20, W - 2 * P, 1); }
+    });
+  }
+  $("#shareBtn").onclick = async () => {
+    if (!okRows().length) return;
+    const { share } = await import("/assets/share/share.js?v=8");
+    const links = { false: location.origin + SELF + "#b=" + packRows(rows, { at }), true: location.origin + SELF + "#b=" + packRows(rows, { at, withIp: true }) };
+    share({
+      lang: LANG, name: t("app_name"), file: `ipqs-batch-${stamp()}`,
+      // the addresses stay out of the link and the card unless the box is ticked
+      show: ["ip"], canShow: true,
+      link: show => links[!!show], home: location.origin + SELF,
+      text: () => t("b_h1") + " · " + t("b_n", { n: okRows().length }),
+      height: (m, kit) => kit.top + HEAD + okRows().length * ROW + 130,
+      draw: drawCard,
+      foot: () => [t("card_cta")],
+      ts: Date.parse(at),
+    }).open();
   };
 
-  // a shared link: the rows it carries, read only; the form stays for checking a list of one's own
+  // a shared link: the rows it carries, read only, under the shared banner (whose button checks a list of one's own)
   const m = /^#b=([\w-]+)$/.exec(location.hash);
   if (m) {
     const P = unpackRows(m[1]);
     if (P && P.rows.length) {
-      shared = true; at = P.at; rows = P.rows;
-      $("#sharedNote").hidden = false;
-      let when = "";
-      try { when = P.at ? new Date(P.at).toLocaleString(LANG, { dateStyle: "medium", timeStyle: "short" }) : ""; } catch (e) {}
-      $("#sharedT").textContent = t(when ? "b_shared_at" : "b_shared", { at: when });
-      $("#sharedGo").href = SELF;
+      shared = true; at = P.at; rows = P.rows; document.documentElement.setAttribute("data-shared", "");
       $("#res").hidden = false; $(".bt-acts").hidden = true; $("#ask").hidden = true;
       draw();
+      import("/assets/share/share.js?v=8").then(({ received }) =>
+        received({ lang: LANG, ts: Date.parse(P.at) || Date.now(), at: $("#res"), test: () => { location.href = SELF; } }), () => {});
     }
   }
 })();

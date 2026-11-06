@@ -45,7 +45,7 @@
 <meta name="twitter:description" content="十几个 IP 数据库加 8 个黑名单，一个分数说清">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"IP 质量测试 · 1ms.dog","url":"https://ipqs.1ms.dog/zh-cn/","image":"https://ipqs.1ms.dog/og/zh-cn.png","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"同时查十几个 IP 数据库和 8 个邮件黑名单，给你的 IP 打一个 0–100 的纯净度分数：家宽还是机房，原生 IP 还是广播 IP，有没有被标记为 VPN、代理或 Tor。还告诉你它能不能看 Netflix、用 ChatGPT，会不会老弹验证码。免费，不用注册。","inLanguage":"zh-CN","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"分数是怎么算的？","acceptedAnswer":{"@type":"Answer","text":"每个地址从 100 分起算，各来源发现问题就扣分：机房网络最多扣 20 分，企业网络最多扣 5 分；被标记为代理扣 20 分，VPN 扣 15 分，Tor 扣 40 分；有滥用报告扣 10 分；平均欺诈分数最多扣 35 分；每上一个邮件黑名单扣 6 分，最多扣 24 分。这些标记按来源的多数意见折算：只有一个来源这么说，只扣一部分。 欺诈分数是风控数据库给一个 IP 打的可疑程度，0–100，越高越可疑。 等级：85 分及以上是 A，70 分及以上是 B，50 分及以上是 C，30 分及以上是 D，低于 30 分是 F。结论下方列出了每一项扣了多少分。"}},{"@type":"Question","name":"用了哪些数据来源？","acceptedAnswer":{"@type":"Answer","text":"不需要密钥的有：ip-api.com、proxycheck.io、IPQuery、ipapi.is、IP2Location、IPinfo、RDAP（各大洲的 IP 地址注册机构）、ip.guide、Shodan InternetDB、Tor 项目的出口列表，以及 Cloudflare（只能查你自己的 IP）。站长配置免费的 API 密钥后，还会加上 IPQualityScore、AbuseIPDB、Scamalytics 和 ipdata。 每一行都链接到这个来源自己的查询页，你可以去核对它的结果。"}},{"@type":"Question","name":"原生 IP 和广播 IP 是什么？","acceptedAnswer":{"@type":"Answer","text":"原生 IP：在哪个国家注册，就在哪个国家使用。广播 IP：在一个国家注册（通常是机房公司注册的），却拿到另一个国家去用。 这对你的影响：大多数定位数据库看实际位置，但也有服务看注册地。用广播 IP 时，这些服务可能把你当成在注册的那个国家。要用某个国家的流媒体或 AI 服务，原生 IP 更稳。 本站比较的是地址注册机构的记录（RDAP）和多数数据库给出的位置。注册记录里没写国家时（ARIN 管的地址常见），改用这段地址所属网络的注册国家。"}},{"@type":"Question","name":"家宽和机房 IP，差别在哪？","acceptedAnswer":{"@type":"Answer","text":"网站把机房 IP 看作服务器、VPN 和代理，不是真人。流媒体、票务、银行和注册页面会拦截它们，或者要求更多验证。 家宽和移动网络的地址像普通用户。移动网络的一个地址还同时有很多人在用（运营商级 NAT），网站一般不会封它。"}},{"@type":"Question","name":"为什么各来源的结果不一样？","acceptedAnswer":{"@type":"Answer","text":"每家的数据不一样：有的只知道哪些网段属于机房，有的自己布置蜜罐、或者收集客户上报的欺诈记录。同一台 VPN 服务器，可能一家已经发现了，另一家还不知道。 所以本站看的是有多少来源意见一致，而不是只信一家。"}},{"@type":"Question","name":"分数很低怎么办？","acceptedAnswer":{"@type":"Answer","text":"如果是家里的宽带：滥用报告或黑名单记录，往往说明你网络里有设备中了病毒，或者被人当成了代理。先把设备清理干净，再去黑名单申请移除（每个黑名单都链接到它的查询和移除页面）。 如果是 VPN 或服务器：分数主要反映网络类型，你改变不了。可以换一家提供家宽 IP 或用的人较少的地址的服务商。"}},{"@type":"Question","name":"会保存我的数据吗？","acceptedAnswer":{"@type":"Answer","text":"查询时，你要查的 IP 会发给上面列出的数据来源，其中几个由你的浏览器直接去查。每个地址的结果在本站缓存 6 小时，免得同一个地址反复去问免费的数据来源。除此之外，本站不保存任何东西。 查找你的出口 IP 时，你的浏览器会直接访问几个 IP 查询服务。 如果你点了「开始实测」，Cloudflare 会读取你的浏览器信息来判断你是不是真人，本站只收到通过与否的结果。 「实测：你的连接」由本站自己的服务器来测：你的浏览器会查几个随机域名，再连一次 probe.1ms.dog。服务器只看是哪个 DNS 解析器来查的，以及 TCP 握手的参数；结果只在内存里放 2 分钟，不写入磁盘。 C 段画像由本站的服务器来查：查你要查的 IP 所在 /24 的 256 个反向解析，再对照几份公开名单；不会连接这一段里的任何地址。结果在服务器内存里缓存 7 天，不记录是谁查的。"}}]}]}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.e152ae6daf.css">
+<link rel="stylesheet" href="/assets/app.cffa7d7de5.css">
 </head>
 <body>
 <div class="app">
@@ -179,7 +179,7 @@
 
 
 <script type="application/json" id="data">{"lang":"zh-CN","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.zh-cn.69dce9af25.js"></script>
+<script src="/assets/l.zh-cn.f026e63996.js"></script>
 <script src="/assets/app.4fa71aa2d2.js"></script>
 </body>
 </html>

@@ -55,7 +55,7 @@ async function loadI18n() {
 }
 
 // Strings only the build uses (the page already shows them); everything else goes to the browser
-const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "docs", "lang_label", "faq_h", "b_seo_title", "b_seo_desc", "b_h1"]);
+const BUILD_ONLY = new Set(["name", "seo_title", "seo_desc", "seo_kw", "og_sub", "h1", "docs", "lang_label", "faq_h", "b_seo_title", "b_seo_desc"]);
 
 export async function build({ check = false } = {}) {
   const I = await loadI18n(), en = I.en;
@@ -70,7 +70,7 @@ export async function build({ check = false } = {}) {
   const cssFull = (await Promise.all(["fonts.css", "base.css", "style.css"].map(f => readFile(new URL(f, src), "utf8")))).join("\n");
   const css = (await transform(cssFull, { loader: "css", minify: true, legalComments: "none" })).code;
   const bjs = (await bundle({ entryPoints: [fileURLToPath(new URL("batch.js", src))], bundle: true, minify: true, format: "iife", target: "es2020",
-    legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
+    external: ["/assets/share/*"], legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
   const jsName = `app.${hash(js)}.js`, cssName = `app.${hash(css)}.css`, bjsName = `batch.${hash(bjs)}.js`;
   const files = { ["assets/" + jsName]: js, ["assets/" + cssName]: css, ["assets/" + bjsName]: bjs };
 
