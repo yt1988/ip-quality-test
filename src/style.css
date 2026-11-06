@@ -417,3 +417,8 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt-seg-h .sg-n { font-family: var(--f-ui); }
 .sg-map i.x, .bt-mini i.x { opacity: .22; cursor: default; box-shadow: none !important; }
 .dot.x { background: var(--muted); opacity: .3; }
+/* the result's header: what there is, and sharing all of it; the sections under it need no rule of their own above */
+.bt-sum { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--line); }
+.bt-sum[hidden] { display: none; }
+.bt-sum-t { font-size: 15px; font-weight: 700; }
+.bt-sum:not([hidden]) + .bt-seg, .bt-sum:not([hidden]) + .bt-seg[hidden] + .bt-res { border-top: 0; padding-top: 0; margin-top: 0; }

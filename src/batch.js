@@ -67,10 +67,12 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     $("#rows").innerHTML = sortRows(rows, sort.col, sort.dir).map(row => `<tr data-st="${row.st}">${cells(row)}</tr>`).join("");
     $$("th [data-sort]").forEach(b => { const on = b.dataset.sort === sort.col; b.parentElement.setAttribute("aria-sort", on ? (sort.dir > 0 ? "ascending" : "descending") : "none"); });
     const done = rows.filter(r => r.st === "ok" || r.st === "err").length, segOk = segs.some(g => g.d);
-    // a list of /24s only: no table yet, the bar still says what there is and shares it
-    $("#res").hidden = !rows.length && !segs.length;
-    $(".bt-wrap").hidden = $(".bt-note").hidden = !rows.length;
-    $("#prog").textContent = !rows.length ? t("b_sr_count", { n: segs.length }) : shared ? t("b_n", { n: rows.length }) : t("b_prog", { n: done, of: rows.length });
+    // the whole result's header, above the ranges and the table: what there is, and the share button for all of it
+    // (a shared result has the shared banner instead)
+    $("#sum").hidden = shared || (!rows.length && !segs.length);
+    $("#sumT").textContent = [segs.length && t("b_sr_count", { n: segs.length }), rows.length && t("b_sum_ip", { n: rows.length })].filter(Boolean).join(" · ");
+    $("#res").hidden = !rows.length;
+    $("#prog").textContent = shared ? t("b_n", { n: rows.length }) : t("b_prog", { n: done, of: rows.length });
     $("#shareBtn").disabled = shared || done < rows.length || (!rows.some(r => r.r) && !segOk);
   }
   $$("th [data-sort]").forEach(b => {
@@ -189,7 +191,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   }
   function segList() {
     $("#seg").hidden = !segs.length;
-    $("#segN").textContent = segs.length > 1 ? t("b_sr_count", { n: segs.length }) : "";
+    $("#segN").textContent = "";
     $("#segList").innerHTML = segs.map(segRow).join("");
     $("#segList").hidden = segs.length < 2;   // one /24 needs no list: its grid is the whole story
     draw();
@@ -391,7 +393,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     const P = unpackRows(m[1]);
     if (P) {
       shared = true; at = P.at; rows = P.rows; document.documentElement.setAttribute("data-shared", "");
-      $(".bt-acts").hidden = true; $("#ask").hidden = true;
+      $("#ask").hidden = true;
       segs = P.segs.map(s => {
         const b3 = s.base ? s.base.split(".").slice(0, 3).join(".") : null;
         const count = Object.fromEntries(ST.map(x => [x, 0]));

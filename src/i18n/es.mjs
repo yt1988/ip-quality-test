@@ -288,5 +288,6 @@ export default {
   b_rg_v_n: "{n} de estas {m} direcciones están en listas",
   b_rg_v_0: "Ninguna de estas {m} direcciones está en una lista pública",
   b_rg_out: "Vecinos fuera del rango (como referencia)",
+  b_sum_ip: "{n} IP",
   b_note: "Cada IP se puntúa exactamente igual que en la comprobación individual; pulsa una IP para ver su informe completo. Un enlace compartido solo lleva los resultados de la tabla, tras el # del enlace, así que nunca llega al servidor.",
 };

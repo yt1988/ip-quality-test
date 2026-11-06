@@ -288,5 +288,6 @@ export default {
   b_rg_v_n: "{n} of these {m} addresses are listed",
   b_rg_v_0: "None of these {m} addresses is on a public list",
   b_rg_out: "Neighbours outside the range (for reference)",
+  b_sum_ip: "{n} IPs",
   b_note: "Each IP is scored exactly as on the single check; click an IP for its full report. A shared link carries only the table's results, after the # in the link, so it never reaches the server.",
 };

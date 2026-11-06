@@ -288,5 +288,6 @@ export default {
   b_rg_v_n: "{n} destes {m} endereços estão em listas",
   b_rg_v_0: "Nenhum destes {m} endereços está em uma lista pública",
   b_rg_out: "Vizinhos fora da faixa (para referência)",
+  b_sum_ip: "{n} IPs",
   b_note: "Cada IP recebe a nota exatamente como na verificação individual; clique num IP para ver o relatório completo. Um link compartilhado leva só os resultados da tabela, depois do # do link, então nunca chega ao servidor.",
 };

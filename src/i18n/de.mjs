@@ -288,5 +288,6 @@ export default {
   b_rg_v_n: "{n} dieser {m} Adressen stehen auf Listen",
   b_rg_v_0: "Keine dieser {m} Adressen steht auf einer öffentlichen Liste",
   b_rg_out: "Nachbarn außerhalb des Bereichs (zum Vergleich)",
+  b_sum_ip: "{n} IPs",
   b_note: "Jede IP wird genau wie bei der Einzelprüfung bewertet; ein Klick auf die IP öffnet den vollständigen Bericht. Ein geteilter Link enthält nur die Ergebnisse der Tabelle, hinter dem # im Link, und erreicht daher nie den Server.",
 };
