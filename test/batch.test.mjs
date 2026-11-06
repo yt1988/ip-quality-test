@@ -67,3 +67,22 @@ test("v6net: masks to the prefix, the first host stands for it", () => {
   assert.deepEqual(v6net("2001:4860:4860::8888", 48), { net: "2001:4860:4860::/48", ip: "2001:4860:4860::1" });
   assert.deepEqual(v6net("2001:4860:4861:ffff::1", 47), { net: "2001:4860:4860::/47", ip: "2001:4860:4860::1" });
 });
+
+test("parseList: says which entries were left out and why", () => {
+  const r = parse2("2001:db8::/48 10.0.0.1 8.8.8.8 8.8.8.8 nope 192.168.1.0/24");
+  assert.deepEqual(r.skip, { priv: ["2001:db8::/48", "10.0.0.1", "192.168.1.0/24"], dup: ["8.8.8.8"], bad: ["nope"] });
+  assert.equal(r.skipped, 5);
+});
+
+import { packSeg, unpackSeg } from "../src/batch.mjs";
+test("the /24 in a shared link: run-length coded colours, the range only with the addresses", () => {
+  const sts = Array(256).fill("ok"); sts[20] = "proxy"; sts[21] = "proxy"; sts[200] = "bad";
+  assert.deepEqual(unpackSeg(packSeg(sts)), sts);
+  assert.equal(packSeg(sts).length, 5);
+  const rows = [{ i: 0, ip: "8.8.8.8", st: "ok", r: rowOf(done) }];
+  const a = unpackRows(packRows(rows, { seg: { base: "95.216.1.0", sts } }));
+  assert.deepEqual(a.seg, { base: null, sts });
+  assert.equal(unpackRows(packRows(rows, { withIp: true, seg: { base: "95.216.1.0", sts } })).seg.base, "95.216.1.0");
+  assert.equal(unpackRows(packRows([], { seg: { base: "95.216.1.0", sts } })).rows.length, 0);
+  assert.equal(unpackSeg([[4, 255]]), null);
+});

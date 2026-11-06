@@ -383,3 +383,5 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt-seg-a .btn[hidden] { display: none; }
 .bt-rep { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 5px; font-size: 11.5px; line-height: 18px; background: var(--soft); color: var(--muted); cursor: help; }
 @media (max-width: 720px) { .bt-seg-p { width: 100%; } }
+[data-shared] .bt-seg { border-top: 0; padding-top: 0; }
+[data-shared] .bt-seg:not([hidden]) + .bt-res { margin-top: 4px; padding-top: 16px; border-top: 1px solid var(--line); }
