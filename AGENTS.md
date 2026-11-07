@@ -78,9 +78,19 @@ behaviour in [server/README.md](server/README.md)). Two systemd units come with 
 fetches the lists. The unit files in `server/` carry 1ms.dog's paths and port; adjust them to yours. On a Linux
 server (amd64), as root:
 
-1. **Build** (on any machine with Go):
+1. **Get the binary.** Every change to `server/` on `main` is built by GitHub Actions
+   (`.github/workflows/server-release.yml`) into a static linux/amd64 binary and published as a release tagged
+   `server-<short commit>`, the newest marked latest, with `SHA256SUMS`. Download and check it:
    ```bash
-   cd server && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o seg .
+   cd /tmp
+   curl -fLO https://github.com/yt1988/ip-quality-test/releases/latest/download/ipqs-seg-linux-amd64
+   curl -fLO https://github.com/yt1988/ip-quality-test/releases/latest/download/SHA256SUMS
+   sha256sum -c SHA256SUMS      # ipqs-seg-linux-amd64: OK
+   ```
+   A specific build: `releases/download/server-<short commit>/…` instead of `releases/latest/download/…`. Or build
+   it yourself on any machine with Go:
+   ```bash
+   cd server && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ipqs-seg-linux-amd64 .
    ```
 2. **A system user and directories**, for example:
    ```bash
@@ -89,7 +99,8 @@ server (amd64), as root:
    install -d -m 700 /etc/<app>
    ```
    The data directory comes from the unit's `StateDirectory`.
-3. **Install** the binary as `/opt/<app>/seg` (root-owned, mode 755) and the unit files in `/etc/systemd/system/`,
+3. **Install** the binary as `/opt/<app>/seg` (`install -m 755 ipqs-seg-linux-amd64 /opt/<app>/seg`) and the unit
+   files in `/etc/systemd/system/`,
    with `User=`, the paths, `-addr :<port>` and the certificate paths set to yours.
 4. **DNS and firewall**: `<your-domain>` A/AAAA to the server, not proxied by a CDN unless it passes `<port>`; open
    TCP `<port>`.
@@ -105,8 +116,9 @@ server (amd64), as root:
    `/v1/seg?ip=95.216.1.2` has `"lists":{…,"at":"…"}`; the update unit's journal shows one line per list. Then build
    the pages with `SEG_API=https://<your-domain>:<port>` and check that the card appears.
 
-To update the binary: upload it next to the old one, `mv` it over, restart the API service. The cache is in memory
-and refills.
+To update the binary: download and check the latest release as in step 1, install it next to the old one
+(`install -m 755 ipqs-seg-linux-amd64 /opt/<app>/seg.new`), `mv` it over, restart the API service. The cache is in
+memory and refills.
 
 The service logs nothing about visitors (no access log, and the HTTP server's own error log is silenced, as it would
 name clients); fetch errors are stripped of the URL so the token never reaches the journal. Keep it that way.

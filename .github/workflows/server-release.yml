@@ -1,0 +1,48 @@
+# When server/ (the /24 portrait service) changes on main: test it, build it for linux/amd64 as one static binary,
+# and publish it as a GitHub Release tagged server-<short commit>, marked latest, with SHA256SUMS. So a server can be
+# set up from the latest release without Go:
+#   https://github.com/yt1988/ip-quality-test/releases/latest/download/ipqs-seg-linux-amd64
+#   https://github.com/yt1988/ip-quality-test/releases/latest/download/SHA256SUMS
+# The pages and the Worker are deployed separately (Cloudflare); this workflow doesn't touch them.
+name: server release
+on:
+  push:
+    branches: [main]
+    paths: ["server/**", ".github/workflows/server-release.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: server-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache: false
+      - name: Test
+        working-directory: server
+        run: go test ./...
+      - name: Build
+        working-directory: server
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p ../dist
+          go build -trimpath -ldflags="-s -w" -o ../dist/ipqs-seg-linux-amd64 .
+          cd ../dist && sha256sum ipqs-seg-linux-amd64 > SHA256SUMS && cat SHA256SUMS
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="server-${GITHUB_SHA::7}"
+          notes="The /24 portrait service (server/) at ${GITHUB_SHA}, built for linux/amd64 (static, CGO_ENABLED=0, -trimpath -ldflags=\"-s -w\").
+
+          Install as /opt/<app>/seg and check it against SHA256SUMS; setup in AGENTS.md, \"The /24 portrait service\"."
+          gh release create "$tag" dist/ipqs-seg-linux-amd64 dist/SHA256SUMS --target "$GITHUB_SHA" --title "$tag" --notes "$notes" --latest
