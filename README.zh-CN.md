@@ -99,6 +99,8 @@ SITE_URL=https://ip.example.com node scripts/build.mjs
 
 ## 开发
 
+要接手这个项目，或者用 AI 代理来改它，先看 [AGENTS.md](AGENTS.md)（本地运行、按改动范围选测试、部署、VPS 服务）和 [docs/decisions.md](docs/decisions.md)。
+
 ```bash
 npm install
 npm run dev        # wrangler dev，http://localhost:8792（本地拿不到本机地址，请用 ?ip=）

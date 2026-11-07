@@ -5,13 +5,14 @@ The service behind ipqs's "/24 portrait" card, on the 1ms.dog VPS. For an IPv4 a
 - **Reverse DNS**: all 256 names, asked of 1.1.1.1 and 8.8.8.8 from the server, then sorted by what they say
   (hosting, home and mobile access, fixed business lines, VPN/proxy words, mail). The most common domains and a few
   sample names come back with the counts.
-- **Prefix**: the announced prefix holding it and its origin AS (RIPEstat `network-info`).
+- **Prefix**: the announced prefix holding it and its origin AS (Team Cymru's DNS, `origin.asn.cymru.com`; RIPEstat
+  `network-info` when that has no answer).
 - **Public lists**, fetched once a day into a per-address index (about 10 MB):
   IP2Proxy PX1 LITE (open proxies; free with attribution, needs a free account's download token), IPsum (malicious
   IPs with a 1–10 score; Unlicense), X4BNet lists_vpn (VPN and data-centre ranges; MIT), Spamhaus DROP, the Tor
   Project's exit list. The page credits them under the card.
 
-No address in the /24 is contacted. Names and prefix are cached in memory for 7 days (at most 5,000 /24s; a sweep
+No address in the /24 is contacted. Names and prefix are cached in memory for 7 days (at most 3,000 /24s, and only when the prefix is known; a sweep
 with fewer than 240 answers isn't kept); the lists are read fresh on every request. New /24s are limited to 30 per
 client address per hour and 4 sweeps at a time; cached ones are free. Nothing is logged, including the HTTP server's
 own error log, which would name clients.
