@@ -99,7 +99,7 @@ On 1ms.dog the page also gets the site's shared top bar, analytics and theme/lan
 
 ## Development
 
-Taking the project over, or working on it with an AI agent: start with [AGENTS.md](AGENTS.md) (running, testing by what changed, deploying, the VPS service) and [docs/decisions.md](docs/decisions.md).
+Taking the project over, or working on it with an AI agent: start with [AGENTS.md](AGENTS.md) (running, testing by what changed, deploying, the /24 portrait service) and [docs/decisions.md](docs/decisions.md).
 
 ```bash
 npm install
