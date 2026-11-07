@@ -49,7 +49,7 @@ test("sortRows: by score high first, unknown last, ties by place", () => {
 
 import { readBeacon, PROBE } from "../src/probe.mjs";
 test("readBeacon: known sources, 0 or 1, a time; anything else is dropped", () => {
-  assert.deepEqual(readBeacon(JSON.stringify({ r: [["geojs", 1, 120.4], ["doh", 0, 99999]] })), [{ id: "geojs", ok: true, ms: 120 }, { id: "doh", ok: false, ms: 30000 }]);
+  assert.deepEqual(readBeacon(JSON.stringify({ r: [["geojs", 1, 120.4], ["doh", 0, 99999]] })), [{ id: "geojs", ok: true, ms: 120, why: "" }, { id: "doh", ok: false, ms: 30000, why: "" }]);
   for (const bad of ["x", "{}", JSON.stringify({ r: [["evil", 1, 1]] }), JSON.stringify({ r: [["geojs", 2, 1]] }), JSON.stringify({ r: Array(PROBE.length + 1).fill(["geojs", 1, 1]) })])
     assert.equal(readBeacon(bad), null);
 });
@@ -104,4 +104,16 @@ test("the /24 in a shared link: run-length coded colours, the range only with th
   assert.deepEqual([b.segs[0].base, b.segs[0].prefix], ["95.216.1.0", { prefix: "95.216.0.0/16", asns: [24940] }]);
   assert.equal(unpackRows(packRows([], { segs: S })).rows.length, 0);
   assert.equal(unpackSeg([[4, 255]]), null);
+});
+
+import { whyOf } from "../src/probe.mjs";
+test("probe: a failure reduced to one word", () => {
+  assert.equal(whyOf("TypeError: Failed to fetch"), "net");
+  assert.equal(whyOf("Failed to fetch"), "net");
+  assert.equal(whyOf("signal timed out"), "timeout");
+  assert.equal(whyOf("HTTP 429"), "http4");
+  assert.equal(whyOf("HTTP 503"), "http5");
+  assert.equal(whyOf("Unexpected token < in JSON"), "parse");
+  assert.equal(whyOf("Reserved range"), "nok");
+  assert.deepEqual(readBeacon(JSON.stringify({ r: [["ipwho", 0, 10, "net"], ["geojs", 1, 5, "net"], ["doh", 0, 3, "evil"]] })).map(x => x.why), ["net", "", ""]);
 });

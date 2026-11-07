@@ -12,11 +12,11 @@ import { SOURCES, DNSBL, ELSEWHERE } from "./sources.mjs";
 import { assess } from "./score.mjs";
 import { decode, unpackResults, SHARE_PATH } from "./share.mjs";
 import * as I18N from "./langs.mjs";
-import { PROBE, SERVER_RATE, readBeacon } from "./probe.mjs";
+import { PROBE, SERVER_RATE, readBeacon, whyOf } from "./probe.mjs";
 
 // the measurement in src/probe.mjs: one data point per source asked (who asked, answered or not, how long, country)
-const probePoint = (env, by, id, ok, ms, cc) => {
-  try { env.PROBE.writeDataPoint({ blobs: [id, by, ok ? "ok" : "fail", cc || ""], doubles: [1, ms], indexes: [id] }); } catch (e) {}
+const probePoint = (env, by, id, ok, ms, cc, why) => {
+  try { env.PROBE.writeDataPoint({ blobs: [id, by, ok ? "ok" : "fail", cc || "", ok ? "" : why || ""], doubles: [1, ms], indexes: [id] }); } catch (e) {}
 };
 async function probeBeacon(request, env) {
   const done = new Response(null, { status: 204 });
@@ -25,7 +25,7 @@ async function probeBeacon(request, env) {
   const origin = request.headers.get("origin");
   if (!env.PROBE || (origin && origin !== new URL(request.url).origin) || +(request.headers.get("content-length") || 0) > 600) return done;
   const r = readBeacon((await request.text()).slice(0, 600));
-  if (r) for (const x of r) probePoint(env, "browser", x.id, x.ok, x.ms, request.cf && request.cf.country);
+  if (r) for (const x of r) probePoint(env, "browser", x.id, x.ok, x.ms, request.cf && request.cf.country, x.why);
   return done;
 }
 
@@ -139,15 +139,17 @@ async function check(request, env, ctx) {
       } else {
         const ctx2 = { env, torList };
         const list = SOURCES.filter(s => !s.own && !skip[s.id]);
+        const blT0 = Date.now(); let blMs = 0;
         const [sources, bl] = await Promise.all([
           Promise.all(list.map(s => runSource(s, ip, ctx2).then(r => { send({ t: "src", ...r }); return r; }))),
-          dnsbl(ip, b => send({ t: "bl", ...b })),
+          dnsbl(ip, b => send({ t: "bl", ...b })).then(r => { blMs = Date.now() - blT0; return r; }),
         ]);
         raw = { at: new Date().toISOString(), sources, dnsbl: bl };
         // the measurement (src/probe.mjs): the same sources, asked by the Worker, on a sample of fresh lookups
         if (env.PROBE && Math.random() < SERVER_RATE) {
-          for (const r of sources) if (PROBE.includes(r.id)) probePoint(env, "server", r.id, r.ok, r.ms, request.cf && request.cf.country);
-          if (bl.length) probePoint(env, "server", "doh", bl.some(b => b.listed !== null), 0, request.cf && request.cf.country);
+          for (const r of sources) if (PROBE.includes(r.id)) probePoint(env, "server", r.id, r.ok, r.ms, request.cf && request.cf.country, r.ok ? "" : whyOf(r.err));
+          // the blocklists: answered when any of them answered, in the time all of them took
+          if (bl.length) probePoint(env, "server", "doh", bl.some(b => b.listed !== null), blMs, request.cf && request.cf.country, "net");
         }
         ctx.waitUntil(cache.put(key, new Response(JSON.stringify(raw), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` } })));
       }

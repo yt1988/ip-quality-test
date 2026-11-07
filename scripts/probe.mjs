@@ -12,8 +12,8 @@ if (!account) {
   const r = await fetch("https://api.cloudflare.com/client/v4/accounts", { headers }).then(r => r.json());
   account = r.result && r.result[0] && r.result[0].id;
 }
-const sql = `SELECT blob1 AS id, blob2 AS by, blob3 AS res, blob4 = 'CN' AS cn, SUM(_sample_interval) AS n, SUM(_sample_interval * double2) AS ms
-  FROM ipqs_probe WHERE timestamp > NOW() - INTERVAL '${days}' DAY GROUP BY id, by, res, cn FORMAT JSON`;
+const sql = `SELECT blob1 AS id, blob2 AS by, blob3 AS res, blob4 = 'CN' AS cn, blob5 AS why, SUM(_sample_interval) AS n, SUM(_sample_interval * double2) AS ms
+  FROM ipqs_probe WHERE timestamp > NOW() - INTERVAL '${days}' DAY GROUP BY id, by, res, cn, why FORMAT JSON`;
 const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/analytics_engine/sql`, { method: "POST", headers, body: sql });
 if (!res.ok) { console.error(res.status, await res.text()); process.exit(1); }
 const rows = (await res.json()).data || [];
@@ -23,6 +23,8 @@ for (const r of rows) {
   for (const scope of ["all", r.cn ? "cn" : null].filter(Boolean)) {
     const c = k[r.by + ":" + scope] ||= { ok: 0, n: 0, ms: 0 };
     c.n += +r.n; if (r.res === "ok") { c.ok += +r.n; c.ms += +r.ms; }
+    // why the failures failed (recorded since the reasons were added; older failures have none)
+    else if (r.why) { c.why ||= {}; c.why[r.why] = (c.why[r.why] || 0) + +r.n; }
   }
 }
 const pct = c => c && c.n ? `${Math.round(100 * c.ok / c.n)}% of ${c.n}${c.ok ? `, ${Math.round(c.ms / c.ok)} ms` : ""}` : "–";
@@ -31,4 +33,10 @@ console.log("source".padEnd(12), "browser".padEnd(26), "browser, CN".padEnd(26),
 for (const id of Object.keys(T).sort()) {
   const k = T[id];
   console.log(id.padEnd(12), pct(k["browser:all"]).padEnd(26), pct(k["browser:cn"]).padEnd(26), pct(k["server:all"]).padEnd(26));
+}
+const whys = Object.keys(T).sort().filter(id => T[id]["browser:all"] && T[id]["browser:all"].why);
+if (whys.length) {
+  console.log("
+why the browser's failures failed (net: no answer at all, blocked or refused; timeout; http4/http5; parse; nok: an answer saying it failed)");
+  for (const id of whys) console.log(id.padEnd(12), Object.entries(T[id]["browser:all"].why).sort((a, b) => b[1] - a[1]).map(([w, n]) => w + " " + n).join(", "));
 }

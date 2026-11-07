@@ -8,7 +8,7 @@ import { ccOfName, SOURCES } from "./sources.mjs";
 import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
 import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
-import { PROBE, BROWSER_RATE, DOH_TEST } from "./probe.mjs";
+import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
 
 (function () {
   "use strict";
@@ -294,11 +294,15 @@ import { PROBE, BROWSER_RATE, DOH_TEST } from "./probe.mjs";
     const v4 = family(ip) === 4;
     const doh = async () => {
       const t0 = Date.now();
-      try { const j = await getJ(DOH_TEST, 5000); return ["doh", j.Status === 0 ? 1 : 0, Date.now() - t0]; }
-      catch (e) { return ["doh", 0, Date.now() - t0]; }
+      // with the Accept header, as the Worker asks it (Cloudflare answers ?ct= with 400)
+      try {
+        const r = await fetch(DOH_TEST, { headers: { Accept: "application/dns-json" }, cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(5000) });
+        if (!r.ok) return ["doh", 0, Date.now() - t0, whyOf("HTTP " + r.status)];
+        const j = await r.json(); return j.Status === 0 ? ["doh", 1, Date.now() - t0] : ["doh", 0, Date.now() - t0, "nok"];
+      } catch (e) { return ["doh", 0, Date.now() - t0, whyOf(e && (e.name === "TimeoutError" ? "timeout" : e.message))]; }
     };
     const ids = PROBE.filter(id => SRCDEF[id] && (v4 || SRCDEF[id].v6 !== false));
-    const r = await Promise.all([...ids.map(id => inBrowser(id, ip).then(x => [id, x.ok ? 1 : 0, x.ms])), ...(v4 ? [doh()] : [])]);
+    const r = await Promise.all([...ids.map(id => inBrowser(id, ip).then(x => x.ok ? [id, 1, x.ms] : [id, 0, x.ms, whyOf(x.err)])), ...(v4 ? [doh()] : [])]);
     fetch("/api/probe", { method: "POST", body: JSON.stringify({ r }), keepalive: true, credentials: "omit" }).catch(() => {});
   }
 
