@@ -544,7 +544,7 @@ import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
     SHARED = P;
     document.documentElement.setAttribute("data-shared", "");
     // the shared banner: whose result this is, and a button that checks the visitor's own address on the language page
-    if (!EMBED) import("/assets/share/share.js?v=8").then(({ received }) =>
+    if (!EMBED) import("/assets/share/share.js?v=9").then(({ received }) =>
       received({ lang: LANG, ts: P.t * 60000, at: $(".hero"), test: () => { location.href = D.paths[LANG]; } }), () => {});
     reset(P.i || null);
     const { res, bl } = unpackResults(P);
@@ -929,7 +929,7 @@ import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
   }
   $("#shareBtn").onclick = async () => {
     if (!SNAP) return;
-    const snap = SNAP, { share } = await import("/assets/share/share.js?v=8");
+    const snap = SNAP, { share } = await import("/assets/share/share.js?v=9");
     // the link is packed (deflated) ahead, both ways, as the dialog asks for it without waiting
     const can = !SHARED || !!SHARED.i, links = { false: await shareLink(false), true: can ? await shareLink(true) : "" };
     if (snap !== SNAP) return;
