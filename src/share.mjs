@@ -2,16 +2,23 @@
 // visitor's browser; the page opening it re-scores the answers (src/score.mjs) and draws them like a fresh check, and
 // the Worker reads the same link to put the grade into the link preview.
 //
-// Link: <language page>r/<format>.<base64url of the deflated JSON>. The format number leads, so a later format can
-// change everything after it while links already shared keep opening. Format 1:
+// Link: <language page>r/<format>.<the JSON, through 1ms.dog's codec>. The format number leads, so a later format can
+// change everything after it while links already shared keep opening. Format 2 (since 2026-11-08) is the codec's
+// pack(): "z" + deflated, or "u" + plain when the browser making the link can't compress (Chrome before 103, Safari
+// before 16.4), so sharing works in every browser. Format 1 links are the bare deflate and read as the codec's
+// legacy form. The payload is the same in both:
 //   { t: minutes since 1970, f: 4 | 6, i?: address, s: { source id: answer }, x: [sources that failed],
 //     k: { source id: why it doesn't apply }, b: { blocklist id: 1 listed | 0 clean | 2 no answer },
 //     c?: Cloudflare's human check when it was run: "p" passed without a click | "c" after a click | "f" refused }
 // Without the address (the default) the answers keep only what the score and the findings need: the country, network
 // type, flags and risk scores, never the city, network name, reverse DNS or registry record.
 import { DNSBL } from "./sources.mjs";
+// 1ms.dog's shared codec, copied byte for byte from 1ms-shell (served as /assets/share/codec.js, where 1ms-shell's
+// check compares it); the page's bundle and the Worker both build from this one file
+import { pack as packText, unpack as unpackText, CodecError } from "../public/assets/share/codec.js";
+export { CodecError };
 
-export const FORMAT = 1;
+export const FORMAT = 2;
 const KEEP = ["cc", "regCc", "asCc", "rir", "type", "tor", "vpn", "proxy", "abuser", "relay", "risk", "anycast", "ports", "tags"];
 const BL = { 1: true, 0: false, 2: null };
 // Cloudflare's human check: the page's words for it and the link's letters
@@ -48,19 +55,19 @@ export function unpackResults(P) {
   return { res, bl };
 }
 
-const b64u = bytes => { let s = ""; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
-const b64d = str => { const s = atob(str.replace(/-/g, "+").replace(/_/g, "/")); const b = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; };
-const zip = async text => new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer());
-const unzip = bytes => new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+export const encode = async P => FORMAT + "." + await packText(JSON.stringify(P));
 
-export const encode = async P => FORMAT + "." + b64u(await zip(JSON.stringify(P)));
-
-// the payload of a link's last path part, or null when it isn't one this code can read
+// The payload of a link's last path part, or null when it isn't one this code can read. A compressed link this
+// browser can't decompress throws CodecError("inflate"): the caller says the browser is too old rather than showing
+// nothing (the Worker can always read it).
 export async function decode(code) {
   const m = /^(\d+)\.([A-Za-z0-9_-]{8,8000})$/.exec(code || "");
-  if (!m || +m[1] !== FORMAT) return null;
+  if (!m || !(+m[1] === 1 || +m[1] === FORMAT)) return null;
+  let text;
+  try { text = await unpackText(m[2], { legacy: +m[1] === 1 }); }
+  catch (e) { if (e instanceof CodecError && e.reason === "inflate") throw e; return null; }
   try {
-    const P = JSON.parse(await unzip(b64d(m[2])));
+    const P = JSON.parse(text);
     if (!P || typeof P !== "object" || !P.s || typeof P.s !== "object" || !(P.f === 4 || P.f === 6) || typeof P.t !== "number") return null;
     for (const id in P.s) if (!P.s[id] || typeof P.s[id] !== "object") return null;
     return P;

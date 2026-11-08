@@ -64,12 +64,12 @@ export async function build({ check = false } = {}) {
   const tpl = await readFile(new URL("page.html", src), "utf8"), btpl = await readFile(new URL("batch.html", src), "utf8");
 
   const root = fileURLToPath(new URL("..", import.meta.url));
-  const js = (await bundle({ entryPoints: [fileURLToPath(new URL("app.js", src))], bundle: true, minify: true, format: "iife", target: "es2020",
+  const js = (await bundle({ entryPoints: [fileURLToPath(new URL("app.js", src))], bundle: true, minify: true, format: "iife", target: ["es2019", "chrome70", "safari12", "firefox68", "edge79"],
     // the share dialog stays its own file, loaded from /assets/share/ when someone shares (copied from 1ms-shell)
     external: ["/assets/share/*"], legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
   const cssFull = (await Promise.all(["fonts.css", "base.css", "style.css"].map(f => readFile(new URL(f, src), "utf8")))).join("\n");
   const css = (await transform(cssFull, { loader: "css", minify: true, legalComments: "none" })).code;
-  const bjs = (await bundle({ entryPoints: [fileURLToPath(new URL("batch.js", src))], bundle: true, minify: true, format: "iife", target: "es2020",
+  const bjs = (await bundle({ entryPoints: [fileURLToPath(new URL("batch.js", src))], bundle: true, minify: true, format: "iife", target: ["es2019", "chrome70", "safari12", "firefox68", "edge79"],
     external: ["/assets/share/*"], legalComments: "none", write: false, absWorkingDir: root })).outputFiles[0].text;
   const jsName = `app.${hash(js)}.js`, cssName = `app.${hash(css)}.css`, bjsName = `batch.${hash(bjs)}.js`;
   const files = { ["assets/" + jsName]: js, ["assets/" + cssName]: css, ["assets/" + bjsName]: bjs };

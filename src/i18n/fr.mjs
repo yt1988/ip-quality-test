@@ -289,5 +289,6 @@ export default {
   b_rg_v_0: "Aucune de ces {m} adresses n’est sur une liste publique",
   b_rg_out: "Voisins hors de la plage (pour référence)",
   b_sum_ip: "{n} IP",
+  shared_old: "Ce résultat partagé demande un navigateur plus récent : mettez le vôtre à jour ou essayez-en un autre",
   b_note: "Chaque IP est notée exactement comme pour la vérification simple ; cliquez sur une IP pour son rapport complet. Un lien partagé ne contient que les résultats du tableau, après le # du lien : ils n’atteignent jamais le serveur.",
 };

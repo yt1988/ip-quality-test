@@ -536,7 +536,10 @@ import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
   /* ---------- a shared result ---------- */
   // the answers in the link fill the rows and the findings as a check would; the address only when it was shared
   async function replay(code) {
-    const P = await decode(code);
+    let P;
+    // a compressed link a browser this old can't open (DecompressionStream's deflate-raw: Chrome 103, Safari 16.4): say so, not an empty result
+    try { P = await decode(code); }
+    catch (e) { toast(t("shared_old"), 6000); history.replaceState(null, "", D.paths[LANG]); setTimeout(() => location.reload(), 6000); return; }
     if (!P) { toast(t("shared_bad")); history.replaceState(null, "", D.paths[LANG]); setTimeout(() => location.reload(), 1500); return; }
     SHARED = P;
     document.documentElement.setAttribute("data-shared", "");
@@ -943,10 +946,10 @@ import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
     }).open();
   };
   let toastEl, toastT = 0;
-  function toast(msg) {
+  function toast(msg, ms = 1800) {
     if (!toastEl) toastEl = document.body.appendChild(Object.assign(document.createElement("div"), { className: "toast", role: "status" }));
     toastEl.textContent = msg; toastEl.classList.add("on");
-    clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 1800);
+    clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), ms);
   }
 
   /* ---------- the form ---------- */

@@ -16,7 +16,7 @@ const snap = { at: "2026-11-01T04:00:00.000Z", v: 4, ip: "95.216.1.2", res, fail
 test("a link scores as the check did", async () => {
   for (const details of [false, true]) {
     const code = await encode(pack({ ...snap, details }));
-    assert.match(code, /^1\.[A-Za-z0-9_-]+$/);
+    assert.match(code, /^2\.z[A-Za-z0-9_-]+$/);
     const P = await decode(code);
     const u = unpackResults(P), a = assess(u.res, u.bl), b = assess(res, bl.map(x => ({ ...x, name: x.id })));
     assert.equal(a.score, b.score); assert.equal(a.grade, b.grade);
@@ -47,4 +47,22 @@ test("Cloudflare's human check rides along when it was run, and older links simp
   for (const cf of ["pass", "click", "fail"]) assert.equal(CF_OF[(await decode(await encode(pack({ ...snap, cf })))).c], cf);
   assert.equal((await decode(await encode(pack(snap)))).c, undefined);
   assert.equal(pack({ ...snap, cf: "maybe" }).c, undefined);
+});
+
+// links from before format 2: the bare deflate, as the old encode wrote it
+const oldEncode = async P => {
+  const bytes = new Uint8Array(await new Response(new Blob([JSON.stringify(P)]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer());
+  let s = ""; for (const b of bytes) s += String.fromCharCode(b);
+  return "1." + btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+test("format 2 through the shared codec; format 1 links still open; an uncompressed link reads too", async () => {
+  const P = pack(snap);
+  const code = await encode(P);
+  assert.match(code, /^2\.z[A-Za-z0-9_-]+$/);
+  assert.deepEqual(await decode(code), JSON.parse(JSON.stringify(P)));
+  assert.deepEqual(await decode(await oldEncode(P)), JSON.parse(JSON.stringify(P)));
+  // what a browser without CompressionStream writes: "u" + the plain JSON
+  const plain = "2.u" + Buffer.from(JSON.stringify(P)).toString("base64url");
+  assert.deepEqual(await decode(plain), JSON.parse(JSON.stringify(P)));
+  for (const c of ["3." + code.slice(2), "2.x" + code.slice(3), "2.zAAAAAAAAAAAA"]) assert.equal(await decode(c), null);
 });
