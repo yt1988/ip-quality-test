@@ -8,6 +8,7 @@ export default {
   og_sub: "Ein Dutzend IP-Datenbanken und 8 Blocklisten, ein Score",
   h1: "IP-Qualität prüfen: Wie sauber ist deine IP?",
   share_btn: "Teilen",
+  rp_wrong: "Ergebnis falsch",
   shared_bad: "Dieser geteilte Link lässt sich nicht öffnen. Vielleicht wurde er nicht vollständig kopiert", r_hidden: "ausgeblendet",
   card_title: "Meine IP-Qualität", card_cta: "Wie sauber ist deine IP?",
   og_r_title: "Meine IP-Qualität: Note {g}, {s}/100 ({v})",

@@ -8,6 +8,7 @@ export default {
   og_sub: "十数個の IP データベースと 8 つのブラックリストを、ひとつのスコアに",
   h1: "IP 品質チェック：あなたの IP はどれくらいきれい？",
   share_btn: "共有",
+  rp_wrong: "結果が違う",
   shared_bad: "この共有リンクは開けません。コピーが途中で切れているかもしれません", r_hidden: "非表示",
   card_title: "わたしの IP 品質", card_cta: "あなたの IP はどれくらいきれい？",
   og_r_title: "わたしの IP 品質：{g} ランク、{s} 点（{v}）",

@@ -953,6 +953,15 @@ import { reportOf } from "./report.mjs";
   // are built in src/report.mjs, so the privacy scope is a shared link's and the tests can check the dialog's limits.
   // No result yet, or the check failed: nothing to say (the dialog then lists only what the page tells about itself).
   window.msReport = () => (SNAP ? reportOf({ snap: SNAP, lang: LANG, t, country }) : null);
+  // beside the findings there is an entry of our own: it opens the same dialog with a line already saying the result
+  // looks wrong, so the dialog asks which part and offers the picks as one-tap answers. The bar and footer buttons have
+  // no words of their own, and the dialog only offers picks when it started from [data-ms-report] (the entry in the
+  // head, src/report.js in 1ms-shell). No shell (a fork serving the page itself): no entry.
+  const rpBtn = $("#rpBtn");
+  if (!EMBED && typeof window.msOpenReport === "function") {
+    rpBtn.setAttribute("data-ms-report", t("rp_wrong") + (CJK ? "：" : ": "));
+    rpBtn.hidden = false;
+  }
 
   let toastEl, toastT = 0;
   function toast(msg, ms = 1800) {

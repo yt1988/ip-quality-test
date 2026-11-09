@@ -8,6 +8,7 @@ export default {
   og_sub: "Una docena de bases de datos de IP y 8 listas negras, una sola puntuación",
   h1: "Calidad de IP: ¿qué tan limpia está tu IP?",
   share_btn: "Compartir",
+  rp_wrong: "El resultado falla",
   shared_bad: "No se puede abrir este enlace compartido. Puede que se haya copiado incompleto", r_hidden: "oculta",
   card_title: "La calidad de mi IP", card_cta: "¿Qué tan limpia está tu IP?",
   og_r_title: "La calidad de mi IP: nivel {g}, {s}/100 ({v})",

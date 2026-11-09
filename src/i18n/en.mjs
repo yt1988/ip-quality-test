@@ -8,6 +8,7 @@ export default {
   og_sub: "A dozen IP databases and 8 blocklists, one score",
   h1: "IP quality check: how clean is your IP?",
   share_btn: "Share",
+  rp_wrong: "Result is wrong",
   shared_bad: "This shared link can't be opened. It may have been copied incompletely", r_hidden: "hidden",
   card_title: "My IP quality", card_cta: "How clean is your IP?",
   og_r_title: "My IP quality: grade {g}, {s}/100 ({v})",

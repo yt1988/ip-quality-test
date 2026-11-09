@@ -8,6 +8,7 @@ export default {
   og_sub: "十几个 IP 数据库加 8 个黑名单，一个分数说清",
   h1: "IP 纯净度检测：你的 IP 有多干净？",
   share_btn: "分享",
+  rp_wrong: "结果不对",
   shared_bad: "这个分享链接打不开，可能复制得不完整", r_hidden: "已隐藏",
   card_title: "我的 IP 质量", card_cta: "测测你的 IP 有多干净",
   og_r_title: "我的 IP 质量：{g} 级，{s} 分（{v}）",

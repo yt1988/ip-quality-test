@@ -8,6 +8,7 @@ export default {
   og_sub: "IP 데이터베이스 십여 곳과 블랙리스트 8개를 점수 하나로",
   h1: "IP 품질 검사: 내 IP는 얼마나 깨끗할까?",
   share_btn: "공유",
+  rp_wrong: "결과가 틀려요",
   shared_bad: "이 공유 링크를 열 수 없어요. 복사하다 일부가 잘렸을 수 있어요", r_hidden: "숨김",
   card_title: "내 IP 품질", card_cta: "내 IP는 얼마나 깨끗할까?",
   og_r_title: "내 IP 품질: {g}등급, {s}점 ({v})",
