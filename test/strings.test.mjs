@@ -11,11 +11,12 @@ const read = f => readFile(new URL("../" + f, import.meta.url), "utf8");
 const all = (s, re) => [...s.matchAll(re)].map(m => m[1]);
 
 test("every key the page uses exists in every language", async () => {
-  const [app, score, sources, page] = await Promise.all(["src/app.js", "src/score.mjs", "src/sources.mjs", "src/page.html"].map(read));
+  const [app, report, score, sources, page] = await Promise.all(["src/app.js", "src/report.mjs", "src/score.mjs", "src/sources.mjs", "src/page.html"].map(read));
   const types = ["hosting", "residential", "mobile", "business", "education", "government"];
   const parts = all(score, /take\("p_(\w+)"/g);
   const keys = new Set([
     ...all(app, /\bt\("(\w+)"/g).filter(k => !k.endsWith("_")),   // t("key"); t("prefix_" + x) is expanded below
+    ...all(report, /\bt\("(\w+)"/g).filter(k => !k.endsWith("_")),   // the report dialog's line and picks
     ...all(app, /"(err_\w+)"/g),                          // the error messages picked by name
     ...all(score, /"((?:n|u)_\w+)"/g).filter(k => !k.endsWith("_")),   // notes and verdict reasons from the scoring
     ...all(score, /"(n_type_)" \+/g).flatMap(() => types.map(x => "n_type_" + x)),
@@ -38,8 +39,8 @@ test("every key the page uses exists in every language", async () => {
 });
 
 test("no English fallback in the page script or the build", async () => {
-  const [app, build] = await Promise.all(["src/app.js", "scripts/build.mjs"].map(read));
-  for (const [name, s] of [["src/app.js", app], ["scripts/build.mjs", build]]) {
+  const [app, report, build] = await Promise.all(["src/app.js", "src/report.mjs", "scripts/build.mjs"].map(read));
+  for (const [name, s] of [["src/app.js", app], ["src/report.mjs", report], ["scripts/build.mjs", build]]) {
     assert.ok(!/\|\|\s*\w+(\.name)?\.en\b|\?\?\s*en\[/.test(s), name + " falls back to English");
   }
 });

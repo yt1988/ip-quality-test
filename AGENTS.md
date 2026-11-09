@@ -45,7 +45,7 @@ running deployment.
 | Change | Run |
 |---|---|
 | Strings, page markup, styles, page code (`src/*.html`, `src/style.css`, `src/app.js`, `src/batch.js`, `src/i18n/`) | `npm run build && npm test`, then open the page (dev server or static) and look at it in light and dark, desktop and 390 px wide |
-| Scoring, sources, sharing, IP parsing (`src/score.mjs`, `src/sources.mjs`, `src/share.mjs`, `src/ip.mjs`, `src/batch.mjs`, `src/seg.mjs`) | `npm run build && npm test`, and a few real addresses through `npm run dev` with `?ip=` |
+| Scoring, sources, sharing, IP parsing, the report dialog's data (`src/score.mjs`, `src/sources.mjs`, `src/share.mjs`, `src/ip.mjs`, `src/batch.mjs`, `src/seg.mjs`, `src/report.mjs`) | `npm run build && npm test`, and a few real addresses through `npm run dev` with `?ip=` |
 | Worker (`src/worker.js`, `wrangler.toml`) | `npm test`, then `npm run dev` and `curl -N "http://localhost:8792/api/check?ip=8.8.8.8"` |
 | Headline or grade texts | `npm run og` to redraw the link-preview images in `public/og/` |
 | Go service (`server/`) | `cd server && go test ./...` |

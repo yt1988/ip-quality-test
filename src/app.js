@@ -9,6 +9,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
 import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
 import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
+import { reportOf } from "./report.mjs";
 
 (function () {
   "use strict";
@@ -945,6 +946,14 @@ import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
       ts: Date.parse(snap.at),
     }).open();
   };
+  /* ---------- reporting a problem (the shell's dialog) ---------- */
+  // The shell puts a "report a problem" button in its bar and in the footer; when the dialog opens it asks this page
+  // what the visitor saw (window.msReport, docs/tool-contract.md section 4). The line, the JSON behind the score (the
+  // address as its /24, nothing a shared link hides by default) and the readings a visitor most often says are wrong
+  // are built in src/report.mjs, so the privacy scope is a shared link's and the tests can check the dialog's limits.
+  // No result yet, or the check failed: nothing to say (the dialog then lists only what the page tells about itself).
+  window.msReport = () => (SNAP ? reportOf({ snap: SNAP, lang: LANG, t, country }) : null);
+
   let toastEl, toastT = 0;
   function toast(msg, ms = 1800) {
     if (!toastEl) toastEl = document.body.appendChild(Object.assign(document.createElement("div"), { className: "toast", role: "status" }));
