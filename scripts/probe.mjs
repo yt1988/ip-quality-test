@@ -36,7 +36,6 @@ for (const id of Object.keys(T).sort()) {
 }
 const whys = Object.keys(T).sort().filter(id => T[id]["browser:all"] && T[id]["browser:all"].why);
 if (whys.length) {
-  console.log("
-why the browser's failures failed (net: no answer at all, blocked or refused; timeout; http4/http5; parse; nok: an answer saying it failed)");
+  console.log("\nwhy the browser's failures failed (net: no answer at all, blocked or refused; timeout; http4/http5; parse; nok: an answer saying it failed)");
   for (const id of whys) console.log(id.padEnd(12), Object.entries(T[id]["browser:all"].why).sort((a, b) => b[1] - a[1]).map(([w, n]) => w + " " + n).join(", "));
 }
