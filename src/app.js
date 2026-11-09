@@ -8,7 +8,6 @@ import { ccOfName, SOURCES } from "./sources.mjs";
 import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
 import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
-import { PROBE, BROWSER_RATE, DOH_TEST, whyOf } from "./probe.mjs";
 import { reportOf } from "./report.mjs";
 
 (function () {
@@ -284,27 +283,7 @@ import { reportOf } from "./report.mjs";
       // no source answering at all is a failed check, not a clean address
       const cur = CUR;
       Promise.allSettled(PEND).then(() => { if (CUR !== cur) return; if (RES.length) finish({ ...m, ...assess(RES, BLR) }); else fail("err_net"); });
-      if (cur.self && !SHARED && !EMBED && Math.random() < BROWSER_RATE) setTimeout(() => probe(cur.ip), 3000);
     } else if (m.t === "error") fail("err_net");
-  }
-
-  // The measurement in src/probe.mjs, on a sample of the visitor's own checks, once the result is in: each source the
-  // browser could ask itself, asked once more from here, and whether it answered (counts only: nothing about the
-  // address or the visitor is sent)
-  async function probe(ip) {
-    const v4 = family(ip) === 4;
-    const doh = async () => {
-      const t0 = Date.now();
-      // with the Accept header, as the Worker asks it (Cloudflare answers ?ct= with 400)
-      try {
-        const r = await fetch(DOH_TEST, { headers: { Accept: "application/dns-json" }, cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(5000) });
-        if (!r.ok) return ["doh", 0, Date.now() - t0, whyOf("HTTP " + r.status)];
-        const j = await r.json(); return j.Status === 0 ? ["doh", 1, Date.now() - t0] : ["doh", 0, Date.now() - t0, "nok"];
-      } catch (e) { return ["doh", 0, Date.now() - t0, whyOf(e && (e.name === "TimeoutError" ? "timeout" : e.message))]; }
-    };
-    const ids = PROBE.filter(id => SRCDEF[id] && (v4 || SRCDEF[id].v6 !== false));
-    const r = await Promise.all([...ids.map(id => inBrowser(id, ip).then(x => x.ok ? [id, 1, x.ms] : [id, 0, x.ms, whyOf(x.err)])), ...(v4 ? [doh()] : [])]);
-    fetch("/api/probe", { method: "POST", body: JSON.stringify({ r }), keepalive: true, credentials: "omit" }).catch(() => {});
   }
 
   function blRow(m) {

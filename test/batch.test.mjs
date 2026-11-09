@@ -47,13 +47,6 @@ test("sortRows: by score high first, unknown last, ties by place", () => {
   assert.deepEqual(sortRows(rows, "i", -1).map(r => r.i), [3, 2, 1, 0]);
 });
 
-import { readBeacon, PROBE } from "../src/probe.mjs";
-test("readBeacon: known sources, 0 or 1, a time; anything else is dropped", () => {
-  assert.deepEqual(readBeacon(JSON.stringify({ r: [["geojs", 1, 120.4], ["doh", 0, 99999]] })), [{ id: "geojs", ok: true, ms: 120, why: "" }, { id: "doh", ok: false, ms: 30000, why: "" }]);
-  for (const bad of ["x", "{}", JSON.stringify({ r: [["evil", 1, 1]] }), JSON.stringify({ r: [["geojs", 2, 1]] }), JSON.stringify({ r: Array(PROBE.length + 1).fill(["geojs", 1, 1]) })])
-    assert.equal(readBeacon(bad), null);
-});
-
 import { parseList as parse2, v6net, v4segs, rangeLabel, inRange } from "../src/batch.mjs";
 test("parseList: /24s (longer prefixes as their /24, a /23 or /22 as two or four) up to SEGS, wider ones refused, IPv6 prefixes one row each", () => {
   const r = parse2("95.216.1.0/24 95.216.1.128/25 8.8.8.0/24 1.0.0.0/16 2400:cb00:2049:1::/64 2400:cb00:2049:1::5/64 1.1.1.1/32 10.0.0.0/24 4.2.2.0/23 9.9.9.0/24");
@@ -104,16 +97,4 @@ test("the /24 in a shared link: run-length coded colours, the range only with th
   assert.deepEqual([b.segs[0].base, b.segs[0].prefix], ["95.216.1.0", { prefix: "95.216.0.0/16", asns: [24940] }]);
   assert.equal(unpackRows(packRows([], { segs: S })).rows.length, 0);
   assert.equal(unpackSeg([[4, 255]]), null);
-});
-
-import { whyOf } from "../src/probe.mjs";
-test("probe: a failure reduced to one word", () => {
-  assert.equal(whyOf("TypeError: Failed to fetch"), "net");
-  assert.equal(whyOf("Failed to fetch"), "net");
-  assert.equal(whyOf("signal timed out"), "timeout");
-  assert.equal(whyOf("HTTP 429"), "http4");
-  assert.equal(whyOf("HTTP 503"), "http5");
-  assert.equal(whyOf("Unexpected token < in JSON"), "parse");
-  assert.equal(whyOf("Reserved range"), "nok");
-  assert.deepEqual(readBeacon(JSON.stringify({ r: [["ipwho", 0, 10, "net"], ["geojs", 1, 5, "net"], ["doh", 0, 3, "evil"]] })).map(x => x.why), ["net", "", ""]);
 });

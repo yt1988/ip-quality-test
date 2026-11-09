@@ -14,7 +14,7 @@ into one 0–100 score, with what it means for streaming, AI services, CAPTCHAs,
 |---|---|---|
 | Pages | `src/page.html`, `src/batch.html` → `public/` | the check (`/`, `/<lang>/`) and the batch page (`/batch/`), 10 languages, built by `scripts/build.mjs` |
 | Page code | `src/app.js`, `src/batch.js` (+ the pure `src/*.mjs` they share with the tests) | bundled by esbuild into `public/assets/` |
-| Worker | `src/worker.js` | `GET /api/check` (NDJSON stream: one line per source, then the score), shared-result previews, Turnstile, `/api/probe` |
+| Worker | `src/worker.js` | `GET /api/check` (NDJSON stream: one line per source, then the score), shared-result previews, Turnstile |
 | Sources | `src/sources.mjs` | each source's request and how its answer is read; `browser: "only" / "retry"` marks the ones the page asks itself |
 | Score | `src/score.mjs` | deductions, grade, notes and the five uses; the same code runs in the Worker and the page |
 | Strings | `src/i18n/*.mjs` | every language has every key (the build fails otherwise) |
@@ -68,7 +68,7 @@ Worker secrets (set with `npx wrangler secret put <NAME>`): `TURNSTILE_SITEKEY` 
 human-check test; without them it stays hidden), and the optional source keys listed in `wrangler.toml`
 (`IPQS_KEY`, `ABUSEIPDB_KEY`, `SCAMALYTICS_USER` + `SCAMALYTICS_KEY`, `IPDATA_KEY`, `PROXYCHECK_KEY`, `IPAPI_IS_KEY`,
 `IP2LOCATION_KEY`, `IPINFO_TOKEN`); a source without its key is left out. Bindings in `wrangler.toml`: `ASSETS`, the
-rate limit `LIMIT` (20 fresh lookups per visitor address a minute) and the Analytics Engine dataset `PROBE`.
+rate limit `LIMIT` (20 fresh lookups per visitor address a minute).
 
 ## The /24 portrait service
 

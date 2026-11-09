@@ -12,22 +12,6 @@ import { SOURCES, DNSBL, ELSEWHERE } from "./sources.mjs";
 import { assess } from "./score.mjs";
 import { decode, unpackResults, SHARE_PATH } from "./share.mjs";
 import * as I18N from "./langs.mjs";
-import { PROBE, SERVER_RATE, readBeacon, whyOf } from "./probe.mjs";
-
-// the measurement in src/probe.mjs: one data point per source asked (who asked, answered or not, how long, country)
-const probePoint = (env, by, id, ok, ms, cc, why) => {
-  try { env.PROBE.writeDataPoint({ blobs: [id, by, ok ? "ok" : "fail", cc || "", ok ? "" : why || ""], doubles: [1, ms], indexes: [id] }); } catch (e) {}
-};
-async function probeBeacon(request, env) {
-  const done = new Response(null, { status: 204 });
-  if (request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
-  // only the page itself sends this
-  const origin = request.headers.get("origin");
-  if (!env.PROBE || (origin && origin !== new URL(request.url).origin) || +(request.headers.get("content-length") || 0) > 600) return done;
-  const r = readBeacon((await request.text()).slice(0, 600));
-  if (r) for (const x of r) probePoint(env, "browser", x.id, x.ok, x.ms, request.cf && request.cf.country, x.why);
-  return done;
-}
 
 const CACHE_TTL = 6 * 3600;
 const CACHE_VER = "v1";
@@ -139,18 +123,11 @@ async function check(request, env, ctx) {
       } else {
         const ctx2 = { env, torList };
         const list = SOURCES.filter(s => !s.own && !skip[s.id]);
-        const blT0 = Date.now(); let blMs = 0;
         const [sources, bl] = await Promise.all([
           Promise.all(list.map(s => runSource(s, ip, ctx2).then(r => { send({ t: "src", ...r }); return r; }))),
-          dnsbl(ip, b => send({ t: "bl", ...b })).then(r => { blMs = Date.now() - blT0; return r; }),
+          dnsbl(ip, b => send({ t: "bl", ...b })),
         ]);
         raw = { at: new Date().toISOString(), sources, dnsbl: bl };
-        // the measurement (src/probe.mjs): the same sources, asked by the Worker, on a sample of fresh lookups
-        if (env.PROBE && Math.random() < SERVER_RATE) {
-          for (const r of sources) if (PROBE.includes(r.id)) probePoint(env, "server", r.id, r.ok, r.ms, request.cf && request.cf.country, r.ok ? "" : whyOf(r.err));
-          // the blocklists: answered when any of them answered, in the time all of them took
-          if (bl.length) probePoint(env, "server", "doh", bl.some(b => b.listed !== null), blMs, request.cf && request.cf.country, "net");
-        }
         ctx.waitUntil(cache.put(key, new Response(JSON.stringify(raw), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` } })));
       }
       const sources = own ? [await own, ...raw.sources] : raw.sources;
@@ -228,7 +205,6 @@ export default {
       try { return await turnstile(request, env); }
       catch (e) { return json({ error: "internal" }, 502); }
     }
-    if (url.pathname === "/api/probe") return probeBeacon(request, env);
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, 404);
     const m = SHARE_PATH.exec(url.pathname);
     if (m && request.method === "GET") { const r = await shared(request, env, m); if (r) return r; }
