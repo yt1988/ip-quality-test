@@ -165,12 +165,13 @@ import { reportOf } from "./report.mjs";
   function progress() {
     $("#prog i").style.transform = `scaleX(${total ? got / total : 0})`;
     $("#progTxt").textContent = t("progress", { n: got, of: total });
-    $("#gNum").textContent = `${got}/${total}`;
+    // once a live score is in the ring, the count no longer takes its place: the answers that keep coming change it
+    if (!gauge.classList.contains("live")) $("#gNum").textContent = `${got}/${total}`;
     groupCounts();
     post({ type: "progress", done: got, total, text: $("#progTxt").textContent });
   }
   function reset(ip) {
-    FINAL = false; $("#facts").classList.remove("live");
+    FINAL = false; gauge.classList.remove("live"); $("#facts").classList.remove("live");
     gauge.classList.add("busy"); gauge.dataset.g = ""; $("#gArc").style.strokeDashoffset = 100; $("#gSeg").innerHTML = "";
     $("#gNum").textContent = "–"; $("#gGrade").innerHTML = "&nbsp;";
     $("#vHead").textContent = t("checking"); const vt = $("#vText"); vt.classList.remove("err"); vt.innerHTML = "&nbsp;";
@@ -184,7 +185,7 @@ import { reportOf } from "./report.mjs";
     markExit(ip || selfIp);
   }
   function fail(key) {
-    gauge.classList.remove("busy"); $("#gNum").textContent = "–"; $("#sgt").hidden = true;
+    gauge.classList.remove("busy", "live"); $("#gNum").textContent = "–"; $("#sgt").hidden = true;
     $("#vHead").textContent = t("err_h");
     const vt = $("#vText"); vt.textContent = t(key); vt.classList.add("err");
     $("#rerun").disabled = false; $("#prog").classList.add("end");
