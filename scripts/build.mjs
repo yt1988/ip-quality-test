@@ -195,7 +195,7 @@ export async function build({ check = false } = {}) {
     // the exit checks (as on EgressLens) and IPinfo, which the browser asks directly
     "connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai " +
       // sources the page asks itself (src/sources.mjs, browser: "only" or "retry"), RDAP with every registry it redirects to
-      "https://ipwho.is https://get.geojs.io https://api.ipapi.is https://api.ipquery.io https://rdap.arin.net https://rdap.org https://rdap.apnic.net https://rdap.db.ripe.net https://rdap.lacnic.net https://rdap.afrinic.net " +
+      "https://ipwho.is https://get.geojs.io https://api.ipapi.is https://api.ipquery.io https://isc.sans.edu https://rdap.arin.net https://rdap.org https://rdap.apnic.net https://rdap.db.ripe.net https://rdap.lacnic.net https://rdap.afrinic.net " +
       // the connection, measured on the 1ms.dog server: dns's authoritative server (random names under l.1ms.dog,
       // answered on its port 2053) and who's probe (this connection's TCP handshake)
       "https://*.l.1ms.dog:2053 https://probe.1ms.dog" +
