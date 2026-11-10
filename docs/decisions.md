@@ -137,8 +137,9 @@ The sources that needed no key but were missing were added, and one source of ou
   six hours like any source's. IP2Proxy, X4BNet and the Tor exit list were already there.
 - **SANS ISC (DShield)**: attack reports and threat feeds, IPv4 only (its API refuses IPv6), cut off at 90 days so an
   old report doesn't count. Because it answered, it can also say no: an address with no report in 90 days counts as a
-  clean abuse reading (the cell gets a green check) instead of "no data". CC BY-NC-SA: the site is non-commercial and
-  the source is named and linked in the row.
+  clean abuse reading (the cell gets a green check) instead of "no data". Its API often stalls requests from
+  Cloudflare's addresses, so the page asks again from the visitor's browser when the server times out. CC BY-NC-SA:
+  the site is non-commercial and the source is named and linked in the row.
 - **RIPEstat**: whether the covering prefix is announced, its origin AS, and its RPKI status. Keyless, CORS, both
   families. An unannounced prefix or an invalid RPKI record is shown, not scored heavily.
 - **Reverse DNS**: the PTR name, forward-confirmed reverse DNS, and whether the name reads like a dynamic pool or a
