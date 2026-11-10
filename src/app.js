@@ -170,6 +170,7 @@ import { reportOf } from "./report.mjs";
     post({ type: "progress", done: got, total, text: $("#progTxt").textContent });
   }
   function reset(ip) {
+    FINAL = false; $("#facts").classList.remove("live");
     gauge.classList.add("busy"); gauge.dataset.g = ""; $("#gArc").style.strokeDashoffset = 100; $("#gSeg").innerHTML = "";
     $("#gNum").textContent = "–"; $("#gGrade").innerHTML = "&nbsp;";
     $("#vHead").textContent = t("checking"); const vt = $("#vText"); vt.classList.remove("err"); vt.innerHTML = "&nbsp;";
@@ -266,7 +267,7 @@ import { reportOf } from "./report.mjs";
   function accept(m) {
     if (m.ok && !m.d.cc && m.d.cname) { m.d.cc = ccOfName(m.d.cname); delete m.d.cname; }
     if (m.ok) RES.push({ id: m.id, data: m.d }); else FAILS.push(m.id);
-    fillSource(m); got++; progress();
+    fillSource(m); got++; progress(); livePaint();
   }
   function handle(m) {
     if (m.t === "start") {
@@ -311,6 +312,7 @@ import { reportOf } from "./report.mjs";
     // a list that answers with a reason code says so on hover (DroneBL: 127.0.0.x, the list's own code)
     const why = m.listed === true && m.codes && m.codes.length ? t("bl_codes", { list: m.codes.join(", ") }) : "";
     prSet(m.id, m.listed === true ? "hit-row" : m.listed === null ? "fail" : "", m.listed === true ? hit : `<span class="m">${esc(t(m.listed === false ? "bl_clean" : "src_fail"))}</span>`, "", "", why);
+    livePaint();
   }
 
   /* ---------- the result ---------- */
@@ -334,33 +336,17 @@ import { reportOf } from "./report.mjs";
     const c = $(`[data-f="${CELL_OF[sp.dataset.k]}"]`); if (!c) return;
     c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash");
   });
-  function finish(r) {
-    const s = r.summary, part = k => r.parts.find(p => p.k === "p_" + k);
-    const why = p => t("p_why", { why: t(p.k, p.p), n: p.pts });
+  // What can be drawn before every source has answered: the running score, the address facts and the findings. A
+  // live paint is dimmed, because more answers can still change it; finish() draws the same parts undimmed and then
+  // the final-only ones (history, links, the list of deductions).
+  let FINAL = false;
+  function paintScore(r) {
     gauge.classList.remove("busy"); gauge.dataset.g = r.grade;
     $("#gNum").textContent = r.score; $("#gGrade").textContent = t("grade", { g: r.grade });
     requestAnimationFrame(() => { $("#gArc").style.strokeDashoffset = 100 - r.score; });
-    $("#vHead").textContent = t("g_" + r.grade);
-    // the grade can stop below what the score alone would give (blocklists, too few risk sources): say why
-    const capN = (r.notes || []).find(n => n.k === "n_cap_bl" || n.k === "n_cap_lists" || n.k === "n_cap_conf");
-    $("#vText").textContent = t("d_" + r.grade) + (capN ? " " + t(capN.k, capN.p) : "");
-    // how much the verdict rests on: the sources that answered, the ones with risk data, and any disagreement
-    const cfd = r.confidence || { level: "low", sources: RES.length, riskSources: 0 };
-    const cfEl = $("#conf");
-    cfEl.textContent = t("conf", { lv: t("conf_" + cfd.level), n: cfd.sources, r: cfd.riskSources });
-    cfEl.hidden = false;
-    // how this address read the last time it was checked on this device (local only; a shared result writes nothing)
-    const prev = !SHARED && CUR && CUR.ip ? histGet(CUR.ip)[CUR.ip] : null;
-    const hEl = $("#hist");
-    if (prev) { hEl.textContent = t("hist_prev", { date: new Date(prev.at).toLocaleString(LANG), g: prev.g, s: prev.s }); hEl.hidden = false; }
-    else hEl.hidden = true;
-    if (!SHARED) histPut(CUR.ip, r.score, r.grade);
-    // where the points went: one colored line per deduction, the same color as its segment of the ring
-    $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-k="${p.k.slice(2)}" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
-    let at = r.score;
-    $("#gSeg").innerHTML = r.parts.map(p => { const len = Math.min(p.pts, 100 - at); if (len <= 0) return ""; const c = `<circle class="g-seg" cx="60" cy="60" r="52" pathLength="100" stroke="var(--p-${p.k.slice(2)})" stroke-dasharray="${Math.max(0, len - .8)} 100" stroke-dashoffset="${-(at + .4)}"/>`; at += len; return c; }).join("");
-
-    // the address
+  }
+  function paintFacts(r) {
+    const s = r.summary;
     const fb = $$("#facts b"), set = (i, h) => { fb[i].className = i ? "" : "ipv"; fb[i].innerHTML = h; };
     // the databases can put the address in different cities: show the two most agreed on, the rest on hover
     const cs = s.cities || [];
@@ -376,7 +362,9 @@ import { reportOf } from "./report.mjs";
     const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
     set(2, !open ? hid : s.asn || s.org ? `${asTxt}<span class="m">${esc(s.org || "")}</span>` : "–");
     set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
-
+  }
+  function paintFindings(r) {
+    const s = r.summary;
     // what the address is: a short answer per cell, the sentence behind it on hover
     const F = s.flags, tv = RES.filter(x => x.data.type), geoN = s.ccs.reduce((a, c) => a + c.by.length, 0);
     if (s.type) finding("type", s.type === "hosting" ? "warn" : s.type === "residential" || s.type === "mobile" ? "ok" : "info",
@@ -410,6 +398,45 @@ import { reportOf } from "./report.mjs";
       hits.length ? t("bl_listed", { list: list(hits.map(b => b.name)) }) : t("q_bl_clean", { n: s.dnsbl.checked }));
     // what it is good for: a verdict each, the reason on hover
     for (const u of ["stream", "ai", "captcha", "account", "mail"]) { const x = r.uses[u], lv = x.lv === "good" ? "ok" : x.lv; finding(u, lv, `<span class="tag ${x.lv}">${esc(t("lv_" + x.lv))}</span>`, t(x.why)); }
+  }
+  // the answers so far, drawn while the rest are still coming; a slower source must not hold the whole result back
+  function livePaint() {
+    if (FINAL || !CUR || (!RES.length && !BLR.length)) return;
+    let r; try { r = assess(RES, BLR); } catch (e) { return; }
+    paintScore(r); paintFacts(r); paintFindings(r);
+    gauge.classList.add("live"); $("#facts").classList.add("live");
+    for (const c of $$(".fc, .uc")) c.classList.add("live");
+  }
+  function finish(r) {
+    FINAL = true;
+    gauge.classList.remove("live"); $("#facts").classList.remove("live");
+    for (const c of $$(".fc, .uc")) c.classList.remove("live");
+    const s = r.summary, part = k => r.parts.find(p => p.k === "p_" + k);
+    const why = p => t("p_why", { why: t(p.k, p.p), n: p.pts });
+    paintScore(r);
+    $("#vHead").textContent = t("g_" + r.grade);
+    // the grade can stop below what the score alone would give (blocklists, too few risk sources): say why
+    const capN = (r.notes || []).find(n => n.k === "n_cap_bl" || n.k === "n_cap_lists" || n.k === "n_cap_conf");
+    $("#vText").textContent = t("d_" + r.grade) + (capN ? " " + t(capN.k, capN.p) : "");
+    // how much the verdict rests on: the sources that answered, the ones with risk data, and any disagreement
+    const cfd = r.confidence || { level: "low", sources: RES.length, riskSources: 0 };
+    const cfEl = $("#conf");
+    cfEl.textContent = t("conf", { lv: t("conf_" + cfd.level), n: cfd.sources, r: cfd.riskSources });
+    cfEl.hidden = false;
+    // how this address read the last time it was checked on this device (local only; a shared result writes nothing)
+    const prev = !SHARED && CUR && CUR.ip ? histGet(CUR.ip)[CUR.ip] : null;
+    const hEl = $("#hist");
+    if (prev) { hEl.textContent = t("hist_prev", { date: new Date(prev.at).toLocaleString(LANG), g: prev.g, s: prev.s }); hEl.hidden = false; }
+    else hEl.hidden = true;
+    if (!SHARED) histPut(CUR.ip, r.score, r.grade);
+    // where the points went: one colored line per deduction, the same color as its segment of the ring
+    $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-k="${p.k.slice(2)}" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
+    let at = r.score;
+    $("#gSeg").innerHTML = r.parts.map(p => { const len = Math.min(p.pts, 100 - at); if (len <= 0) return ""; const c = `<circle class="g-seg" cx="60" cy="60" r="52" pathLength="100" stroke="var(--p-${p.k.slice(2)})" stroke-dasharray="${Math.max(0, len - .8)} 100" stroke-dashoffset="${-(at + .4)}"/>`; at += len; return c; }).join("");
+
+    paintFacts(r);
+
+    paintFindings(r);
 
     // every deduction: its finding tinted in its color with the points, and every source mark that caused it
     for (const f in PARTS_OF) {

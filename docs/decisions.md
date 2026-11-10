@@ -176,6 +176,11 @@ the PTR in parallel, within 5 seconds.
   scores, plus which lists named the address, whether its prefix is announced, the RPKI verdict and whether the
   reverse DNS name matches. The prefix and the reverse DNS name itself stay out, as before, so a link scores and
   grades the same as the check it came from while naming no more than the score needs.
+- The score, the address facts and the findings are drawn while the sources are still answering, not only when the
+  last one is in: each answer repaints them from what has arrived so far, dimmed (`livePaint()`), and the final paint
+  clears the dimming and adds what only a finished check can say (the verdict sentence, confidence, history, links,
+  the deduction lines). A slower source no longer holds the whole result back; the dimming says the numbers can still
+  move.
 
 ## What was not added
 

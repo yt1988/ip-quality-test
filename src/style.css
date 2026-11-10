@@ -107,6 +107,10 @@ h2 { font-size: 15px; font-weight: 700; }
 .fc-v .m { font-weight: 500; font-size: 12px; }
 .fc-v .skl { width: 70%; }
 .fr-p { position: absolute; top: 7px; right: 9px; font: 600 12px var(--f-num); color: var(--pc); }
+/* an answer drawn while the check is still running: readable, but visibly not final */
+.gauge.live { opacity: .78; }
+.fc.live, .uc.live { opacity: .62; }
+#facts.live b:not(.ipv) { opacity: .6; }
 .st { width: 14px; height: 14px; border-radius: 50%; display: inline-grid; place-items: center; font: 700 9px/1 var(--f-ui); font-style: normal; flex: none; color: #fff; background: var(--line); }
 .st-ok .st { background: var(--ok); } .st-bad .st { background: var(--bad); } .st-warn .st { background: var(--t3); }
 .st-info .st { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--muted); }
