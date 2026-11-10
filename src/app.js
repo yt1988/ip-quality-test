@@ -291,7 +291,6 @@ import { reportOf } from "./report.mjs";
     } else if (m.t === "src") {
       if (!m.ok && SRCDEF[m.id] && SRCDEF[m.id].browser) {
         const cur = CUR;
-        markBrowser(m.id);
         PEND.push(inBrowser(m.id, cur.ip).then(r => { if (CUR === cur) accept(r.ok ? r : m); }));
         return;
       }
