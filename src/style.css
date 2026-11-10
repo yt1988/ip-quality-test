@@ -3,6 +3,7 @@
 /* one color per kind of deduction: its segment of the ring, its line under the score, its finding row, and every
    source mark that caused it */
 :root { --p-hosting: #f59e0b; --p-business: #94a3b8; --p-proxy: #ef4444; --p-vpn: #a855f7; --p-tor: #be123c; --p-abuser: #b45309; --p-risk: #ec4899; --p-dnsbl: #0ea5e9;
+  --p-lists: #d946ef; --p-drop: #7f1d1d; --p-asndrop: #92400e; --p-relay: #4f46e5;
   --ok: var(--t1); }
 h2 { font-size: 15px; font-weight: 700; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; font-weight: 500; white-space: nowrap; }
@@ -70,6 +71,13 @@ h2 { font-size: 15px; font-weight: 700; }
 .parts span { display: inline-flex; align-items: center; gap: 5px; color: var(--pc); font-weight: 600; cursor: help; outline: none; }
 .parts span i { width: 8px; height: 8px; border-radius: 2px; background: var(--pc); }
 .parts span b { font: 600 12.5px var(--f-num); }
+/* how much the verdict rests on: the sources that answered, the ones with risk data, and any disagreement */
+.conf { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.conf[hidden], .skip-n[hidden] { display: none !important; }
+/* the source rows a deployment can't ask (needs keys): said once above the list */
+.skip-n { margin: -2px 0 12px; font-size: 12.5px; color: var(--muted); }
+/* the /24 card: check a neighbour of the address being looked at */
+#sgPickGo { margin: 0 0 10px; }
 
 /* the address: label and value per line */
 .kv { list-style: none; margin: 0; padding: 0; }
@@ -172,6 +180,7 @@ h2 { font-size: 15px; font-weight: 700; }
 .sg-note { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
 .sg-src { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
 .sg-src a { color: inherit; }
+.src-credit { margin: 12px 0 0; }
 .segs.masked .sg-n, .segs.masked .sg-info .ip { filter: blur(6px); }
 @media (max-width: 720px) {
   .segs { padding: 16px 16px 14px; }
@@ -425,4 +434,6 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt-sum { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--line); }
 .bt-sum[hidden] { display: none; }
 .bt-sum-t { font-size: 15px; font-weight: 700; }
+.bt-sum-a { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.bt-sum .btn[hidden] { display: none; }
 .bt-sum:not([hidden]) + .bt-seg, .bt-sum:not([hidden]) + .bt-seg[hidden] + .bt-res { border-top: 0; padding-top: 0; margin-top: 0; }

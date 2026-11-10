@@ -108,3 +108,79 @@ counts what makes sites distrust an address (data centre, proxy, VPN, Tor, abuse
 blocklists); a registry country that differs from the location doesn't. What it changes is which country a service
 that goes by the registry thinks you are in, which matters for region-locked streaming and AI services; the uses say
 so.
+
+### Grade ceilings, single-source findings and confidence (2026-11-10)
+
+The score stays arithmetic ("every point taken off is shown"), but the grade adds ceilings, because a high score must
+not claim more than the findings support:
+
+- on one mail blocklist an address is never graded A; on two or more, never above C. UCEPROTECT L1 flags whole ranges
+  for one neighbour's behaviour, so it counts half, both in the points (3 instead of 6) and towards the ceilings;
+- fewer than two sources that said anything about risk (a risk score or any risk flag) stops the grade at B;
+- a Tor exit is always F. Its deduction is 75 points (it was 40), so the score lands below 30 and the letter and the
+  number still agree; a source-only Tor flag counts by the share of sources, as the other flags do.
+
+A flag, a hosting vote or a risk score made by a single source counts half: one noisy source (ip-api calling a public
+DNS resolver a proxy, say) can't move the score as far as several agreeing sources. The result carries `confidence`:
+the sources that answered, the ones with risk data, and whether they disagreed (a split vote or a single-source flag
+makes it "mid"; fewer than three answers or fewer than two risk sources, "low"). The page shows it under the verdict,
+
+and a shared link or the report JSON sets it again from the answers it carries.
+
+## Public lists, routing and reverse DNS (2026-11-10)
+
+The sources that needed no key but were missing were added, and one source of our own:
+
+- **1ms public lists** (`server/`'s `GET /v1/ip`): IPsum, Spamhaus DROP and ASN-DROP, Apple iCloud Private Relay
+  egress ranges, and the Tor Project's running relays, read for the exact address (IPv4 and IPv6). The lists are
+  downloaded once a day by the existing timer; the Worker asks its VPS for one address, and the answer is cached for
+  six hours like any source's. IP2Proxy, X4BNet and the Tor exit list were already there.
+- **SANS ISC (DShield)**: attack reports and threat feeds, IPv4 only (its API refuses IPv6), cut off at 90 days so an
+  old report doesn't count. Because it answered, it can also say no: an address with no report in 90 days counts as a
+  clean abuse reading (the cell gets a green check) instead of "no data". CC BY-NC-SA: the site is non-commercial and
+  the source is named and linked in the row.
+- **RIPEstat**: whether the covering prefix is announced, its origin AS, and its RPKI status. Keyless, CORS, both
+  families. An unannounced prefix or an invalid RPKI record is shown, not scored heavily.
+- **Reverse DNS**: the PTR name, forward-confirmed reverse DNS, and whether the name reads like a dynamic pool or a
+  server network. Mail servers check FCrDNS, so a failure turns the mail verdict to "warn"; the name is a hint and is
+  never voted into the network type (a data-centre address with "customer" in its PTR is still a data centre).
+- **DroneBL** joins the DNS blocklists, and a list that answers with reason codes (DroneBL's 127.0.0.x) shows them on
+  hover.
+
+The lists count without double counting: when a source already flags the address as proxy/VPN/Tor/abuser, IPsum's
+lists don't take points again. DROP (whole range) takes 15 and caps the grade at B; ASN-DROP (whole network) takes 3
+and also caps at B; one or two IPsum lists take 4 and three or more take 8, capping at B (two list findings at C). A
+Private Relay exit is treated like an anonymizer (5 points, the same finding cell as VPN and proxy) and `n_relay`
+says what it is. A Tor relay (not an exit) is only noted.
+
+The Apple list (12 MB, about 285,000 prefixes) and Onionoo's relay list (about 600 KB) are merged into inclusive
+ranges and gob-encoded with the rest of the index (1.65 MB with every list but IP2Proxy). ASN-DROP is matched against
+the origin AS of the covering prefix, so an address's lists answer needs the prefix first; `/v1/ip` asks Team Cymru and
+the PTR in parallel, within 5 seconds.
+
+## The JSON API, hostnames and local history (2026-11-10)
+
+- `GET /api/check?format=json` runs the same collection as the stream and returns one document, with `sources` (each
+  answer or error), `dnsbl`, `parts`, `notes` (keys and parameters, not sentences) and `summary`. CORS is open; the
+  rate limit and the six-hour cache are the same as the stream's. A script that wants every source has to wait for the
+  slowest one; the page keeps the stream.
+- `GET /api/resolve?host=…` resolves a hostname through Cloudflare's DoH (A, else AAAA), returns the first public
+  address, and caches it six hours. Only hostnames pass validation, and a private answer is refused, so the endpoint
+  can't be used to reach an internal address. The page's box accepts a hostname, resolves it, then checks the address
+  (the link carries the address, so it replays without another lookup). A name with no public address is cached for
+  five minutes, so a typo isn't asked again on every submit.
+- The last 30 addresses checked on a device are kept in `localStorage` (`ipqs:hist`), with score, grade and time. A
+  result shows how the address read last time; shared results neither read nor write it. Nothing leaves the browser.
+- A shared link without the address keeps only what the score re-reads: the country, network type, flags and risk
+  scores, plus which lists named the address, whether its prefix is announced, the RPKI verdict and whether the
+  reverse DNS name matches. The prefix and the reverse DNS name itself stay out, as before, so a link scores and
+  grades the same as the check it came from while naming no more than the score needs.
+
+## What was not added
+
+- **Two-address comparison** needs a shared shell component (the 1ms.dog site's), so it waits for that; it is not
+  rebuilt here.
+- **StopForumSpam, CINS, GreenSnow, blocklist.de's HTTP API and similar lists** are left out: IPsum already aggregates
+  them, so querying both would count one finding twice. Spamhaus ZEN is left out for DNS: it refuses public resolvers.
+  Its DROP and ASN-DROP are used from the daily download instead.
+- **Shodan's port list** was already read; commonly abused open ports (23, 445, 3389, …) now get their own note.

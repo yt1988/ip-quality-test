@@ -7,16 +7,19 @@ accounts, its product decisions) are in the private repository 1ms-shell; nothin
 
 ## What it is
 
-IPQS checks an IP address against a dozen IP intelligence sources and eight DNS blocklists and turns their answers
-into one 0–100 score, with what it means for streaming, AI services, CAPTCHAs, sign-ups and mail.
+IPQS checks an IP address against 17 keyless IP intelligence sources (the page itself asks three of them; Cloudflare
+adds its view of the visitor's own address) and nine DNS blocklists, and turns their answers into one 0–100 score,
+with what it means for streaming, AI services, CAPTCHAs, sign-ups and mail. With free API keys its owner can add six
+more sources.
 
 | Part | Where | What |
 |---|---|---|
 | Pages | `src/page.html`, `src/batch.html` → `public/` | the check (`/`, `/<lang>/`) and the batch page (`/batch/`), 10 languages, built by `scripts/build.mjs` |
 | Page code | `src/app.js`, `src/batch.js` (+ the pure `src/*.mjs` they share with the tests) | bundled by esbuild into `public/assets/` |
-| Worker | `src/worker.js` | `GET /api/check` (NDJSON stream: one line per source, then the score), shared-result previews, Turnstile |
+| Worker | `src/worker.js` | `GET /api/check` (NDJSON stream: one line per source, then the score; `?format=json` for one document), `GET /api/resolve` (a hostname → its public address), shared-result previews, Turnstile |
 | Sources | `src/sources.mjs` | each source's request and how its answer is read; `browser: "only" / "retry"` marks the ones the page asks itself |
 | Score | `src/score.mjs` | deductions, grade, notes and the five uses; the same code runs in the Worker and the page |
+| Local history | `src/app.js` (`ipqs:hist`) | the last 30 addresses checked on the device, in `localStorage` only; never sent anywhere |
 | Strings | `src/i18n/*.mjs` | every language has every key (the build fails otherwise) |
 | /24 portrait service | `server/` (Go) | a small HTTPS API on a Linux server, not on Cloudflare: see [server/README.md](server/README.md) and "The /24 portrait service" below |
 
@@ -68,15 +71,19 @@ Worker secrets (set with `npx wrangler secret put <NAME>`): `TURNSTILE_SITEKEY` 
 human-check test; without them it stays hidden), and the optional source keys listed in `wrangler.toml`
 (`IPQS_KEY`, `ABUSEIPDB_KEY`, `SCAMALYTICS_USER` + `SCAMALYTICS_KEY`, `IPDATA_KEY`, `PROXYCHECK_KEY`, `IPAPI_IS_KEY`,
 `IP2LOCATION_KEY`, `IPINFO_TOKEN`); a source without its key is left out. Bindings in `wrangler.toml`: `ASSETS`, the
-rate limit `LIMIT` (20 fresh lookups per visitor address a minute).
+rate limit `LIMIT` (20 fresh lookups per visitor address a minute), and `[vars] SEG` — the address of the lists
+service below. Empty, the exact-address list source is left out (the /24 portrait card is separate; it is built by
+`scripts/build.mjs` from `SEG` or `SEG_API`).
 
 ## The /24 portrait service
 
 `server/` is a Go HTTPS server answering `GET /v1/seg?ip=…` for the page's /24 portrait and the batch page's range
-comparison: reverse DNS for the 256 addresses, the announced prefix, and a daily index of public lists (API and
-behaviour in [server/README.md](server/README.md)). Two systemd units come with it: the API, and a daily job that
-fetches the lists. The unit files in `server/` carry 1ms.dog's paths and port; adjust them to yours. On a Linux
-server (amd64), as root:
+comparison, and `GET /v1/ip?ip=…` for one address's list flags, reverse name and announced prefix (the page's "1ms
+public lists" source): reverse DNS, the announced prefix, and a daily index of public lists — IPsum, IP2Proxy, X4BNet,
+Spamhaus DROP and ASN-DROP, Apple Private Relay, Tor exits and relays (API and behaviour in
+[server/README.md](server/README.md)). Two systemd units come with it: the API, and a daily job that fetches the
+lists. The unit files in `server/` carry 1ms.dog's paths and port; adjust them to yours. On a Linux server (amd64),
+as root:
 
 1. **Get the binary.** Every change to `server/` on `main` is built by GitHub Actions
    (`.github/workflows/server-release.yml`) into a static linux/amd64 binary and published as a release tagged

@@ -2,7 +2,7 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-How clean is your IP? [IPQS](https://ipqs.1ms.dog) asks a dozen IP intelligence sources and 8 DNS blocklists about an address at once, shows each answer as it arrives, then turns them into one 0–100 score with a verdict for everyday uses.
+How clean is your IP? [IPQS](https://ipqs.1ms.dog) asks up to 17 IP intelligence sources without an API key (nine asked by the server, seven by your browser, and Cloudflare's view of your own address) and 9 DNS blocklists about an address at once, shows each answer as it arrives, then turns them into one 0–100 score with a verdict for everyday uses. Check an IPv4 or IPv6 address, or type a hostname.
 
 **Live:** https://ipqs.1ms.dog
 
@@ -23,14 +23,17 @@ How clean is your IP? [IPQS](https://ipqs.1ms.dog) asks a dozen IP intelligence 
 - **A score and grade (A–F)**, with the breakdown: every point taken off and why.
 - **Residential, mobile or data center**, by how many sources agree.
 - **Native or broadcast IP**: the regional registry's country (RDAP) against where the databases place the address.
-- **VPN, proxy and Tor flags**, counted per source, plus the Tor Project's own exit list.
+- **VPN, proxy, Tor and iCloud Private Relay flags**, counted per source, plus the Tor Project's own exit list and its list of relays (a relay is not an exit).
+- **Public blocklists and routing**: IPsum's combined score, Spamhaus DROP (whole ranges) and ASN-DROP (whole networks), whether the covering prefix is announced in BGP, and whether its RPKI record is valid.
 - **Fraud and abuse scores** from the sources that have them, averaged with weights.
-- **Mail blocklists** (SpamCop, Barracuda, PSBL, Mailspike, UCEPROTECT, GBUdb, blocklist.de, Anonmails).
+- **Reverse DNS**: the PTR name, whether it resolves forward back to the address (mail servers check this), and whether it reads like a home pool or a server.
+- **Mail blocklists** (SpamCop, DroneBL, Barracuda, PSBL, Mailspike, UCEPROTECT, GBUdb, blocklist.de, Anonmails).
 - **What it means** for streaming, AI services (including the regions OpenAI and Anthropic don't serve), CAPTCHAs on Google and Cloudflare, sign-ups and payments, and sending mail.
 - **Sharing**: an image card (grade and score first; address, city and network only if you switch them on) and a link that opens the same result, with the grade in its link preview. Both are made in your browser.
 - **Every source's own answer**, linked to its page so you can check it there, and links to look the address up elsewhere (Scamalytics, Spur, ping0…).
+- **Local history**: the last 30 addresses checked on this device (in `localStorage` only, never sent anywhere), so a result can say how the address read last time.
 
-Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are asked from your browser), and any public address can be checked: `https://ipqs.1ms.dog/?ip=8.8.8.8`.
+Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are asked from your browser), and any public address can be checked: `https://ipqs.1ms.dog/?ip=8.8.8.8`. A hostname works too (`https://ipqs.1ms.dog/?ip=example.com`): the page asks the Worker's `/api/resolve` (Cloudflare's DoH) for its address and refuses private answers.
 
 ## Sources
 
@@ -45,6 +48,10 @@ Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are ask
 | IP.SB | – | location, network (asked from the browser) |
 | iplocation.net | – | location, ISP |
 | GeoJS | – | location, network |
+| 1ms public lists | – | IPsum, Spamhaus DROP and ASN-DROP, Apple Private Relay, Tor relays for this exact address (IPv4 and IPv6; needs the lists service) |
+| SANS ISC | – | DShield attack reports and threat feeds (IPv4) |
+| RIPEstat | – | announced prefix, origin AS, RPKI status |
+| Reverse DNS | – | PTR name, forward confirmation, home-pool or server naming |
 | RDAP (RIR) | – | registration country, net name, range |
 | ip.guide | – | the network's registered country and RIR |
 | Shodan InternetDB | – | open ports, tags such as `vpn`, `proxy`, `tor` (IPv4) |
@@ -56,22 +63,32 @@ Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are ask
 | proxycheck.io | `PROXYCHECK_KEY` | proxy, VPN, Tor, network type, risk 0–100, operator |
 | IP2Location | `IP2LOCATION_KEY` | proxy |
 
-Sources without their keys are left out. All the keyed ones have free plans; proxycheck.io and IP2Location answer without a key too, but not to Cloudflare's shared addresses. Sources that limit those addresses are asked from the visitor's browser instead, and a source the server got no answer from is asked again from the browser when it allows that (CORS). Spamhaus and SORBS aren't in the blocklists: they refuse queries that come through public DNS resolvers.
+Sources without their keys are left out. All the keyed ones have free plans; proxycheck.io and IP2Location answer without a key too, but not to Cloudflare's shared addresses. Sources that limit those addresses are asked from the visitor's browser instead, and a source the server got no answer from is asked again from the browser when it allows that (CORS). Spamhaus and SORBS aren't in the DNS blocklists: they refuse queries that come through public DNS resolvers. Spamhaus's DROP and ASN-DROP data still count: the lists service downloads them once a day and reads the address or its network locally, with the attribution their terms ask for.
+
+The live 1ms.dog site doesn't enable the keyed sources: there, scoring uses the sources above that need no key (the hidden ones are named on the page), and the grade ceilings below say how far that evidence goes.
 
 ## How the score works
 
-Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network (the full 20 when most sources say so, so a clean server address tops out at B), 20 for proxy and 15 for VPN flags, 40 for Tor, 10 for abuse reports, up to 35 for the weighted average fraud score, and 6 per mail blocklist (at most 24). Flags count by the share of sources that agree. Grades: A 85+, B 70+, C 50+, D 30+, F below.
+Every address starts at 100. Points come off for what the sources find: up to 20 for a data-center network (the full 20 when most sources say so, so a clean server address tops out at B) and up to 5 for a business network, 20 for a proxy flag and 15 for VPN, 75 for Tor, 5 for an iCloud Private Relay exit, 10 for abuse reports, up to 35 for the weighted average fraud score, 4 for one or two IPsum blocklists and 8 for three or more, 15 for a whole range on Spamhaus DROP and 3 for a network on ASN-DROP, and 6 per mail blocklist (at most 24; UCEPROTECT counts half). A flag, a hosting vote or a risk score that only one source made counts half, and flags count by the share of the sources that agree. A source that already names the address keeps IPsum from counting the same finding twice.
+
+Grades: A 85+, B 70+, C 50+, D 30+, F below — with ceilings the score can't lift: on a mail blocklist an address is never A, on two or more lists never above C, on a public list (IPsum, DROP or ASN-DROP) never A and on two of them never above C, and fewer than two sources with risk data stops at B; a Tor exit is always F. The page shows a confidence line with the sources that answered, the ones that said anything about risk, and whether they disagreed.
 
 The logic is in [`src/score.mjs`](src/score.mjs) and has unit tests.
 
 ## API
 
 ```
-GET /api/check            your own address
-GET /api/check?ip=<addr>  any public IPv4 or IPv6 address
+GET /api/check                  your own address
+GET /api/check?ip=<addr>        any public IPv4 or IPv6 address
+GET /api/check?format=json      the same answers and score as one JSON document
+GET /api/resolve?host=<name>    the first public address a hostname resolves to
 ```
 
-The answer is NDJSON: a `start` line listing the rows, one `src` line per source and one `bl` line per blocklist as they answer, then a `done` line with `score`, `grade`, `parts`, `notes`, `uses` and `summary`. Answers are cached for six hours per address. Fresh lookups are limited to 20 a minute per visitor.
+The streamed answer is NDJSON: a `start` line listing the rows, one `src` line per source and one `bl` line per blocklist as they answer, then a `done` line with `score`, `grade`, `parts`, `notes`, `uses` and `summary`. `?format=json` waits for every source and returns `{ip, version, self, at, cached, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}` (CORS open); notes and deductions carry an i18n key and parameters, not a sentence. Answers are cached for six hours per address. Fresh lookups are limited to 20 a minute per visitor.
+
+```bash
+curl -s 'https://ipqs.1ms.dog/api/check?ip=8.8.8.8&format=json' | jq '{score, grade, cc: .summary.cc, asn: .summary.asn}'
+```
 
 Shared results live at `/r/<code>` (or `/<lang>/r/<code>`): the code is the answers, deflated and base64url-encoded, behind a format number (`src/share.mjs`). The Worker puts the grade and score into that page's link preview. The share dialog itself is the one every 1ms.dog tool uses, copied verbatim from [1ms-shell](https://github.com/yt1988/1ms-shell) into `public/assets/share/`; this page only draws its result on the card.
 
@@ -86,7 +103,7 @@ npx wrangler login
 npx wrangler deploy
 ```
 
-It's one Worker: the pages are static assets (free, unmetered), and `src/worker.js` answers `/api/check`. `wrangler.toml` turns off `*.workers.dev` and preview URLs; bind your own domain under **Workers & Pages → ipqs → Settings → Domains & Routes**, or set `workers_dev = true` for a quick test. Add keys with `npx wrangler secret put IPQS_KEY` and so on. The Cloudflare human-check test (a Turnstile widget the visitor runs with a button) appears only once `TURNSTILE_SITEKEY` and `TURNSTILE_SECRET` are set: create a widget in managed mode under **Turnstile** in the dashboard. The two connection cells (DNS resolver, TCP handshake) read 1ms.dog's own servers from the browser: the authoritative DNS of `l.1ms.dog` (github.com/yt1988/dns-test, `server/dns`) and who's probe `probe.1ms.dog/fp`; a fork without them simply doesn't show the cells. The /24 portrait card reads `server/` (Go, on the 1ms.dog VPS; see `server/README.md`), at the address set as `SEG` in `scripts/build.mjs`; empty, the card stays hidden.
+It's one Worker: the pages are static assets (free, unmetered), and `src/worker.js` answers `/api/check`. `wrangler.toml` turns off `*.workers.dev` and preview URLs; bind your own domain under **Workers & Pages → ipqs → Settings → Domains & Routes**, or set `workers_dev = true` for a quick test. Add keys with `npx wrangler secret put IPQS_KEY` and so on. The Cloudflare human-check test (a Turnstile widget the visitor runs with a button) appears only once `TURNSTILE_SITEKEY` and `TURNSTILE_SECRET` are set: create a widget in managed mode under **Turnstile** in the dashboard. The two connection cells (DNS resolver, TCP handshake) read 1ms.dog's own servers from the browser: the authoritative DNS of `l.1ms.dog` (github.com/yt1988/dns-test, `server/dns`) and who's probe `probe.1ms.dog/fp`; a fork without them simply doesn't show the cells. The /24 portrait card reads `server/` (Go, on the 1ms.dog VPS; see `server/README.md`), at the address set as `SEG` in `scripts/build.mjs`; empty, the card stays hidden. The same service answers the exact-address list lookup: set `[vars] SEG` in `wrangler.toml` to its address (empty leaves that source out).
 
 To put your own domain into canonical tags and the sitemap, rebuild with `SITE_URL`:
 

@@ -45,7 +45,11 @@
       </form>
       <div class="bt-sum" id="sum" hidden>
         <b class="bt-sum-t" id="sumT"></b>
-        <button class="btn sm pri" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="b_share"></span></button>
+        <span class="bt-sum-a">
+          <button class="btn sm" id="csvBtn" type="button" data-i="b_csv" hidden></button>
+          <button class="btn sm" id="jsonBtn" type="button" data-i="b_json" hidden></button>
+          <button class="btn sm pri" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="b_share"></span></button>
+        </span>
       </div>
       <div class="bt-seg" id="seg" hidden>
         <div class="bt-seg-h"><h2 data-i="sg_h"></h2><span class="sg-n" id="segN"></span></div>

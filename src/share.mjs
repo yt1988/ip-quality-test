@@ -11,7 +11,8 @@
 //     k: { source id: why it doesn't apply }, b: { blocklist id: 1 listed | 0 clean | 2 no answer },
 //     c?: Cloudflare's human check when it was run: "p" passed without a click | "c" after a click | "f" refused }
 // Without the address (the default) the answers keep only what the score and the findings need: the country, network
-// type, flags and risk scores, never the city, network name, reverse DNS or registry record.
+// type, flags, risk scores, which public lists named it, the routing verdicts and whether the reverse DNS matches its
+// name, never the city, network name, prefix, reverse DNS name itself or registry record.
 import { DNSBL } from "./sources.mjs";
 // 1ms.dog's shared codec, copied byte for byte from 1ms-shell (served as /assets/share/codec.js, where 1ms-shell's
 // check compares it); the page's bundle and the Worker both build from this one file
@@ -19,7 +20,10 @@ import { pack as packText, unpack as unpackText, CodecError } from "../public/as
 export { CodecError };
 
 export const FORMAT = 2;
-const KEEP = ["cc", "regCc", "asCc", "rir", "type", "tor", "vpn", "proxy", "abuser", "relay", "risk", "anycast", "ports", "tags"];
+// What a link without the address keeps: the score reads these (the lists' findings, the RPKI verdict, whether the
+// reverse DNS name matches), and none of them names the address or its prefix
+const KEEP = ["cc", "regCc", "asCc", "rir", "type", "tor", "vpn", "proxy", "abuser", "relay", "risk", "anycast", "ports", "tags",
+  "lists", "announced", "rpki", "fcrdns"];
 const BL = { 1: true, 0: false, 2: null };
 // Cloudflare's human check: the page's words for it and the link's letters
 const CF_CODE = { pass: "p", click: "c", fail: "f" };

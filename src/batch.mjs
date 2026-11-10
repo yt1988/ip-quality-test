@@ -1,6 +1,9 @@
 // The batch page, read: the list a visitor pastes, one table row per address from the API's `done` event, and the
 // shared link's payload. Pure, shared by the page (src/batch.js) and the tests.
 import { canon, isPublic, family, v6words } from "./ip.mjs";
+import { GRADES } from "./score.mjs";
+// the grade's letters, for the shared link (a capped grade isn't derivable from the score, so it travels along)
+const GR = GRADES.map(([, g]) => g);
 
 // one batch: as many fresh lookups as the Worker allows one visitor a minute (wrangler.toml, LIMIT)
 export const MAX = 20;
@@ -137,25 +140,31 @@ export function unpackSeg(runs) {
 const KINDS = ["hosting", "dynamic", "static", "mixed", "unknown"];
 export function packRows(rows, { at, withIp = false, segs = [] } = {}) {
   const R = rows.filter(r => r.r).map(({ ip, net, r }) => [r.score, r.cc || "", idx(TYPES, r.type), r.native == null ? -1 : +r.native, r.regCc || "",
-    r.anon.reduce((m, a) => m | (1 << ANON.indexOf(a)), 0), idx(LV, r.ai), idx(LV, r.stream), r.aiWhy || "", r.streamWhy || "", ...(withIp ? [ip, net || ""] : [])]);
+    r.anon.reduce((m, a) => m | (1 << ANON.indexOf(a)), 0), idx(LV, r.ai), idx(LV, r.stream), r.aiWhy || "", r.streamWhy || "",
+    GR.indexOf(r.grade), ...(withIp ? [ip, net || ""] : [])]);
   const S = segs.map(g => ({ r: packSeg(g.sts), k: idx(KINDS, g.kind), ...(g.bits > 24 ? { l: g.lo, m: g.bits } : {}),
     ...(withIp ? { b: g.base, ...(g.prefix && g.prefix.prefix ? { p: g.prefix.prefix, a: (g.prefix.asns || []).slice(0, 3) } : {}) } : {}) }));
-  return b64u(JSON.stringify({ v: 1, at, R, ...(S.length ? { S } : {}) }));
+  // v2 adds the grade after the answers and before the address; v1 links (already shared) still open, their grade
+  // derived from the score as before
+  return b64u(JSON.stringify({ v: 2, at, R, ...(S.length ? { S } : {}) }));
 }
 
 export function unpackRows(code) {
   let P;
   try { P = JSON.parse(unb64u(code)); } catch (e) { return null; }
-  if (!P || P.v !== 1 || !Array.isArray(P.R)) return null;
+  if (!P || !(P.v === 1 || P.v === 2) || !Array.isArray(P.R)) return null;
   const grade = s => (s >= 85 ? "A" : s >= 70 ? "B" : s >= 50 ? "C" : s >= 30 ? "D" : "F");
   const ok = s => typeof s === "string" && s.length < 80;
   const rows = P.R.slice(0, MAX).map((x, i) => {
     if (!Array.isArray(x) || !Number.isInteger(x[0]) || x[0] < 0 || x[0] > 100) return null;
+    const v2 = P.v === 2;
     const cc = /^[A-Z]{2}$/.test(x[1]) ? x[1] : null, reg = /^[A-Z]{2}$/.test(x[4]) ? x[4] : null;
-    const ip = typeof x[10] === "string" ? canon(x[10]) : null;
-    const net = typeof x[11] === "string" && /^[0-9a-f:]+\/\d{1,3}$/.test(x[11]) ? x[11] : null;
+    // a capped grade (a blocklist, too few risk sources) can't be read from the score: v2 carries it
+    const gr = v2 && GR[x[10]] ? GR[x[10]] : grade(x[0]);
+    const ip = typeof x[v2 ? 11 : 10] === "string" ? canon(x[v2 ? 11 : 10]) : null;
+    const net = typeof x[v2 ? 12 : 11] === "string" && /^[0-9a-f:]+\/\d{1,3}$/.test(x[v2 ? 12 : 11]) ? x[v2 ? 12 : 11] : null;
     return { i, ip: ip && isPublic(ip) ? ip : null, ...(net && ip ? { net } : {}), st: "ok", r: {
-      score: x[0], grade: grade(x[0]), cc, type: TYPES[x[2]] || null, native: x[3] === 1 ? true : x[3] === 0 ? false : null, regCc: reg,
+      score: x[0], grade: gr, cc, type: TYPES[x[2]] || null, native: x[3] === 1 ? true : x[3] === 0 ? false : null, regCc: reg,
       anon: ANON.filter((a, k) => x[5] & (1 << k)), ai: LV[x[6]] || null, stream: LV[x[7]] || null,
       aiWhy: ok(x[8]) && /^u_ai_\w+$/.test(x[8]) ? x[8] : null, streamWhy: ok(x[9]) && /^u_stream_\w+$/.test(x[9]) ? x[9] : null,
     } };

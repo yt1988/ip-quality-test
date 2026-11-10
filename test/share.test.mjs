@@ -33,6 +33,25 @@ test("without details the link has no address, city, network or registry record"
   for (const s of ["95.216.1.2", "Frankfurt", "Hetzner"]) assert.ok(full.includes(s), s);
 });
 
+test("the lists, routing and PTR verdicts ride along, never the prefix or the reverse DNS name", async () => {
+  const more = [...res,
+    { id: "lists", data: { type: "hosting", abuser: true, lists: { bad: 3, dc: true, drop: true, asndrop: false, relay: false, torrelay: false, proxy: false, vpn: false, tor: false, at: "2026-11-01T03:00:00.000Z" } } },
+    { id: "routing", data: { asn: 24940, org: "Hetzner", announced: true, rpki: "invalid", prefix: "95.216.0.0/16" } },
+    { id: "ptr", data: { host: "host-95-216-1-2.example.net", fcrdns: false, ptrType: "dynamic" } },
+  ];
+  const P = await decode(await encode(pack({ ...snap, res: more })));
+  const u = unpackResults(P), a = assess(u.res, u.bl), b = assess(more, bl.map(x => ({ ...x, name: x.id })));
+  assert.equal(a.score, b.score); assert.equal(a.grade, b.grade);
+  assert.deepEqual(a.uses, b.uses);
+  // the verdicts the score and the findings read are in the link
+  assert.equal(P.s.lists.lists.bad, 3); assert.equal(P.s.routing.rpki, "invalid");
+  assert.equal(P.s.routing.announced, true); assert.equal(P.s.ptr.fcrdns, false);
+  // the address's prefix and its reverse DNS name are not
+  const text = JSON.stringify(P);
+  for (const s of ["95.216.0.0/16", "example.net", "host-95"]) assert.ok(!text.includes(s), s);
+  assert.equal(P.s.ptr.host, 1);
+});
+
 test("links this code can't read come back null", async () => {
   for (const c of ["", "1.", "2.abcdefghij", "1.!!!!!!!!!!", "1.abcdefghijkl"]) assert.equal(await decode(c), null);
 });

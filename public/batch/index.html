@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/en.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Bulk IP check · 1ms.dog","url":"https://ipqs.1ms.dog/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Paste up to 20 IPv4 or IPv6 addresses and get one table: quality score and grade, residential or data center, native or broadcast IP, VPN, proxy or Tor flags, and whether AI services and streaming will work. Sort by any column; shared links leave the IPs out by default. Free, no sign-up.","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.4d325fb196.css">
+<link rel="stylesheet" href="/assets/app.7d366f0794.css">
 </head>
 <body>
 <div class="app">
@@ -77,7 +77,11 @@
       </form>
       <div class="bt-sum" id="sum" hidden>
         <b class="bt-sum-t" id="sumT"></b>
-        <button class="btn sm pri" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="b_share">Share</span></button>
+        <span class="bt-sum-a">
+          <button class="btn sm" id="csvBtn" type="button" data-i="b_csv" hidden>CSV</button>
+          <button class="btn sm" id="jsonBtn" type="button" data-i="b_json" hidden>JSON</button>
+          <button class="btn sm pri" id="shareBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5"/></svg><span data-i="b_share">Share</span></button>
+        </span>
       </div>
       <div class="bt-seg" id="seg" hidden>
         <div class="bt-seg-h"><h2 data-i="sg_h">Neighbourhood (/24)</h2><span class="sg-n" id="segN"></span></div>
@@ -123,7 +127,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"en","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.en.12467a49a9.js"></script>
-<script src="/assets/batch.d8742dcd0a.js"></script>
+<script src="/assets/l.en.3434d7999d.js"></script>
+<script src="/assets/batch.e34eb677a1.js"></script>
 </body>
 </html>

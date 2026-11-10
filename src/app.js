@@ -20,7 +20,17 @@ import { reportOf } from "./report.mjs";
   const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
-  const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask" };
+  const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask", hist: "ipqs:hist" };
+  // The addresses checked on this device, with their last score: kept in this browser only, never sent anywhere (the
+  // same store the theme uses). A result says how the address read last time, when it was checked here before.
+  const histGet = ip => { try { const m = JSON.parse(store.get(K.hist) || "{}"); return m && typeof m === "object" ? m : {}; } catch (e) { return {}; } };
+  function histPut(ip, score, grade) {
+    if (!ip) return;
+    const m = histGet(); delete m[ip]; m[ip] = { s: score, g: grade, at: Date.now() };
+    // newest first, 30 addresses: enough to look back without holding a profile of everything ever checked
+    const keep = Object.fromEntries(Object.entries(m).sort((a, b) => b[1].at - a[1].at).slice(0, 30));
+    try { store.set(K.hist, JSON.stringify(keep)); } catch (e) {}
+  }
   // Taiwan is "中国台湾 / Taiwan, China" with the PRC flag (1ms-shell docs/tool-contract.md §5); every other region by its system name
   const TW = { "zh-CN": "中国台湾", "zh-TW": "中國台灣", en: "Taiwan, China", ja: "中国台湾", ko: "중국 대만", es: "Taiwán, China", fr: "Taïwan, Chine", de: "Taiwan, China", pt: "Taiwan, China", ru: "Тайвань, Китай" };
   const country = cc => { if (cc === "TW") return TW[LANG]; try { return new Intl.DisplayNames([LANG], { type: "region" }).of(cc); } catch (e) { return cc; } };
@@ -130,14 +140,18 @@ import { reportOf } from "./report.mjs";
     else if (d.regCc || d.asCc) out.push(`<span class="pl">${flag(d.regCc || d.asCc)}${esc(t(d.regCc ? "g_reg_cc" : "g_as_cc"))}</span>`);
     if (d.rir && !d.cc) out.push(`<span class="m">${esc(d.rir)}</span>`);
     if (d.type) out.push(`<span class="ft" data-p="${d.type}">${esc(typeName(d.type))}</span>`);
-    for (const [k, x] of [["tor", "Tor"], ["vpn", "VPN"], ["proxy", t("tag_proxy")], ["abuser", t("f_abuse")]]) if (d[k] === true) out.push(`<span class="ft bad" data-p="${k}">${esc(x)}</span>`);
+    for (const [k, x] of [["tor", "Tor"], ["vpn", "VPN"], ["proxy", t("tag_proxy")], ["relay", t("tag_relay")], ["abuser", t("f_abuse")]]) if (d[k] === true) out.push(`<span class="ft bad" data-p="${k}">${esc(x)}</span>`);
     if (id === "tor" && d.tor === false) out.push(`<span class="m">${esc(t("x_tor_no"))}</span>`);
     if (id === "shodan") out.push(`<span class="m">${esc(d.ports && d.ports.length ? d.ports.slice(0, 8).join(", ") : t("x_no_ports"))}</span>`);
+    if (id === "ptr" && d.host) out.push(`<span class="num">${esc(d.host)}</span>`);
     if (!out.length && d.org) out.push(`<span class="m">${esc(d.org)}</span>`);
     return out.join("") || '<span class="m">–</span>';
   }
   const riskCell = v => typeof v === "number" ? `<b class="rk ${riskLv(v)}" data-p="risk">${v}</b>` : "";
-  const detail = (m, d) => [d.org && (d.asn ? "AS" + d.asn + " " : "") + d.org, d.city, ...(d.extra || []).map(([k, v]) => t(k) + " " + v)].filter(Boolean).join(" · ");
+  // a few extra facts are booleans or states of their own, not free text: translate their value too
+  const XV = { x_fcrdns: v => t(v === "yes" ? "yes" : "no"), x_rpki: v => t("rpki_" + v) };
+  const detail = (m, d) => [d.org && (d.asn ? "AS" + d.asn + " " : "") + d.org, d.city,
+    ...(d.extra || []).map(([k, v]) => t(k) + " " + (XV[k] ? XV[k](v) : v))].filter(Boolean).join(" · ");
   function fillSource(m) {
     if (!m.ok) { prSet(m.id, "fail", `<span class="m">${esc(t("src_fail"))}</span>`, "", "", m.err || ""); return; }
     prSet(m.id, "", answerOf(m.id, m.d), riskCell(m.d.risk), m.ms != null ? m.ms + " ms" : "", detail(m, m.d));
@@ -164,6 +178,7 @@ import { reportOf } from "./report.mjs";
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
+    $("#fresh").hidden = true; $("#conf").hidden = true; $("#hist").hidden = true; $("#skipN").hidden = true;
     cnShow(); cfShow();
     markExit(ip || selfIp);
   }
@@ -175,7 +190,7 @@ import { reportOf } from "./report.mjs";
     post({ type: "error", text: t(key) });
   }
 
-  async function run(ip, push) {
+  async function run(ip, push, fresh) {
     // a shared result's page checks nothing itself: a check starts on the language page
     if (SHARE_CODE) { location.href = D.paths[LANG] + (ip ? "?ip=" + encodeURIComponent(ip) : ""); return; }
     if (RUN) RUN.abort();
@@ -199,7 +214,8 @@ import { reportOf } from "./report.mjs";
     // a request that never answers (held by a blocker or a dead network) fails within seconds, not never
     const slow = setTimeout(() => ctl.abort(), 15000);
     let res;
-    try { res = await fetch("/api/check" + (ask ? "?ip=" + encodeURIComponent(ask) : ""), { cache: "no-store", signal: ctl.signal }); }
+    const q = new URLSearchParams(); if (ask) q.set("ip", ask); if (fresh) q.set("fresh", "1");
+    try { res = await fetch("/api/check" + (q.toString() ? "?" + q : ""), { cache: "no-store", signal: ctl.signal }); }
     catch (e) { if (ctl === RUN) fail("err_net"); return; }
     finally { clearTimeout(slow); }
     if (!res.ok) {
@@ -259,6 +275,9 @@ import { reportOf } from "./report.mjs";
       const b = $("#facts b"); b.className = "ipv"; b.innerHTML = ipHtml(m.ip, m.v);
       // sources this deployment has no keys for stay out of the list (the same for every address); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
       const cur = m, mine = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
+      // the sources this deployment has no keys for (hidden above): said once, because they decide the confidence
+      const nKey = Object.keys(m.skip).filter(id => m.skip[id] === "key").length;
+      const skn = $("#skipN"); skn.textContent = nKey ? t("skip_n", { n: nKey }) : ""; skn.hidden = !nKey;
       for (const id in m.skip) {
         if (!PR[id] || m.skip[id] === "browser") continue;
         if (m.skip[id] === "key") PR[id].hidden = true;
@@ -266,12 +285,13 @@ import { reportOf } from "./report.mjs";
       }
       if (!m.bl.length) for (const id in PR) if (PR[id].closest('[data-g="dnsbl"]')) prSet(id, "na", `<span class="m">${esc(t("skip_v4"))}</span>`, "", "");
       total = m.n + m.bl.length + mine.length;
-      for (const id of mine) PEND.push(inBrowser(id, m.ip).then(r => { if (CUR === cur) accept(r); }));
+      for (const id of mine) { PEND.push(inBrowser(id, m.ip).then(r => { if (CUR === cur) accept(r); })); }
       if (m.self) noteMine(m.ip);
       progress();
     } else if (m.t === "src") {
       if (!m.ok && SRCDEF[m.id] && SRCDEF[m.id].browser) {
         const cur = CUR;
+        markBrowser(m.id);
         PEND.push(inBrowser(m.id, cur.ip).then(r => { if (CUR === cur) accept(r.ok ? r : m); }));
         return;
       }
@@ -289,12 +309,15 @@ import { reportOf } from "./report.mjs";
   function blRow(m) {
     BLR.push(m);
     const hit = m.site ? `<a class="ft bad" data-p="dnsbl" href="${esc(m.site)}" target="_blank" rel="noopener noreferrer">${esc(t("bl_in"))}</a>` : `<span class="ft bad" data-p="dnsbl">${esc(t("bl_in"))}</span>`;
-    prSet(m.id, m.listed === true ? "hit-row" : m.listed === null ? "fail" : "", m.listed === true ? hit : `<span class="m">${esc(t(m.listed === false ? "bl_clean" : "src_fail"))}</span>`, "", "");
+    // a list that answers with a reason code says so on hover (DroneBL: 127.0.0.x, the list's own code)
+    const why = m.listed === true && m.codes && m.codes.length ? t("bl_codes", { list: m.codes.join(", ") }) : "";
+    prSet(m.id, m.listed === true ? "hit-row" : m.listed === null ? "fail" : "", m.listed === true ? hit : `<span class="m">${esc(t(m.listed === false ? "bl_clean" : "src_fail"))}</span>`, "", "", why);
   }
 
   /* ---------- the result ---------- */
   // each finding cell and the deductions that belong to it
-  const PARTS_OF = { type: ["hosting", "business"], anon: ["vpn", "proxy"], tor: ["tor"], risk: ["risk"], abuse: ["abuser"], dnsbl: ["dnsbl"] };
+  // (a Private Relay exit is an anonymizer like a VPN, so it sits in the same cell and shares its finding)
+  const PARTS_OF = { type: ["hosting", "business"], anon: ["vpn", "proxy", "relay"], tor: ["tor"], risk: ["risk"], abuse: ["abuser"], dnsbl: ["dnsbl"] };
   const CELL_OF = Object.fromEntries(Object.entries(PARTS_OF).flatMap(([f, ps]) => ps.map(p => [p, f])));
   const ICON = { ok: "✓", warn: "!", bad: "✕", info: "i", none: "–" };
   const nodata = () => `<span class="m">${esc(t("q_nodata"))}</span>`;
@@ -319,7 +342,20 @@ import { reportOf } from "./report.mjs";
     $("#gNum").textContent = r.score; $("#gGrade").textContent = t("grade", { g: r.grade });
     requestAnimationFrame(() => { $("#gArc").style.strokeDashoffset = 100 - r.score; });
     $("#vHead").textContent = t("g_" + r.grade);
-    $("#vText").textContent = t("d_" + r.grade);
+    // the grade can stop below what the score alone would give (blocklists, too few risk sources): say why
+    const capN = (r.notes || []).find(n => n.k === "n_cap_bl" || n.k === "n_cap_lists" || n.k === "n_cap_conf");
+    $("#vText").textContent = t("d_" + r.grade) + (capN ? " " + t(capN.k, capN.p) : "");
+    // how much the verdict rests on: the sources that answered, the ones with risk data, and any disagreement
+    const cfd = r.confidence || { level: "low", sources: RES.length, riskSources: 0 };
+    const cfEl = $("#conf");
+    cfEl.textContent = t("conf", { lv: t("conf_" + cfd.level), n: cfd.sources, r: cfd.riskSources });
+    cfEl.hidden = false;
+    // how this address read the last time it was checked on this device (local only; a shared result writes nothing)
+    const prev = !SHARED && CUR && CUR.ip ? histGet(CUR.ip)[CUR.ip] : null;
+    const hEl = $("#hist");
+    if (prev) { hEl.textContent = t("hist_prev", { date: new Date(prev.at).toLocaleString(LANG), g: prev.g, s: prev.s }); hEl.hidden = false; }
+    else hEl.hidden = true;
+    if (!SHARED) histPut(CUR.ip, r.score, r.grade);
     // where the points went: one colored line per deduction, the same color as its segment of the ring
     $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-k="${p.k.slice(2)}" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
     let at = r.score;
@@ -327,10 +363,16 @@ import { reportOf } from "./report.mjs";
 
     // the address
     const fb = $$("#facts b"), set = (i, h) => { fb[i].className = i ? "" : "ipv"; fb[i].innerHTML = h; };
-    const where = [s.city, s.cc && country(s.cc)].filter(Boolean).join(", ");
+    // the databases can put the address in different cities: show the two most agreed on, the rest on hover
+    const cs = s.cities || [];
+    const shown = cs.length > 1 ? [s.city, ...cs.filter(c => c.city !== s.city).map(c => c.city)].filter(Boolean) : [s.city];
+    const cityTxt = shown.slice(0, 2).join(" / ");
+    const where = [cityTxt, s.cc && country(s.cc)].filter(Boolean).join(", ");
+    const srcName = id => (PR[id] && PR[id].querySelector(".pn") ? PR[id].querySelector(".pn").textContent : id);
+    const cityMore = cs.length > 2 ? ` <span class="m" data-why="${esc(cs.map(c => c.city + " · " + c.by.map(srcName).join(", ")).join("\n"))}">+${cs.length - 2}</span>` : "";
     // a shared result without the address has no network or reverse DNS name either
     const hid = `<span class="m">${esc(t("r_hidden"))}</span>`, open = !SHARED || SHARED.i;
-    set(1, s.cc ? `${flag(s.cc)} ${esc(where)}` : "–");
+    set(1, s.cc ? `${flag(s.cc)} ${esc(where)}${cityMore}` : "–");
     // the AS number opens the ASN lookup when the shell names it
     const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
     set(2, !open ? hid : s.asn || s.org ? `${asTxt}<span class="m">${esc(s.org || "")}</span>` : "–");
@@ -348,11 +390,12 @@ import { reportOf } from "./report.mjs";
     else if (s.ccs.length === 1) finding("geo", "ok", `${flag(s.cc)} ${esc(t("fs_geo_ok", { n: geoN }))}`, s.ccs[0].by.map(id => PR[id] ? PR[id].querySelector(".pn").textContent : id).join(" · "));
     else finding("geo", "warn", s.ccs.map(c => `${flag(c.cc)} <span class="m">${c.by.length}</span>`).join(" "),
       t("n_geo_split", { list: list(s.ccs.map(c => country(c.cc))) }));
-    if (!F.vpn.of && !F.proxy.of) finding("anon", "none", nodata());
-    else if (F.vpn.yes || F.proxy.yes) finding("anon", F.vpn.yes + F.proxy.yes > 1 ? "bad" : "warn",
-      [F.vpn.yes && `VPN ${F.vpn.yes}/${F.vpn.of}`, F.proxy.yes && `${t("tag_proxy")} ${F.proxy.yes}/${F.proxy.of}`].filter(Boolean).map(esc).join(" · "),
-      t("n_anon", { n: new Set([...F.vpn.by, ...F.proxy.by]).size }));
-    else finding("anon", "ok", `${esc(t("fs_clean"))} <span class="m">${Math.max(F.vpn.of, F.proxy.of)}</span>`, t("q_clean", { n: Math.max(F.vpn.of, F.proxy.of) }));
+    if (!F.vpn.of && !F.proxy.of && !F.relay.of) finding("anon", "none", nodata());
+    else if (F.vpn.yes || F.proxy.yes || F.relay.yes) finding("anon", F.vpn.yes + F.proxy.yes + F.relay.yes > 1 ? "bad" : "warn",
+      [F.vpn.yes && `VPN ${F.vpn.yes}/${F.vpn.of}`, F.proxy.yes && `${t("tag_proxy")} ${F.proxy.yes}/${F.proxy.of}`,
+        F.relay.yes && `${t("tag_relay")} ${F.relay.yes}/${F.relay.of}`].filter(Boolean).map(esc).join(" · "),
+      F.relay.yes && !F.vpn.yes && !F.proxy.yes ? t("n_relay") : t("n_anon", { n: new Set([...F.vpn.by, ...F.proxy.by, ...F.relay.by]).size }));
+    else finding("anon", "ok", `${esc(t("fs_clean"))} <span class="m">${Math.max(F.vpn.of, F.proxy.of, F.relay.of)}</span>`, t("q_clean", { n: Math.max(F.vpn.of, F.proxy.of, F.relay.of) }));
     if (s.torListed || F.tor.yes) finding("tor", "bad", esc(t("q_tor_yes")), t("n_tor"));
     else if (F.tor.of) finding("tor", "ok", `${esc(t("fs_no"))} <span class="m">${F.tor.of}</span>`, t("q_tor_no", { n: F.tor.of }));
     else finding("tor", "none", nodata());
@@ -385,7 +428,10 @@ import { reportOf } from "./report.mjs";
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
     showLinks(); segShow(); cnShow(); cfShow();
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").hidden = false;
-    $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (r.cached ? " · " + t("cached") : "");
+    const ageH = r.cached ? Math.max(1, Math.round((Date.now() - Date.parse(r.at)) / 3600e3)) : 0;
+    const cacheTxt = !r.cached ? "" : Date.now() - Date.parse(r.at) < 3600e3 ? t("cached") : t("cached_age", { h: ageH });
+    $("#progTxt").textContent = t("src_n", { ok: RES.length, at: new Date(r.at).toLocaleString(LANG) }) + (cacheTxt ? " · " + cacheTxt : "");
+    $("#fresh").hidden = !r.cached;
     groupCounts();
     if (EMBED && !SHARED) postResult(SNAP);
   }
@@ -425,6 +471,8 @@ import { reportOf } from "./report.mjs";
     new ResizeObserver(() => { const h = Math.ceil(app.getBoundingClientRect().height); if (h !== lastH) post({ type: "size", height: lastH = h }); }).observe(app);
   }
   $("#rerun").onclick = () => { findExits(); run(lastIp, false); };
+  // the cached answer says how old it is; this asks the sources again (the Worker's rate limit still applies)
+  $("#fresh").onclick = () => run(lastIp, false, true);
 
   /* ---------- the visitor's exits ---------- */
   // A rule-based proxy picks the route by destination, so one "what is my IP" only shows one exit. As on EgressLens,
@@ -575,10 +623,18 @@ import { reportOf } from "./report.mjs";
     $("#sgSrc").innerHTML = sgCredit(null);
     $("#sgt").hidden = false;
   }
-  // the lists' credit (IP2Proxy LITE asks for it), with the oldest list's date
+  // the lists' credit (IP2Proxy LITE and Spamhaus ask for it), with the oldest list's date
   const SG_SRC = [["proxy", "IP2Proxy LITE", "https://lite.ip2location.com"], ["bad", "IPsum", "https://github.com/stamparm/ipsum"],
     ["vpn", "X4BNet", "https://github.com/X4BNet/lists_vpn"], ["drop", "Spamhaus DROP", "https://www.spamhaus.org/blocklists/do-not-route-or-peer/"],
     ["tor", "Tor Project", "https://www.torproject.org/"]];
+  // the same credit under the sources card, where it is visible for IPv6 too (the /24 card is IPv4 only)
+  const CREDIT = [["IPsum", "https://github.com/stamparm/ipsum"], ["X4BNet", "https://github.com/X4BNet/lists_vpn"],
+    ["Spamhaus DROP / ASN-DROP", "https://www.spamhaus.org/blocklists/do-not-route-or-peer/"],
+    ["Apple Private Relay", "https://support.apple.com/en-us/102602"], ["Tor Project", "https://www.torproject.org/"],
+    ["IP2Proxy LITE", "https://lite.ip2location.com"]];
+  const srcCredit = $("#srcCredit");
+  if (srcCredit) srcCredit.innerHTML = esc(t("src_credit")) + " " +
+    CREDIT.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join(esc(t("v_join")));
   // the legend: each colour, when its list was read
   const SG_LEG = { bad: "bad", proxy: "proxy", tor: "tor", vpn: "vpn", ok: null };
   const TAG = { ok: "good", warn: "warn", bad: "bad" };
@@ -613,10 +669,14 @@ import { reportOf } from "./report.mjs";
   // under it
   let sgCells = [], sgPick = -1;
   const sgSay = i => {
-    const c = sgCells[i], box = $("#sgInfo"); if (!c) { box.textContent = t("sg_hint"); return; }
+    const c = sgCells[i], box = $("#sgInfo");
+    if (!c) { box.textContent = t("sg_hint"); const pg = $("#sgPickGo"); if (pg) pg.hidden = true; return; }
     box.innerHTML = `<span class="ip">${esc(c.ip)}</span>${c.me ? `<span class="tag">${esc(t("sg_me"))}</span>` : ""}` +
       `<span class="st2"><i class="dot s-${c.st}"></i>${esc(addrLines(c).map(([k, q]) => say(k, q)).join(t("v_join")))}</span>` +
       `<span class="nm" title="${esc(c.name)}">${esc(c.name || t("sg_a_noname"))}</span>`;
+    // the neighbour under the pointer can be checked like any address (a shared result only shows the portrait)
+    const pg = $("#sgPickGo");
+    if (pg) { pg.hidden = SHARED; pg.onclick = () => { input.value = ""; run(c.ip, true); }; }
   };
   const sgRest = () => sgSay(sgPick >= 0 ? sgPick : sgCells.findIndex(c => c.me));
   const sgMap = $("#sgMap");
@@ -950,17 +1010,44 @@ import { reportOf } from "./report.mjs";
   }
 
   /* ---------- the form ---------- */
-  $("#ask").onsubmit = e => {
+  // a hostname is looked up by the Worker (Cloudflare's DoH; a name that resolves to a private address is refused)
+  const HOST_RE = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\.?$/i;
+  const resolveHost = v => getJ("/api/resolve?host=" + encodeURIComponent(v), 6000).then(j => {
+    const ip = j && canon(j.ip || "");
+    return ip && isPublic(ip) ? ip : null;
+  }).catch(() => null);
+  async function askAddress(v) {
+    const ip = canon(v);
+    if (ip) {
+      if (!isPublic(ip)) { input.classList.add("bad"); fail("err_private"); return null; }
+      input.classList.remove("bad"); return ip;
+    }
+    if (!HOST_RE.test(v)) { input.classList.add("bad"); fail("err_bad_ip"); return null; }
+    const r = await resolveHost(v);
+    if (!r) { input.classList.add("bad"); fail("err_host"); return null; }
+    input.classList.remove("bad");
+    return r;
+  }
+  $("#ask").onsubmit = async e => {
     e.preventDefault();
     const v = input.value.trim();
     if (!v) { run(null, true); return; }
-    const ip = canon(v);
-    if (!ip || !isPublic(ip)) { input.classList.add("bad"); fail(ip ? "err_private" : "err_bad_ip"); return; }
-    input.classList.remove("bad");
+    const btn = $("#go"); btn.disabled = true;
+    const ip = await askAddress(v);
+    btn.disabled = false;
+    if (!ip) return;
+    // the address the name resolved to stays in the box (and in the link), so a rerun doesn't ask again
+    if (ip !== canon(v)) input.value = ip;
     run(ip, true);
   };
   input.oninput = () => input.classList.remove("bad");
-  const start = () => { const q = new URL(location.href).searchParams.get("ip"); input.value = q || ""; run(q && canon(q) ? canon(q) : null, false); };
+  const start = async () => {
+    const q = (new URL(location.href).searchParams.get("ip") || "").trim();
+    input.value = q;
+    if (!q) { run(null, false); return; }
+    const ip = await askAddress(q);
+    if (ip) run(ip, false);
+  };
   if (SHARE_CODE) replay(SHARE_CODE);
   else { addEventListener("popstate", start); start(); }
 })();

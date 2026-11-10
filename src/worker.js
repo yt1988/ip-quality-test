@@ -1,8 +1,10 @@
 // ipqs Worker. Pages and assets are static files (public/, served without running this script); this script answers
 //   GET /api/check            the visitor's own address
 //   GET /api/check?ip=<addr>  any public IPv4 or IPv6 address
+//   GET /api/check?format=json  the same answers and score as one JSON document (instead of the NDJSON stream)
 // by asking every source in src/sources.mjs and the DNS blocklists at once, streaming each answer as it arrives, then
 // scoring them all (src/score.mjs), and
+//   GET /api/resolve?host=<name>  the first public address a hostname resolves to (Cloudflare's DoH)
 //   GET [/<lang>]/r/<code>    a shared result (src/share.mjs): the language page with the grade in its link preview
 //   GET  /api/turnstile       the Turnstile site key for the page's human-check test
 //   POST /api/turnstile       {token}: verifies a token the page's Turnstile widget handed back (siteverify)
@@ -34,7 +36,7 @@ async function dnsbl(ip, each = () => {}) {
   if (family(ip) !== 4) return [];          // the lists here only carry IPv4
   const rev = reverse(ip);
   return Promise.all(DNSBL.map(b => (async () => {
-    let listed = null;
+    let listed = null, codes;
     try {
       const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${rev}.${b.zone}&type=A`, { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(3500) });
       const j = await r.json();
@@ -43,10 +45,10 @@ async function dnsbl(ip, each = () => {}) {
         const a = (j.Answer || []).filter(x => x.type === 1).map(x => x.data);
         if (!a.length) listed = false;
         else if (a.some(x => /^127\.255\.255\./.test(x))) listed = null;     // the list refused the resolver
-        else listed = a.some(x => /^127\./.test(x));
+        else { listed = a.some(x => /^127\./.test(x)); if (listed) codes = a.filter(x => /^127\./.test(x)); }
       }
     } catch (e) {}
-    return { id: b.id, name: b.name, site: b.site(ip), listed };
+    return { id: b.id, name: b.name, site: b.site(ip), listed, codes };
   })().then(r => { each(r); return r; })));
 }
 
@@ -66,6 +68,7 @@ async function runSource(s, ip, ctx) {
 
 // Why a source is skipped for this address: needs secrets this deployment lacks, IPv4 only, or the visitor's own address only
 function skipOf(s, ip, self, env) {
+  if (s.id === "lists" && !env.SEG) return "off";
   if (!enabled(s, env)) return "key";
   if (s.browser === "only" && !(s.opt || []).some(k => env[k])) return "browser";   // asked by the page itself
   if (family(ip) === 6 && s.v6 === false) return "v4";
@@ -76,8 +79,44 @@ function skipOf(s, ip, self, env) {
 // The answer is NDJSON, one line per event, so the page fills each source's row the moment it answers:
 //   {"t":"start", ip, v, self, skip: {id: why}, bl: [ids], n}  what will answer (n sources), before any answer
 //   {"t":"src", id, ok, ms, d | err}                          one source
-//   {"t":"bl", id, listed}                                    one blocklist
+//   {"t":"bl", id, listed, codes?}                            one blocklist
 //   {"t":"done", score, grade, parts, notes, uses, summary, at, cached, elsewhere}
+//
+// One round of answers, shared by the stream and by ?format=json: the cache, the sources, the blocklists and the score.
+// send() is the stream's writer, or a no-op for JSON.
+async function collect({ request, env, ctx, ip, self, v, hit, skip, send }) {
+  const cache = caches.default, key = new Request(`https://ipqs.cache/${CACHE_VER}/${ip}`);
+  let raw, cached = false;
+  // what Cloudflare sees for this very request: the visitor's own address only, never cached
+  const own = !skip.cloudflare ? runSource(SOURCES.find(s => s.own), ip, { env, cf: request.cf }).then(r => { send({ t: "src", ...r }); return r; }) : null;
+  if (hit) {
+    raw = await hit.json(); cached = true;
+    // a source that failed last time (rate limit, timeout) is asked again rather than served as a failure
+    const ctx2 = { env, torList };
+    raw.sources = await Promise.all(raw.sources.map(r => {
+      const s = SOURCES.find(x => x.id === r.id);
+      return r.ok || !s ? r : runSource(s, ip, ctx2);
+    }));
+    // sources added since the answer was cached are asked now, and ones no longer used are dropped
+    const missing = SOURCES.filter(s => !s.own && !skip[s.id] && !raw.sources.some(r => r.id === s.id));
+    raw.sources = [...raw.sources.filter(r => SOURCES.some(s => s.id === r.id && !skip[s.id])), ...await Promise.all(missing.map(s => runSource(s, ip, ctx2)))];
+    for (const r of raw.sources) await send({ t: "src", ...r });
+    for (const b of raw.dnsbl) await send({ t: "bl", ...b });
+  } else {
+    const ctx2 = { env, torList };
+    const list = SOURCES.filter(s => !s.own && !skip[s.id]);
+    const [sources, bl] = await Promise.all([
+      Promise.all(list.map(s => runSource(s, ip, ctx2).then(r => { send({ t: "src", ...r }); return r; }))),
+      dnsbl(ip, b => send({ t: "bl", ...b })),
+    ]);
+    raw = { at: new Date().toISOString(), sources, dnsbl: bl };
+    ctx.waitUntil(cache.put(key, new Response(JSON.stringify(raw), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` } })));
+  }
+  const sources = own ? [await own, ...raw.sources] : raw.sources;
+  const result = assess(sources.filter(s => s.ok).map(s => ({ id: s.id, data: s.d })), raw.dnsbl);
+  return { sources, dnsbl: raw.dnsbl, at: raw.at, cached, result };
+}
+
 async function check(request, env, ctx) {
   const url = new URL(request.url);
   const me = canon(request.headers.get("CF-Connecting-IP") || "");
@@ -86,53 +125,36 @@ async function check(request, env, ctx) {
   if (!ip) return json({ error: "bad_ip" }, 400);
   if (!isPublic(ip)) return json({ error: "private", ip }, 400);
   const self = ip === me, v = family(ip);
+  // ?fresh=1 skips the cached answer: the page's own "check fresh" button, for when the visitor wants a new reading
+  const fresh = url.searchParams.get("fresh") === "1";
 
   const cache = caches.default, key = new Request(`https://ipqs.cache/${CACHE_VER}/${ip}`);
-  const hit = await cache.match(key);
+  const hit = fresh ? null : await cache.match(key);
   // a fresh lookup spends the sources' free quotas: limited per visitor when the binding exists
   if (!hit && env.LIMIT && me) {
     const { success } = await env.LIMIT.limit({ key: me });
     if (!success) return json({ error: "rate" }, 429, { "Retry-After": "60" });
   }
+  const skip = Object.fromEntries(SOURCES.map(s => [s.id, skipOf(s, ip, self, env)]).filter(([, why]) => why));
+  const blIds = v === 4 ? DNSBL.map(b => b.id) : [];
+
+  // ?format=json: the same answers and score as one JSON document, for scripts (no stream, so it waits for the slowest
+  // source). CORS is open: there is nothing to authenticate and the answer is public.
+  if (url.searchParams.get("format") === "json") {
+    const { sources, dnsbl: bl, at, cached, result } = await collect({ request, env, ctx, ip, self, v, hit, skip, send: async () => {} });
+    return json({ ip, version: v, self, at, cached, elsewhere: ELSEWHERE.map(([name, f]) => [name, f(ip)]), sources, dnsbl: bl, ...result },
+      200, { "Access-Control-Allow-Origin": "*" });
+  }
 
   const { readable, writable } = new TransformStream();
   const w = writable.getWriter(), enc = new TextEncoder();
   const send = o => w.write(enc.encode(JSON.stringify(o) + "\n")).catch(() => {});
-  const skip = Object.fromEntries(SOURCES.map(s => [s.id, skipOf(s, ip, self, env)]).filter(([, why]) => why));
-  const blIds = v === 4 ? DNSBL.map(b => b.id) : [];
 
   ctx.waitUntil((async () => {
     try {
       await send({ t: "start", ip, v, self, skip, bl: blIds, n: SOURCES.filter(s => !skip[s.id]).length });
-      let raw, cached = false;
-      // what Cloudflare sees for this very request: the visitor's own address only, never cached
-      const own = !skip.cloudflare ? runSource(SOURCES.find(s => s.own), ip, { env, cf: request.cf }).then(r => { send({ t: "src", ...r }); return r; }) : null;
-      if (hit) {
-        raw = await hit.json(); cached = true;
-        // a source that failed last time (rate limit, timeout) is asked again rather than served as a failure
-        const ctx2 = { env, torList };
-        raw.sources = await Promise.all(raw.sources.map(r => {
-          const s = SOURCES.find(x => x.id === r.id);
-          return r.ok || !s ? r : runSource(s, ip, ctx2);
-        }));
-        // sources added since the answer was cached are asked now, and ones no longer used are dropped
-        const missing = SOURCES.filter(s => !s.own && !skip[s.id] && !raw.sources.some(r => r.id === s.id));
-        raw.sources = [...raw.sources.filter(r => SOURCES.some(s => s.id === r.id && !skip[s.id])), ...await Promise.all(missing.map(s => runSource(s, ip, ctx2)))];
-        for (const r of raw.sources) await send({ t: "src", ...r });
-        for (const b of raw.dnsbl) await send({ t: "bl", ...b });
-      } else {
-        const ctx2 = { env, torList };
-        const list = SOURCES.filter(s => !s.own && !skip[s.id]);
-        const [sources, bl] = await Promise.all([
-          Promise.all(list.map(s => runSource(s, ip, ctx2).then(r => { send({ t: "src", ...r }); return r; }))),
-          dnsbl(ip, b => send({ t: "bl", ...b })),
-        ]);
-        raw = { at: new Date().toISOString(), sources, dnsbl: bl };
-        ctx.waitUntil(cache.put(key, new Response(JSON.stringify(raw), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` } })));
-      }
-      const sources = own ? [await own, ...raw.sources] : raw.sources;
-      const result = assess(sources.filter(s => s.ok).map(s => ({ id: s.id, data: s.d })), raw.dnsbl);
-      await send({ t: "done", ...result, at: raw.at, cached, elsewhere: ELSEWHERE.map(([name, f]) => [name, f(ip)]) });
+      const { at, cached, result } = await collect({ request, env, ctx, ip, self, v, hit, skip, send });
+      await send({ t: "done", ...result, at, cached, elsewhere: ELSEWHERE.map(([name, f]) => [name, f(ip)]) });
     } catch (e) {
       await send({ t: "error", error: "internal" });
     } finally {
@@ -140,6 +162,30 @@ async function check(request, env, ctx) {
     }
   })());
   return new Response(readable, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+}
+
+// A hostname the visitor typed: Cloudflare's DoH (A, else AAAA), the first public address, cached for six hours.
+// Only names are accepted, and only public answers come back: this never reaches a private address.
+const HOST_RE = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\.?$/i;
+async function resolveHost(host, ctx) {
+  const key = new Request("https://ipqs.cache/host/" + host);
+  const hit = await caches.default.match(key);
+  if (hit) { const j = await hit.json(); return j.ip || null; }
+  const put = (body, ms) => ctx.waitUntil(caches.default.put(key, new Response(JSON.stringify(body), {
+    headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${ms}` },
+  })));
+  for (const type of ["A", "AAAA"]) {
+    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=${type}`, {
+      headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(4000),
+    }).catch(() => null);
+    if (!r || !r.ok) continue;
+    const j = await r.json().catch(() => null);
+    const ips = ((j && j.Answer) || []).filter(x => x.type === 1 || x.type === 28).map(x => canon(x.data)).filter(x => x && isPublic(x));
+    if (ips.length) { put({ ip: ips[0] }, 21600); return ips[0]; }
+  }
+  // a name with no public address is not asked again and again; five minutes, so a name that starts resolving is seen
+  put({}, 300);
+  return null;
 }
 
 // A shared result: the language page as it is, with its link preview naming the grade and score (the page itself
@@ -204,6 +250,17 @@ export default {
     if (url.pathname === "/api/turnstile") {
       try { return await turnstile(request, env); }
       catch (e) { return json({ error: "internal" }, 502); }
+    }
+    // a hostname the page's box accepts: resolved here (Cloudflare's DoH), never in the visitor's browser
+    if (url.pathname === "/api/resolve") {
+      if (request.method !== "GET") return json({ error: "method" }, 405, { Allow: "GET" });
+      const host = (url.searchParams.get("host") || "").trim().toLowerCase().replace(/\.$/, "");
+      if (!HOST_RE.test(host)) return json({ error: "bad_host" }, 400);
+      try {
+        const ip = await resolveHost(host, ctx);
+        if (!ip) return json({ error: "no_host" }, 404);
+        return json({ ip, version: family(ip) }, 200, { "Access-Control-Allow-Origin": "*" });
+      } catch (e) { return json({ error: "internal" }, 502); }
     }
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, 404);
     const m = SHARE_PATH.exec(url.pathname);

@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/netip"
@@ -58,13 +59,22 @@ func parseCymru(txts []string) *Prefix {
 
 func cymru(ctx context.Context, ip string) (*Prefix, error) {
 	a, err := netip.ParseAddr(ip)
-	if err != nil || !a.Is4() {
+	if err != nil {
 		return nil, err
 	}
-	b := a.As4()
+	var name string
+	switch {
+	case a.Is4():
+		b := a.As4()
+		name = net.IPv4(b[3], b[2], b[1], b[0]).String() + ".origin.asn.cymru.com"
+	case a.Is6() && !a.Is4In6():
+		name = cymruName6(a)
+	default:
+		return nil, err
+	}
 	qctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
 	defer cancel()
-	txts, err := resolver(0).LookupTXT(qctx, net.IPv4(b[3], b[2], b[1], b[0]).String()+".origin.asn.cymru.com")
+	txts, err := resolver(0).LookupTXT(qctx, name)
 	if err != nil {
 		var de *net.DNSError
 		if asDNSError(err, &de) && de.IsNotFound {
@@ -73,6 +83,17 @@ func cymru(ctx context.Context, ip string) (*Prefix, error) {
 		return nil, err
 	}
 	return parseCymru(txts), nil
+}
+
+// cymruName6: Team Cymru's IPv6 origin lookup, the address's 32 nibbles reversed.
+func cymruName6(a netip.Addr) string {
+	b := a.As16()
+	var sb strings.Builder
+	for i := 15; i >= 0; i-- {
+		fmt.Fprintf(&sb, "%x.%x.", b[i]&0xf, b[i]>>4)
+	}
+	sb.WriteString("origin6.asn.cymru.com")
+	return sb.String()
 }
 
 var ripe = &http.Client{Timeout: 3 * time.Second, Transport: &http.Transport{

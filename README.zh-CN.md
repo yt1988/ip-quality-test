@@ -2,7 +2,7 @@
 
 [English](README.md) · **简体中文**
 
-你的 IP 有多干净？[IPQS](https://ipqs.1ms.dog) 同时向十几个 IP 情报库和 8 个 DNS 黑名单查询一个地址，哪个先返回就先显示哪个，全部返回后给出 0–100 的评分，以及对常见用途的判断。
+你的 IP 有多干净？[IPQS](https://ipqs.1ms.dog) 同时向 17 个不需要密钥的 IP 情报来源（其中 9 个由服务器查询、7 个由浏览器直接查询，Cloudflare 另提供本机地址的边缘视角）和 9 个 DNS 黑名单查询一个地址，哪个先返回就先显示哪个，全部返回后给出 0–100 的评分，以及对常见用途的判断。可以查 IPv4、IPv6，也可以直接输入域名。
 
 **在线使用：** https://ipqs.1ms.dog
 
@@ -23,14 +23,17 @@
 - **评分和等级（A–F）**，附明细：每一分扣在哪里、为什么。
 - **家宽、移动网络还是机房**，按有多少个来源同意来判断。
 - **原生 IP 还是广播 IP**：比较地址注册机构（RDAP）记录的国家和各数据库给出的位置。
-- **VPN、代理、Tor 标记**，逐个来源统计，另外查 Tor 项目自己的出口列表。
+- **VPN、代理、Tor 和 iCloud Private Relay 标记**，逐个来源统计，另外查 Tor 项目自己的出口列表和中继列表（中继不是出口）。
+- **公开黑名单和路由**：IPsum 的综合收录数、Spamhaus DROP（整段）和 ASN-DROP（整个网络）、覆盖它的前缀有没有在 BGP 中宣告、RPKI 记录是否有效。
 - **欺诈和滥用分数**：有这项数据的来源加权平均。
-- **邮件黑名单**（SpamCop、Barracuda、PSBL、Mailspike、UCEPROTECT、GBUdb、blocklist.de、Anonmails）。
+- **反向解析**：PTR 名称、正向能否解析回这个地址（邮件服务器会查）、名称看起来像家宽动态池还是服务器。
+- **邮件黑名单**（SpamCop、DroneBL、Barracuda、PSBL、Mailspike、UCEPROTECT、GBUdb、blocklist.de、Anonmails）。
 - **对用途的影响**：流媒体、AI 服务（包括 OpenAI 和 Anthropic 不服务的地区）、Google 和 Cloudflare 验证码、注册和支付、发邮件。
 - **分享**：结果图片卡片（等级和分数为主，IP、城市和运营商默认不显示，可以打开）和一个能打开同样结果的链接，链接预览里写着等级和分数。两者都在你的浏览器里生成。
 - **每个来源的原始结果**，都链接到该来源自己的查询页，方便核对；另有去 Scamalytics、Spur、ping0 等网站查询的链接。
+- **本机历史**：这台设备查过的最近 30 个地址，只存在 `localStorage` 里，不会发到任何地方；同一个地址再查时会显示上次的等级和分数。
 
-本机的 IPv4 和 IPv6 都会找出来（由浏览器访问只支持 IPv4 和只支持 IPv6 的地址），也可以查任意公网地址：`https://ipqs.1ms.dog/?ip=8.8.8.8`。
+本机的 IPv4 和 IPv6 都会找出来（由浏览器访问只支持 IPv4 和只支持 IPv6 的地址），也可以查任意公网地址：`https://ipqs.1ms.dog/?ip=8.8.8.8`。也可以输入域名（`https://ipqs.1ms.dog/?ip=example.com`）：页面向 Worker 的 `/api/resolve`（Cloudflare DoH）要地址，解析到内网地址会被拒绝。
 
 ## 数据来源
 
@@ -45,6 +48,10 @@
 | IP.SB | 否 | 位置、网络（由浏览器查询） |
 | iplocation.net | 否 | 位置、运营商 |
 | GeoJS | 否 | 位置、网络 |
+| 1ms 公开名单 | 否 | 这个地址在 IPsum、Spamhaus DROP 和 ASN-DROP、Apple Private Relay、Tor 中继里的记录（IPv4 和 IPv6；需要名单服务） |
+| SANS ISC | 否 | DShield 攻击报告和威胁情报源（IPv4） |
+| RIPEstat | 否 | 宣告的前缀、来源 AS、RPKI 状态 |
+| 反向 DNS | 否 | PTR 名称、正向确认、动态池或服务器命名 |
 | RDAP（各 RIR） | 否 | 注册国家、网络名、地址段 |
 | ip.guide | 否 | 所属网络的注册国家和 RIR |
 | Shodan InternetDB | 否 | 开放端口，`vpn`、`proxy`、`tor` 等标签（IPv4） |
@@ -56,22 +63,30 @@
 | proxycheck.io | `PROXYCHECK_KEY` | 代理、VPN、Tor、网络类型、0–100 风险值、运营方 |
 | IP2Location | `IP2LOCATION_KEY` | 代理 |
 
-没有配置密钥的来源不显示。需要密钥的几家都有免费套餐；proxycheck.io 和 IP2Location 不带密钥也能查，但会拒绝 Cloudflare 的共享地址。会限流这些地址的来源改由访问者的浏览器查询；服务器没查到的来源，如果允许跨域，也会由浏览器再查一次。黑名单里没有 Spamhaus 和 SORBS：它们拒绝经由公共 DNS 解析器的查询。
+没有配置密钥的来源不显示。需要密钥的几家都有免费套餐；proxycheck.io 和 IP2Location 不带密钥也能查，但会拒绝 Cloudflare 的共享地址。会限流这些地址的来源改由访问者的浏览器查询；服务器没查到的来源，如果允许跨域，也会由浏览器再查一次。DNS 黑名单里没有 Spamhaus 和 SORBS：它们拒绝经由公共 DNS 解析器的查询。Spamhaus 的 DROP 和 ASN-DROP 数据仍然会用：名单服务每天下载一次，在本地按地址或网络查询，并按它们的条款署名。
 
 ## 评分规则
 
-每个地址从 100 分开始，按各来源的发现扣分：机房网络最多扣 20（多数来源认为是机房时扣满 20，所以干净的服务器地址最高 B 级），代理标记扣 20，VPN 扣 15，Tor 扣 40，滥用报告扣 10，加权平均欺诈分数最多扣 35，每个邮件黑名单扣 6（最多 24）。标记按同意的来源比例折算。等级：A 85 以上，B 70 以上，C 50 以上，D 30 以上，F 低于 30。
+每个地址从 100 分开始，按各来源的发现扣分：机房网络最多扣 20（多数来源认为是机房时扣满 20，所以干净的服务器地址最高 B 级），商业网络最多扣 5，代理标记扣 20，VPN 扣 15，Tor 扣 75，iCloud Private Relay 出口扣 5，滥用报告扣 10，加权平均欺诈分数最多扣 35，IPsum 收录 1–2 份扣 4、3 份以上扣 8，整个网段在 Spamhaus DROP 扣 15、所在网络在 ASN-DROP 扣 3，每个邮件黑名单扣 6（最多 24；UCEPROTECT 算半个）。只有一个来源给出的标记、机房票或风险分数按一半计算，标记按同意的来源比例折算。已经有来源标记过的地址，IPsum 不重复扣同一件事。
+
+等级：A 85 以上，B 70 以上，C 50 以上，D 30 以上，F 低于 30，并有以下分数抬不上去的上限：在邮件黑名单上最高 B，两份以上最高 C；在公开名单上（IPsum、DROP、ASN-DROP）最高 B，两份以上最高 C；风险来源少于两个也最高 B；Tor 出口固定 F。页面上会显示置信度：有几个来源回答、几个给出了风险数据、它们有没有分歧。
 
 规则在 [`src/score.mjs`](src/score.mjs)，有单元测试。
 
 ## API
 
 ```
-GET /api/check            本机地址
-GET /api/check?ip=<地址>  任意公网 IPv4 或 IPv6 地址
+GET /api/check                  本机地址
+GET /api/check?ip=<地址>        任意公网 IPv4 或 IPv6 地址
+GET /api/check?format=json      同样的回答和评分，一次性返回 JSON
+GET /api/resolve?host=<域名>    域名解析到的第一个公网地址
 ```
 
-返回 NDJSON：先是一行 `start`（列出所有行），每个来源返回时一行 `src`，每个黑名单一行 `bl`，最后一行 `done`，包含 `score`、`grade`、`parts`、`notes`、`uses` 和 `summary`。每个地址的结果缓存 6 小时。每个访问者每分钟最多 20 次新查询。
+流式返回 NDJSON：先是一行 `start`（列出所有行），每个来源返回时一行 `src`，每个黑名单一行 `bl`，最后一行 `done`，包含 `score`、`grade`、`parts`、`notes`、`uses` 和 `summary`。`?format=json` 会等所有来源返回，给出 `{ip, version, self, at, cached, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}`（开放 CORS）；`notes` 和扣分项带的是文案 key 和参数，不是整句。每个地址的结果缓存 6 小时。每个访问者每分钟最多 20 次新查询。
+
+```bash
+curl -s 'https://ipqs.1ms.dog/api/check?ip=8.8.8.8&format=json' | jq '{score, grade, cc: .summary.cc, asn: .summary.asn}'
+```
 
 分享的结果在 `/r/<code>`（或 `/<语言>/r/<code>`）：code 是各来源的回答，压缩后用 base64url 编码，前面带格式版本号（`src/share.mjs`）。Worker 会把等级和分数写进这个页面的链接预览。分享弹窗本身是 1ms.dog 各工具共用的组件，原样复制自 [1ms-shell](https://github.com/yt1988/1ms-shell) 到 `public/assets/share/`，本页只负责在卡片上画出结果。
 
@@ -86,7 +101,7 @@ npx wrangler login
 npx wrangler deploy
 ```
 
-只有一个 Worker：页面是静态资源（免费、不计请求数），`src/worker.js` 负责 `/api/check`。`wrangler.toml` 关闭了 `*.workers.dev` 和预览地址；在 **Workers & Pages → ipqs → Settings → Domains & Routes** 绑定自己的域名，或者临时设置 `workers_dev = true` 试用。用 `npx wrangler secret put IPQS_KEY` 等命令添加密钥。Cloudflare 人机验证实测（访客点按钮才运行的 Turnstile 小组件）要设置 `TURNSTILE_SITEKEY` 和 `TURNSTILE_SECRET` 后才会出现：在控制台的 **Turnstile** 里建一个托管模式的小组件。「你的连接」两格（DNS 解析器、TCP 握手）由浏览器直接读 1ms.dog 自己的服务器：`l.1ms.dog` 的权威 DNS（github.com/yt1988/dns-test 的 `server/dns`）和 who 的探针 `probe.1ms.dog/fp`；读不到时这两格不显示。「C 段画像」卡片读的是 `server/`（Go 写的服务，部署在 1ms.dog 的 VPS 上，见 `server/README.md`），地址写在 `scripts/build.mjs` 的 `SEG` 里；为空时卡片不显示。
+只有一个 Worker：页面是静态资源（免费、不计请求数），`src/worker.js` 负责 `/api/check`。`wrangler.toml` 关闭了 `*.workers.dev` 和预览地址；在 **Workers & Pages → ipqs → Settings → Domains & Routes** 绑定自己的域名，或者临时设置 `workers_dev = true` 试用。用 `npx wrangler secret put IPQS_KEY` 等命令添加密钥。Cloudflare 人机验证实测（访客点按钮才运行的 Turnstile 小组件）要设置 `TURNSTILE_SITEKEY` 和 `TURNSTILE_SECRET` 后才会出现：在控制台的 **Turnstile** 里建一个托管模式的小组件。「你的连接」两格（DNS 解析器、TCP 握手）由浏览器直接读 1ms.dog 自己的服务器：`l.1ms.dog` 的权威 DNS（github.com/yt1988/dns-test 的 `server/dns`）和 who 的探针 `probe.1ms.dog/fp`；读不到时这两格不显示。「C 段画像」卡片读的是 `server/`（Go 写的服务，部署在 1ms.dog 的 VPS 上，见 `server/README.md`），地址写在 `scripts/build.mjs` 的 `SEG` 里；为空时卡片不显示。同一个服务还提供单地址名单查询：在 `wrangler.toml` 的 `[vars] SEG` 填它的地址，为空则这个来源不显示。
 
 要让 canonical 标签和站点地图用你自己的域名，用 `SITE_URL` 重新构建：
 

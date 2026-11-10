@@ -30,8 +30,8 @@ export const FINDS = [...PROFILE, ...USES];
 // the source groups of the second card, in the order the rows are drawn
 const nameOf = id => (SOURCES.find(s => s.id === id) || DNSBL.find(s => s.id === id)).name;
 export const GROUPS = [
-  ["intel", ["cloudflare", "ipapi", "ipquery", "ipapiis", "ipinfo", "ipwho", "ipsb", "iplocation", "geojs", "proxycheck", "ip2location", "ipqs", "abuseipdb", "scamalytics", "ipdata"]],
-  ["reg", ["rdap", "ipguide", "shodan", "tor"]],
+  ["intel", ["lists", "cloudflare", "ipapi", "ipquery", "ipapiis", "ipinfo", "ipwho", "ipsb", "iplocation", "geojs", "isc", "proxycheck", "ip2location", "ipqs", "abuseipdb", "scamalytics", "ipdata"]],
+  ["reg", ["rdap", "ipguide", "routing", "ptr", "shodan", "tor"]],
   ["dnsbl", DNSBL.map(x => x.id)],
 ].map(([g, ids]) => [g, ids.map(id => [id, nameOf(id)])]);
 
@@ -181,9 +181,9 @@ export async function build({ check = false } = {}) {
 > streaming, AI services, CAPTCHAs, sign-ups and sending mail. Each source's answer is shown with a link to check it.
 
 - Page: ${SITE}/ (also ${langs.slice(1).map(([, s]) => "/" + s + "/").join(", ")})
-- Any address: ${SITE}/?ip=8.8.8.8
+- Any address or hostname: ${SITE}/?ip=8.8.8.8
 - Up to 20 addresses at once, as one table: ${SITE}/batch/
-- API (NDJSON stream, one line per source, then the score): ${SITE}/api/check?ip=8.8.8.8
+- API (NDJSON stream, one line per source, then the score; add &format=json for one document): ${SITE}/api/check?ip=8.8.8.8
 - Source code: https://github.com/yt1988/ip-quality-test
 
 - More 1ms.dog tools: https://1ms.dog/

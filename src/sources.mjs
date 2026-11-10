@@ -16,6 +16,8 @@
 //       got no answer. Both need the source to answer CORS.
 // site: the source's own page for the address, so a visitor can check the answer at the source
 
+import { family, v6words, canon } from "./ip.mjs";
+
 const UA = "ipqs (+https://github.com/yt1988/ip-quality-test)";
 
 export async function getJSON(url, { headers = {}, ms = 4500 } = {}) {
@@ -24,6 +26,31 @@ export async function getJSON(url, { headers = {}, ms = 4500 } = {}) {
   const r = await fetch(url, { headers: h, signal: AbortSignal.timeout(ms) });
   if (!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
+}
+
+// A DNS answer through Cloudflare's DoH JSON (the Worker already asks the blocklists this way).
+async function doh(name, type) {
+  const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`, {
+    headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(3500),
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  const want = type === "PTR" ? 12 : type === "AAAA" ? 28 : 1;
+  return (j.Answer || []).filter(x => x.type === want).map(x => String(x.data).replace(/\.$/, ""));
+}
+
+// "1.2.3.4" → "4.3.2.1.in-addr.arpa"; an IPv6 address → its nibbles reversed in ip6.arpa.
+export function ptrName(ip) {
+  if (family(ip) === 4) return ip.split(".").reverse().join(".") + ".in-addr.arpa";
+  const w = v6words(ip);
+  if (!w) return "";
+  return w.map(x => x.toString(16).padStart(4, "0")).join("").split("").reverse().join(".") + ".ip6.arpa";
+}
+
+// A date a source printed, older than the days given? Used to keep old abuse reports out of the score.
+export function withinDays(s, days) {
+  const t = Date.parse(String(s || "").replace(" ", "T"));
+  return Number.isFinite(t) && Date.now() - t <= days * 864e5;
 }
 
 // The many ways sources name a network's use, mapped to ours
@@ -248,6 +275,98 @@ export const SOURCES = [
       return { tor: set.has(ip) };
     },
   },
+  {
+    // Our own VPS: the daily public lists read for this exact address (IPsum, IP2Proxy, X4BNet, Spamhaus DROP and
+    // ASN-DROP, Apple Private Relay, Tor relays). Cached by the Worker like every other answer.
+    id: "lists", name: "1ms public lists",
+    site: () => "https://ipqs.1ms.dog/",
+    async run(ip, { env }) {
+      if (!env.SEG) throw new Error("off");
+      const j = await getJSON(`${env.SEG}/v1/ip?ip=${encodeURIComponent(ip)}`, { ms: 5000 });
+      const L = j.lists || {};
+      const bits = [];
+      if (L.bad) bits.push("IPsum " + L.bad);
+      if (L.drop) bits.push("Spamhaus DROP");
+      if (L.asndrop) bits.push("ASN-DROP");
+      if (L.relay) bits.push("Private Relay");
+      if (L.torrelay) bits.push("Tor relay");
+      if (L.vpn) bits.push("VPN range");
+      if (L.dc) bits.push("data-centre range");
+      if (L.proxy) bits.push("open proxy");
+      return {
+        host: j.ptr || undefined, type: L.dc ? "hosting" : undefined,
+        proxy: L.proxy ? true : undefined, vpn: L.vpn ? true : undefined, tor: L.tor ? true : undefined,
+        relay: L.relay ? true : undefined,
+        abuser: L.bad >= 3 || L.drop || L.asndrop ? true : undefined,
+        lists: L, extra: bits.length ? [["x_lists", bits.join(" · ")]] : [],
+      };
+    },
+  },
+  {
+    // SANS ISC's DShield records: attack reports and the feeds that name the address. IPv4 only (its API refuses v6).
+    id: "isc", name: "SANS ISC", v6: false,
+    site: ip => "https://isc.sans.edu/ipinfo/" + ip,
+    async run(ip) {
+      const j = await getJSON(`https://isc.sans.edu/api/ip/${ip}?json`);
+      const d = j.ip || {};
+      if (d.number === false || (!d.as && !d.threatfeeds)) throw new Error("no data");
+      const feeds = Object.keys(d.threatfeeds || {});
+      const ssh = +(d.ssh && d.ssh.attempts) || 0, web = +(d.weblogs && d.weblogs.count) || 0;
+      const attacks = (+d.attacks || 0) + (+d.count || 0) + ssh + web;
+      const last = d.updated || (d.weblogs && d.weblogs.lastseen) || (d.ssh && d.ssh.end) || d.maxdate;
+      const bits = [];
+      if (ssh) bits.push("SSH " + ssh);
+      if (web) bits.push("web " + web);
+      if (feeds.length) bits.push(feeds.slice(0, 5).join(", "));
+      if (d.asabusecontact) bits.push(d.asabusecontact);
+      return { asn: asnOf(d.as), org: d.asname,
+        // "torexit" only: "alltor" covers relays too, and a relay is not an exit (the lists source tells them apart)
+        tor: feeds.includes("torexit") ? true : undefined,
+        // it answered, so it can also say no: no attack report in the last 90 days is a clean reading, not "no data"
+        abuser: attacks >= 10 && withinDays(last, 90),
+        extra: bits.length ? [["x_isc", bits.join(" · ")]] : [] };
+    },
+  },
+  {
+    // RIPE's routing data: is the covering prefix announced, by which AS, and does its RPKI record validate?
+    id: "routing", name: "RIPEstat",
+    site: () => "https://stat.ripe.net/",
+    async run(ip) {
+      const j = await getJSON(`https://stat.ripe.net/data/prefix-overview/data.json?resource=${encodeURIComponent(ip)}`, { ms: 5000 });
+      const d = j.data || {}, as = (d.asns || [])[0] || {};
+      let rpki;
+      if (as.asn && d.resource) {
+        const r = await getJSON(`https://stat.ripe.net/data/rpki-validation/data.json?resource=AS${as.asn}&prefix=${encodeURIComponent(d.resource)}`, { ms: 5000 }).catch(() => null);
+        // the three states the page knows; anything else is left out rather than shown half-translated
+        rpki = r && r.data && /^(valid|invalid|unknown)$/i.test(r.data.status) ? r.data.status.toLowerCase() : undefined;
+      }
+      const extra = [];
+      if (d.resource) extra.push(["x_prefix", d.resource]);
+      if (rpki) extra.push(["x_rpki", rpki]);
+      return { asn: as.asn, org: as.holder, announced: d.announced === true, rpki, prefix: d.resource, extra };
+    },
+  },
+  {
+    // Reverse DNS from Cloudflare's DoH: the PTR name, whether it forwards back to the address (mail cares), and
+    // whether the name reads like a dynamic home or mobile pool or a server network.
+    id: "ptr", name: "Reverse DNS",
+    site: ip => "https://dns.google/query?name=" + encodeURIComponent(ptrName(ip)) + "&type=PTR",
+    async run(ip) {
+      const name = ptrName(ip);
+      if (!name) throw new Error("bad ip");
+      const names = await doh(name, "PTR");
+      if (!names.length) return { fcrdns: false };
+      const host = names[0].toLowerCase();
+      const fwd = await doh(host, family(ip) === 4 ? "A" : "AAAA").catch(() => []);
+      const fcrdns = fwd.some(a => canon(a) === canon(ip));
+      const dyn = /(^|[.\-])(dynamic|dyn|dhcp|pool|ppp|pppoe|adsl|dsl|xdsl|vdsl|cable|catv|fttx|ftth|fttb|fiber|fibre|broadband|res|resi|residential|cust|customer|customers|home|user|users|client|clients|subscriber|mobile|cpe|wifi|lte|wireless|gprs|3g|4g|5g|dial|dialup|nat|cgnat)([.\-]|$)/i.test(host);
+      const srv = /(^|[.\-])(server|srv|vps|vds|cloud|dedi|dedicated|colo|colocation|hosting|hosted|hoster|datacenter|datacentre|rack|node)([.\-]|$)/i.test(host);
+      // the name says something about the kind of line, but a name is a hint, not a database: it is shown, never
+      // voted into the network type (a data center address with "customer" in its PTR is still a data center)
+      return { host, fcrdns, ptrType: dyn ? "dynamic" : srv ? "static" : undefined,
+        extra: [["x_fcrdns", fcrdns ? "yes" : "no"]] };
+    },
+  },
 
   /* ---- sources that need a free API key (set as Worker secrets; skipped without them) ---- */
   {
@@ -311,6 +430,7 @@ export const SOURCES = [
 // they aren't here). An answer in 127.0.0.0/8 means listed; 127.255.255.x is a refusal, not a listing.
 export const DNSBL = [
   { id: "spamcop", name: "SpamCop", zone: "bl.spamcop.net", site: () => "https://www.spamcop.net/bl.shtml" },
+  { id: "dronebl", name: "DroneBL", zone: "dnsbl.dronebl.org", site: ip => "https://dronebl.org/lookup?ip=" + ip },
   { id: "barracuda", name: "Barracuda", zone: "b.barracudacentral.org", site: () => "https://www.barracudacentral.org/lookups" },
   { id: "psbl", name: "PSBL", zone: "psbl.surriel.com", site: ip => "https://psbl.org/listing?ip=" + ip },
   { id: "mailspike", name: "Mailspike", zone: "bl.mailspike.net", site: () => "https://mailspike.org/iplookup.html" },

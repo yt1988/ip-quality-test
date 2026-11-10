@@ -9,6 +9,9 @@ package main
 //   vpn    X4BNet lists_vpn, output/vpn: VPN providers' ranges (MIT)
 //   dc     X4BNet lists_vpn, output/datacenter: data centres and VPNs, anything not an eyeball network (MIT)
 //   drop   Spamhaus DROP: ranges hijacked or run by criminals
+//   relay  Apple iCloud Private Relay egress ranges (IPv4 and IPv6; Apple's public endpoint)
+//   torrelay  the Tor Project's running relays (IPv4 and IPv6; Onionoo), to tell a relay from an exit
+//   asndrop   Spamhaus ASN-DROP: autonomous systems run by criminals (IPv4 and IPv6)
 //
 // A list that couldn't be fetched keeps its last copy; one never fetched is absent, and the answer says so (null)
 // rather than "none listed".
@@ -16,12 +19,15 @@ package main
 import (
 	"archive/zip"
 	"bufio"
+	"bytes"
 	"encoding/csv"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math/bits"
+	"net"
 	"net/http"
 	"net/netip"
 	neturl "net/url"
@@ -79,6 +85,89 @@ func (x Scored) Of(seg uint32) (m Mask, score [256]uint8) {
 // Ranges: merged, sorted, inclusive [from, to] address ranges.
 type Ranges struct{ F, T []uint32 }
 
+// Has: is this address in one of the ranges?
+func (r Ranges) Has(a uint32) bool {
+	i := sort.Search(len(r.T), func(i int) bool { return r.T[i] >= a })
+	return i < len(r.F) && r.F[i] <= a
+}
+
+// A16: an IPv6 address as bytes, so the index can be encoded with gob.
+type A16 [16]byte
+
+func cmp16(a, b A16) int { return bytes.Compare(a[:], b[:]) }
+
+func inc16(a A16) (A16, bool) {
+	for i := 15; i >= 0; i-- {
+		a[i]++
+		if a[i] != 0 {
+			return a, true
+		}
+	}
+	return a, false
+}
+
+// Ranges6: merged, sorted, inclusive IPv6 ranges.
+type Ranges6 struct{ F, T []A16 }
+
+func (r Ranges6) Has(a netip.Addr) bool {
+	if !a.Is6() || a.Is4In6() {
+		return false
+	}
+	x := A16(a.As16())
+	i := sort.Search(len(r.T), func(i int) bool { return cmp16(r.T[i], x) >= 0 })
+	return i < len(r.F) && cmp16(r.F[i], x) <= 0
+}
+
+func merge6(rs [][2]A16) Ranges6 {
+	sort.Slice(rs, func(i, j int) bool { return cmp16(rs[i][0], rs[j][0]) < 0 })
+	var out Ranges6
+	for _, r := range rs {
+		if n := len(out.T); n > 0 {
+			last := out.T[n-1]
+			adj, _ := inc16(last)
+			if cmp16(r[0], last) <= 0 || cmp16(r[0], adj) == 0 {
+				if cmp16(r[1], last) > 0 {
+					out.T[n-1] = r[1]
+				}
+				continue
+			}
+		}
+		out.F, out.T = append(out.F, r[0]), append(out.T, r[1])
+	}
+	return out
+}
+
+// range6: a prefix's first and last address (masked).
+func range6(p netip.Prefix) (A16, A16, bool) {
+	if !p.Addr().Is6() || p.Addr().Is4In6() {
+		return A16{}, A16{}, false
+	}
+	p = p.Masked()
+	f := A16(p.Addr().As16())
+	t := f
+	bits := p.Bits()
+	for i := 0; i < 16; i++ {
+		lo := i * 8
+		if lo >= bits {
+			t[i] = 0xff
+			continue
+		}
+		if lo+8 > bits {
+			t[i] |= byte((1 << (lo + 8 - bits)) - 1)
+		}
+	}
+	return f, t, true
+}
+
+// Score: an address's IPsum score (0 when it isn't named).
+func (x Scored) Score(a uint32) uint8 {
+	i := sort.Search(len(x.A), func(i int) bool { return x.A[i] >= a })
+	if i < len(x.A) && x.A[i] == a {
+		return x.S[i]
+	}
+	return 0
+}
+
 func (r Ranges) Of(seg uint32) (m Mask) {
 	lo, hi := seg<<8, seg<<8|0xff
 	i := sort.Search(len(r.T), func(i int) bool { return r.T[i] >= lo })
@@ -92,13 +181,80 @@ func (r Ranges) Of(seg uint32) (m Mask) {
 }
 
 type Index struct {
-	At    map[string]time.Time // when each list was last fetched; absent: never
-	Proxy Bits
-	Bad   Scored
-	Tor   Bits
-	VPN   Ranges
-	DC    Ranges
-	Drop  Ranges
+	At                map[string]time.Time // when each list was last fetched; absent: never
+	Proxy             Bits
+	Bad               Scored
+	Tor               Bits
+	VPN               Ranges
+	DC                Ranges
+	Drop              Ranges
+	Relay4, TorRelay4 Ranges
+	Relay6, TorRelay6 Ranges6
+	ASNDrop           []uint32
+}
+
+// IPLists: what the lists say about one address. The IPv4-only lists are false for IPv6.
+type IPLists struct {
+	Proxy    bool      `json:"proxy"`
+	Bad      int       `json:"bad"`
+	Tor      bool      `json:"tor"`
+	VPN      bool      `json:"vpn"`
+	DC       bool      `json:"dc"`
+	Drop     bool      `json:"drop"`
+	Relay    bool      `json:"relay"`
+	TorRelay bool      `json:"torrelay"`
+	ASNDrop  bool      `json:"asndrop"`
+	At       time.Time `json:"at"`
+}
+
+// oldest: the fetch time of the oldest list among those that answered.
+func (idx *Index) oldest(names ...string) time.Time {
+	var out time.Time
+	for _, n := range names {
+		if at, ok := idx.At[n]; ok && !at.IsZero() && (out.IsZero() || at.Before(out)) {
+			out = at
+		}
+	}
+	return out
+}
+
+// OfIP: one address's list flags. asns are the ASes the address belongs to (for ASN-DROP).
+func (idx *Index) OfIP(a netip.Addr, asns []int) (out IPLists) {
+	if idx == nil {
+		return
+	}
+	switch {
+	case a.Is4():
+		u, ok := v4(a.String())
+		if !ok {
+			return
+		}
+		seg, off := u>>8, int(u&0xff)
+		out.Proxy = idx.Proxy.Of(seg).Has(off)
+		out.Bad = int(idx.Bad.Score(u))
+		out.Tor = idx.Tor.Of(seg).Has(off)
+		out.VPN = idx.VPN.Of(seg).Has(off)
+		out.DC = idx.DC.Of(seg).Has(off)
+		out.Drop = idx.Drop.Of(seg).Has(off)
+		out.Relay = idx.Relay4.Has(u)
+		out.TorRelay = idx.TorRelay4.Has(u)
+		out.At = idx.oldest("proxy", "bad", "tor", "vpn", "dc", "drop", "relay", "torrelay", "asndrop")
+	case a.Is6() && !a.Is4In6():
+		out.Relay = idx.Relay6.Has(a)
+		out.TorRelay = idx.TorRelay6.Has(a)
+		out.At = idx.oldest("relay", "torrelay", "asndrop")
+	}
+	for _, asn := range asns {
+		if asn <= 0 {
+			continue
+		}
+		i := sort.Search(len(idx.ASNDrop), func(i int) bool { return idx.ASNDrop[i] >= uint32(asn) })
+		if i < len(idx.ASNDrop) && idx.ASNDrop[i] == uint32(asn) {
+			out.ASNDrop = true
+			break
+		}
+	}
+	return
 }
 
 // building Bits: addresses and ranges (split at /24 boundaries) set into each /24's mask
@@ -246,14 +402,112 @@ func parsePX1(r io.Reader, each func(from, to uint32)) error {
 	}
 }
 
+// Apple iCloud Private Relay egress ranges: "prefix,country,region,city," per line, IPv4 and IPv6.
+func parseRelay(r io.Reader, v4rs *[][2]uint32, v6rs *[][2]A16) error {
+	cr := csv.NewReader(bufio.NewReaderSize(r, 1<<20))
+	cr.FieldsPerRecord = -1
+	cr.ReuseRecord = true
+	for {
+		rec, err := cr.Read()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if len(rec) < 1 {
+			continue
+		}
+		p, err := netip.ParsePrefix(strings.TrimSpace(rec[0]))
+		if err != nil {
+			continue
+		}
+		p = p.Masked()
+		switch {
+		case p.Addr().Is4():
+			if f, t, ok := rangeOf(p.String()); ok {
+				*v4rs = append(*v4rs, [2]uint32{f, t})
+			}
+		case p.Addr().Is6() && !p.Addr().Is4In6():
+			if f, t, ok := range6(p); ok {
+				*v6rs = append(*v6rs, [2]A16{f, t})
+			}
+		}
+	}
+}
+
+// Onionoo's running relays: or_addresses holds "ip:port" and "[ipv6]:port" strings.
+func parseTorRelay(r io.Reader, v4rs *[][2]uint32, v6rs *[][2]A16) error {
+	var j struct {
+		Relays []struct {
+			Or []string `json:"or_addresses"`
+		} `json:"relays"`
+	}
+	if err := json.NewDecoder(bufio.NewReaderSize(r, 1<<20)).Decode(&j); err != nil {
+		return err
+	}
+	for _, rel := range j.Relays {
+		for _, s := range rel.Or {
+			host := s
+			if h, _, err := net.SplitHostPort(s); err == nil {
+				host = h
+			}
+			a, err := netip.ParseAddr(strings.Trim(host, "[]"))
+			if err != nil {
+				continue
+			}
+			switch {
+			case a.Is4():
+				if u, ok := v4(a.String()); ok {
+					*v4rs = append(*v4rs, [2]uint32{u, u})
+				}
+			case a.Is6() && !a.Is4In6():
+				x := A16(a.As16())
+				*v6rs = append(*v6rs, [2]A16{x, x})
+			}
+		}
+	}
+	return nil
+}
+
+// Spamhaus ASN-DROP: one JSON object per line, each with an "asn".
+func parseASNDrop(r io.Reader) ([]uint32, error) {
+	dec := json.NewDecoder(bufio.NewReaderSize(r, 1<<20))
+	set := map[uint32]bool{}
+	for {
+		var rec struct {
+			ASN uint32 `json:"asn"`
+		}
+		err := dec.Decode(&rec)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if rec.ASN > 0 {
+			set[rec.ASN] = true
+		}
+	}
+	out := make([]uint32, 0, len(set))
+	for a := range set {
+		out = append(out, a)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out, nil
+}
+
 // Sources, by list name. The IP2Proxy URL takes the account's download token.
 var sources = map[string]string{
-	"proxy": "https://www.ip2location.com/download/?token=%s&file=PX1LITECSV",
-	"bad":   "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
-	"tor":   "https://check.torproject.org/torbulkexitlist",
-	"vpn":   "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt",
-	"dc":    "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt",
-	"drop":  "https://www.spamhaus.org/drop/drop.txt",
+	"proxy":    "https://www.ip2location.com/download/?token=%s&file=PX1LITECSV",
+	"bad":      "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
+	"tor":      "https://check.torproject.org/torbulkexitlist",
+	"vpn":      "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt",
+	"dc":       "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt",
+	"drop":     "https://www.spamhaus.org/drop/drop.txt",
+	"relay":    "https://mask-api.icloud.com/egress-ip-ranges.csv",
+	"torrelay": "https://onionoo.torproject.org/details?type=relay&running=true&fields=or_addresses",
+	"asndrop":  "https://www.spamhaus.org/drop/asndrop.json",
 }
 
 var client = &http.Client{Timeout: 10 * time.Minute}
@@ -319,7 +573,7 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 		}
 	}
 	var errs []error
-	for _, name := range []string{"proxy", "bad", "tor", "vpn", "dc", "drop"} {
+	for _, name := range []string{"proxy", "bad", "tor", "vpn", "dc", "drop", "relay", "torrelay", "asndrop"} {
 		url := sources[name]
 		if name == "proxy" {
 			if token == "" {
@@ -334,6 +588,8 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 			continue
 		}
 		b, sc, rs := bitset{}, scores{}, [][2]uint32{}
+		r6 := [][2]A16{}
+		var asns []uint32
 		switch name {
 		case "proxy":
 			err = loadPX1(path, b)
@@ -343,13 +599,23 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 			err = withFile(path, func(r io.Reader) error {
 				return parseLines(r, false, func(f, t uint32, _ int) { b.add(f, t) })
 			})
+		case "relay":
+			err = withFile(path, func(r io.Reader) error { return parseRelay(r, &rs, &r6) })
+		case "torrelay":
+			err = withFile(path, func(r io.Reader) error { return parseTorRelay(r, &rs, &r6) })
+		case "asndrop":
+			err = withFile(path, func(r io.Reader) error {
+				var e error
+				asns, e = parseASNDrop(r)
+				return e
+			})
 		default:
 			err = withFile(path, func(r io.Reader) error {
 				return parseLines(r, false, func(f, t uint32, _ int) { rs = append(rs, [2]uint32{f, t}) })
 			})
 		}
 		os.Remove(path)
-		if err == nil && len(b) == 0 && len(sc) == 0 && len(rs) == 0 {
+		if err == nil && len(b) == 0 && len(sc) == 0 && len(rs) == 0 && len(r6) == 0 && len(asns) == 0 {
 			err = errors.New("empty")
 		}
 		if err != nil {
@@ -369,6 +635,12 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 			idx.DC = merge(rs)
 		case "drop":
 			idx.Drop = merge(rs)
+		case "relay":
+			idx.Relay4, idx.Relay6 = merge(rs), merge6(r6)
+		case "torrelay":
+			idx.TorRelay4, idx.TorRelay6 = merge(rs), merge6(r6)
+		case "asndrop":
+			idx.ASNDrop = asns
 		}
 		idx.At[name] = time.Now().UTC()
 	}

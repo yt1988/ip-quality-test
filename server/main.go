@@ -168,6 +168,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"ok": true, "lists": ok})
 		return
 	}
+	if r.URL.Path == "/v1/ip" && r.Method == "GET" {
+		s.serveIP(w, r)
+		return
+	}
 	if r.URL.Path != "/v1/seg" || r.Method != "GET" {
 		w.WriteHeader(404)
 		w.Write([]byte(`{"error":"not_found"}`))
@@ -200,6 +204,111 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	lists, flags, score := s.idx.Of(seg)
 	s.mu.RUnlock()
 	json.NewEncoder(w).Encode(Answer{Seg: *sg, Lists: lists, Kinds: kindsOf(sg.Names), Flags: flags, Score: score})
+}
+
+// IPAnswer: one address's list flags, its reverse name and its announced prefix.
+type IPAnswer struct {
+	IP     string  `json:"ip"`
+	V      int     `json:"v"`
+	Lists  IPLists `json:"lists"`
+	PTR    string  `json:"ptr,omitempty"`
+	Prefix string  `json:"prefix,omitempty"`
+	ASNs   []int   `json:"asns,omitempty"`
+}
+
+// publicIP: an address the public lists and resolvers can say something about.
+func publicIP(a netip.Addr) bool {
+	if !a.IsValid() || a.Is4In6() || a.IsPrivate() || a.IsLoopback() || a.IsMulticast() || a.IsLinkLocalUnicast() || a.IsUnspecified() {
+		return false
+	}
+	if a.Is4() {
+		_, _, ok := segOf(a.String())
+		return ok
+	}
+	b := a.As16()
+	if b[0]&0xe0 != 0x20 { // only global unicast 2000::/3
+		return false
+	}
+	if b[0] == 0x20 && b[1] == 0x01 && b[2] == 0x0d && b[3] == 0xb8 { // documentation
+		return false
+	}
+	if b[0] == 0x20 && b[1] == 0x01 && b[2] == 0x00 && b[3] == 0x00 { // Teredo
+		return false
+	}
+	if b[0] == 0x20 && b[1] == 0x02 { // 6to4
+		return false
+	}
+	return true
+}
+
+// serveIP: the exact address's list flags (IPv4 and IPv6 where the list has them), with the /24 cache's name for an
+// IPv4 address and a single lookup otherwise. No sweep, so it is cheap enough to answer per check.
+func (s *Server) serveIP(w http.ResponseWriter, r *http.Request) {
+	a, err := netip.ParseAddr(strings.TrimSpace(r.URL.Query().Get("ip")))
+	if err != nil || !publicIP(a) {
+		w.WriteHeader(400)
+		w.Write([]byte(`{"error":"bad_ip"}`))
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	var px *Prefix
+	var host string
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		if p, err := PrefixOf(ctx, a.String()); err == nil {
+			px = p
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		host = s.ptrOf(ctx, a)
+	}()
+	wg.Wait()
+	var asns []int
+	if px != nil {
+		asns = px.ASNs
+	}
+	s.mu.RLock()
+	idx := s.idx
+	s.mu.RUnlock()
+	// no index yet: say so rather than answer "on no list", which would read as a clean address
+	if idx == nil {
+		w.WriteHeader(503)
+		w.Write([]byte(`{"error":"no_lists"}`))
+		return
+	}
+	lists := idx.OfIP(a, asns)
+	out := IPAnswer{IP: a.String(), V: 4, Lists: lists, PTR: host}
+	if a.Is6() {
+		out.V = 6
+	}
+	if px != nil {
+		out.Prefix, out.ASNs = px.Prefix, px.ASNs
+	}
+	json.NewEncoder(w).Encode(out)
+}
+
+// ptrOf: the address's reverse name, from the /24 cache for IPv4 when it is there, or one lookup.
+func (s *Server) ptrOf(ctx context.Context, a netip.Addr) string {
+	if a.Is4() {
+		if seg, _, ok := segOf(a.String()); ok {
+			if sg := s.cache.Get(seg); sg != nil {
+				if off := int(a.As4()[3]); off < len(sg.Names) {
+					return sg.Names[off]
+				}
+			}
+		}
+	}
+	qctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
+	defer cancel()
+	ns, err := resolver(0).LookupAddr(qctx, a.String())
+	if err != nil || len(ns) == 0 {
+		return ""
+	}
+	return strings.TrimSuffix(strings.ToLower(ns[0]), ".")
 }
 
 func (s *Server) sweep(ctx context.Context, seg uint32, name string) *Seg {

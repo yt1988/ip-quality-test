@@ -74,7 +74,52 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     $("#res").hidden = !rows.length;
     $("#prog").textContent = shared ? t("b_n", { n: rows.length }) : t("b_prog", { n: done, of: rows.length });
     $("#shareBtn").disabled = shared || done < rows.length || (!rows.some(r => r.r) && !segOk);
+    // the table as a file, for comparing a list in a spreadsheet or a script
+    $("#csvBtn").hidden = $("#jsonBtn").hidden = !rows.some(r => r.r);
   }
+
+  /* ---------- the table as a file: CSV (for a spreadsheet) and JSON (for a script), in the order on screen ---------- */
+  // what the table shows, one entry per row: the address (or that it was hidden), where, the score and grade, the
+  // network type, native or broadcast, the anonymity flags any source raised, and the AI and streaming verdicts
+  const exportRows = () => sortRows(rows, sort.col, sort.dir).filter(row => row.r).map(row => {
+    const r = row.r;
+    return {
+      ip: row.ip || null, net: row.net || null,
+      country: r.cc || null, score: r.score, grade: r.grade, type: r.type || null,
+      native: r.native == null ? null : r.native, regCc: r.regCc || null,
+      anon: r.anon, ai: r.ai || null, stream: r.stream || null,
+    };
+  });
+  const download = (name, text, type) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  const CELL = v => {
+    if (v == null || v === "") return "";
+    const s = String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  $("#csvBtn").onclick = () => {
+    const D = exportRows();
+    if (!D.length) return;
+    const head = ["b_c_ip", "b_c_loc", "b_c_score", "b_c_type", "b_c_native", "b_c_anon", "b_c_ai", "b_c_stream"].map(k => t(k));
+    const lines = D.map(o => [
+      o.net || o.ip || t("b_hidden"), o.country, o.score + " " + o.grade, o.type ? t("t_" + o.type) : "",
+      o.native == null ? "" : o.native ? t("fs_native") : t("fs_broadcast") + (o.regCc ? " " + o.regCc : ""),
+      o.anon.length ? o.anon.map(a => ANON[a]()).join(" / ") : t("fs_clean"),
+      o.ai ? t("lv_" + o.ai) : "", o.stream ? t("lv_" + o.stream) : "",
+    ].map(CELL).join(","));
+    // a BOM, so Excel opens the CJK headers in UTF-8 rather than guessing
+    download(`ipqs-batch-${stamp()}.csv`, "\ufeff" + [head.map(CELL).join(","), ...lines].join("\r\n"), "text/csv;charset=utf-8");
+  };
+  $("#jsonBtn").onclick = () => {
+    const D = exportRows();
+    if (!D.length) return;
+    download(`ipqs-batch-${stamp()}.json`, JSON.stringify({ at, rows: D }, null, 2), "application/json");
+  };
   $$("th [data-sort]").forEach(b => {
     b.onclick = () => {
       const c = b.dataset.sort;

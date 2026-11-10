@@ -11,6 +11,11 @@ preview_urls = false
 directory = "./public"
 binding = "ASSETS"
 
+# The /24 portrait and the exact-IP public lists (server/, see server/README.md). Empty turns both off; a fork
+# without the service should leave it empty.
+[vars]
+SEG = "https://seg.1ms.dog:8444"
+
 # Fresh lookups per visitor address and minute (cached answers don't count). Remove the block to turn the limit off.
 [[ratelimits]]
 name = "LIMIT"

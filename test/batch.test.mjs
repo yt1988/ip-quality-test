@@ -39,6 +39,21 @@ test("packRows / unpackRows: round trip, with and without the addresses", () => 
   for (const bad of ["", "x", "eyJ2IjoyfQ", "eyJ2IjoxLCJSIjpbWzEwMV1dfQ"]) assert.equal(unpackRows(bad), null);
 });
 
+test("a capped grade (a blocklist ceiling) survives the shared link", () => {
+  const row = { i: 0, ip: "8.8.8.8", st: "ok", r: { ...rowOf(done), score: 88, grade: "C" } };
+  const back = unpackRows(packRows([row], { at: "2026-11-06T00:00:00.000Z" }));
+  assert.equal(back.rows[0].r.grade, "C");
+  assert.equal(back.rows[0].r.score, 88);
+});
+
+test("format 1 batch links (shared before grades travelled) still open, their grade from the score", () => {
+  // v1 rows had no grade: [score, cc, type, native, regCc, anon, ai, stream, aiWhy, streamWhy, ip?, net?]
+  const v1 = Buffer.from(JSON.stringify({ v: 1, at: "2026-11-06T00:00:00.000Z", R: [[91, "US", -1, -1, "", 1, -1, -1, "", "", "8.8.8.8", ""]] })).toString("base64url");
+  const p = unpackRows(v1);
+  assert.equal(p.rows[0].ip, "8.8.8.8");
+  assert.equal(p.rows[0].r.grade, "A");
+});
+
 test("sortRows: by score high first, unknown last, ties by place", () => {
   const mk = (i, score) => ({ i, ip: "8.8.8." + i, st: score == null ? "err" : "ok", r: score == null ? null : { ...rowOf(done), score } });
   const rows = [mk(0, 40), mk(1, null), mk(2, 90), mk(3, 40)];
