@@ -120,7 +120,8 @@ h2 { font-size: 15px; font-weight: 700; }
 .fgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .fc { position: relative; display: flex; flex-direction: column; gap: 3px; min-height: 58px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .fc-l { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-.fc-v { font-size: 14px; font-weight: 600; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; padding-left: 20px; }
+/* the answer is never cut: a long network name or an organisation wraps inside the cell instead of ending in … */
+.fc-v { font-size: 14px; font-weight: 600; line-height: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding-left: 20px; overflow-wrap: anywhere; }
 .fc-v .m { font-weight: 500; font-size: 12px; }
 .fc-v .skl { width: 70%; }
 .fr-p { position: absolute; top: 7px; right: 9px; font: 600 12px var(--f-num); color: var(--pc); }
@@ -252,12 +253,13 @@ h2 { font-size: 15px; font-weight: 700; }
 .pr.na .pa { color: var(--muted); }
 .pg h3 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; height: 20px; display: flex; align-items: center; margin: 0; }
 .pg-n { margin-left: auto; font: 500 12px var(--f-num); letter-spacing: 0; font-variant-numeric: tabular-nums; }
-.pr { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 12fr) 34px 56px; align-items: center; gap: 8px; height: 34px; border-top: 1px solid var(--line); font-size: 13px; }
+.pr { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 12fr) 34px 56px; align-items: center; gap: 8px; min-height: 34px; padding: 2px 0; border-top: 1px solid var(--line); font-size: 13px; }
 .pn { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pn a { color: inherit; text-decoration: none; }
 .pn a:hover { color: var(--ink); text-decoration: underline; }
-.pa { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; font-size: 12.5px; }
-.pa .m { overflow: hidden; text-overflow: ellipsis; }
+/* a source's answer is shown whole: a long network name wraps in its column and the row grows, instead of ending in … */
+.pa { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; line-height: 1.45; }
+.pa .m { min-width: 0; overflow-wrap: anywhere; }
 .pl { display: inline-flex; align-items: center; gap: 5px; font: 12px var(--f-num); }
 .pk { text-align: right; }
 .pms { font: 12px var(--f-num); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }

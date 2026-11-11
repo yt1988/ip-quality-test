@@ -255,3 +255,11 @@ So the link is a block (`display: block`, `align-self: flex-start`), the arrow i
 balances its lines (`text-wrap: balance`). The last line then ends well short of the column's edge and the arrow fits
 after the last word. `text-wrap` older than Chrome 114 / Safari 17.5 / Firefox 121 simply wraps as before, and may
 leave the arrow on its own line — degrade, not break.
+
+## A source's answer is shown whole (2026-11-11)
+
+The owner pointed at "CHINA169-BJ - China Unicom Beijing Pr…" and at an exit card cut at "China Unicom Guandong":
+a value that ends in an ellipsis hides the answer the tool exists to give. So `.fc-v` (finding and connection cells)
+and `.pa` (a source's value) wrap instead of truncating (`overflow-wrap: anywhere` for a name with no spaces), and a
+row grows to fit it — `.pr` is `min-height` + a little padding rather than a fixed 34px. Names and labels keep their
+ellipsis; it is only answers that may no longer be shortened.
