@@ -334,6 +334,7 @@ export default {
   src_credit: "공개 목록(매일 갱신):",
 
   /* neighbours, cloud ranges, routing age, OTX, appealing a listing, the privacy switch */
+  t_edge: "CDN 엣지",
   r_near: "인접 대역",
   v_near: "이 /24의 {of}개 주소 중 {n}개가 공개 목록에 올라 있습니다",
   v_near_bad: "그중 {n}개는 여러 목록에 올라 있습니다",

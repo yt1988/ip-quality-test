@@ -334,6 +334,7 @@ export default {
   src_credit: "公開名單（每日更新）：",
 
   /* neighbours, cloud ranges, routing age, OTX, appealing a listing, the privacy switch */
+  t_edge: "CDN 邊緣",
   r_near: "鄰域",
   v_near: "這個 /24 裡的 {of} 個位址中，有 {n} 個被公開名單點名",
   v_near_bad: "其中 {n} 個被多份名單點名",

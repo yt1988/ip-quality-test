@@ -390,7 +390,9 @@ import { reportOf } from "./report.mjs";
     const s = r.summary;
     // what the address is: a short answer per cell, the sentence behind it on hover
     const F = s.flags, tv = RES.filter(x => x.data.type), geoN = s.ccs.reduce((a, c) => a + c.by.length, 0);
-    if (s.type) finding("type", s.type === "hosting" ? "warn" : s.type === "residential" || s.type === "mobile" ? "ok" : "info",
+    // a CDN edge is shared infrastructure, not a rented host: it says so, and takes the hosting cell's warning off
+    if (s.edge) finding("type", "info", `${esc(t("t_edge"))} <span class="m">${s.cloud ? esc(CLOUD[s.cloud] || s.cloud) : ""}</span>`, t("n_edge", { p: s.cloud || "" }));
+    else if (s.type) finding("type", s.type === "hosting" ? "warn" : s.type === "residential" || s.type === "mobile" ? "ok" : "info",
       `${esc(typeName(s.type))} <span class="m">${tv.filter(x => x.data.type === s.type).length}/${tv.length}</span>`, t("n_type_" + s.type) + (s.type === "mobile" ? " " + t("n_cgnat") : ""));
     else finding("type", "none", nodata());
     if (s.native === null) finding("native", "none", nodata());

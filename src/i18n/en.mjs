@@ -334,6 +334,7 @@ export default {
   src_credit: "Public lists, updated daily:",
 
   /* neighbours, cloud ranges, routing age, OTX, appealing a listing, the privacy switch */
+  t_edge: "CDN edge",
   r_near: "Neighbours",
   v_near: "Public lists name {n} of the {of} addresses in this /24",
   v_near_bad: "{n} of them are named by several lists",

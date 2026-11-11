@@ -334,6 +334,7 @@ export default {
   src_credit: "Публичные списки, обновляются ежедневно:",
 
   /* neighbours, cloud ranges, routing age, OTX, appealing a listing, the privacy switch */
+  t_edge: "периферия CDN",
   r_near: "Соседи",
   v_near: "Публичные списки называют {n} из {of} адресов этой /24",
   v_near_bad: "{n} из них есть в нескольких списках",

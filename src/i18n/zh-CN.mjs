@@ -334,6 +334,7 @@ export default {
   src_credit: "公开名单（每日更新）：",
 
   /* neighbours, cloud ranges, routing age, OTX, appealing a listing, the privacy switch */
+  t_edge: "CDN 边缘",
   r_near: "邻域",
   v_near: "这个 /24 里的 {of} 个地址中，有 {n} 个被公开名单点名",
   v_near_bad: "其中 {n} 个被多份名单点名",

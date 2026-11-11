@@ -334,6 +334,7 @@ export default {
   src_credit: "公開リスト（毎日更新）:",
 
   /* neighbours, cloud ranges, routing age, OTX, appealing a listing, the privacy switch */
+  t_edge: "CDN エッジ",
   r_near: "近隣",
   v_near: "この /24 の {of} 個のアドレスのうち {n} 個が公開リストに載っています",
   v_near_bad: "そのうち {n} 個は複数のリストに載っています",

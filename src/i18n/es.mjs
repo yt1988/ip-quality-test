@@ -334,6 +334,7 @@ export default {
   src_credit: "Listas públicas, actualizadas a diario:",
 
   /* neighbours, cloud ranges, routing age, OTX, appealing a listing, the privacy switch */
+  t_edge: "borde de CDN",
   r_near: "Vecinos",
   v_near: "Las listas públicas nombran {n} de las {of} direcciones de este /24",
   v_near_bad: "{n} de ellas aparecen en varias listas",
