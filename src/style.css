@@ -122,7 +122,8 @@ h2 { font-size: 15px; font-weight: 700; }
 .fc-l { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 /* the answer is never cut: a long network name or an organisation wraps inside the cell instead of ending in … */
 .fc-v { font-size: 14px; font-weight: 600; line-height: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding-left: 20px; overflow-wrap: anywhere; }
-.fc-v .m { font-weight: 500; font-size: 12px; }
+/* a name that wraps splits evenly, so it doesn't leave one word alone on the second line */
+.fc-v .m { font-weight: 500; font-size: 12px; text-wrap: balance; }
 .fc-v .skl { width: 70%; }
 .fr-p { position: absolute; top: 7px; right: 9px; font: 600 12px var(--f-num); color: var(--pc); }
 /* an answer drawn while the check is still running: readable, but visibly not final */
@@ -259,7 +260,7 @@ h2 { font-size: 15px; font-weight: 700; }
 .pn a:hover { color: var(--ink); text-decoration: underline; }
 /* a source's answer is shown whole: a long network name wraps in its column and the row grows, instead of ending in … */
 .pa { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; line-height: 1.45; }
-.pa .m { min-width: 0; overflow-wrap: anywhere; }
+.pa .m { min-width: 0; overflow-wrap: anywhere; text-wrap: balance; }
 .pl { display: inline-flex; align-items: center; gap: 5px; font: 12px var(--f-num); }
 .pk { text-align: right; }
 .pms { font: 12px var(--f-num); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }

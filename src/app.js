@@ -837,10 +837,11 @@ import { reportOf } from "./report.mjs";
       // the worst network on the cell (and how many others there are); each network, its addresses and why, on hover
       const g = d.groups, m = g[0], v = m.ecsOff && m.kind !== "leak" ? "cn_d_leak" : DNS_V[m.kind];
       const tail = m.kind === "public" ? esc(m.pub) : `${flag(m.cc)} ${esc(m.org || m.ip)}`;
-      const more = g.length > 1 ? ` <span class="m">+${g.length - 1}</span>` : "";
+      // the count of the other networks rides in the name's own span, so it never sits on a line of its own
+      const more = g.length > 1 ? ` +${g.length - 1}` : "";
       const ips = r => r.ips.slice(0, 3).join(", ") + (r.ips.length > 3 ? ` … (${r.ips.length})` : "");
       const line = r => (ips(r) + " · " + t("cn_dw_" + r.kind, { at: where(r), pub: r.pub, exit: s.cc ? country(s.cc) : "" }) + (r.ecsOff ? gap + t("cn_dw_ecs", { ecs: r.ecs }) : "")).replace(/） /g, "）");
-      finding("dns", d.lv, `${esc(t(v))} <span class="m">${tail}</span>${more}`, [...g.map(line), DBIP].join("\n"));
+      finding("dns", d.lv, `${esc(t(v))} <span class="m">${tail}${more}</span>`, [...g.map(line), DBIP].join("\n"));
     }
     if (!c) finding("tcp", "none", off, t("cn_t_down"));
     else {
