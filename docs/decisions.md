@@ -190,3 +190,15 @@ the PTR in parallel, within 5 seconds.
   them, so querying both would count one finding twice. Spamhaus ZEN is left out for DNS: it refuses public resolvers.
   Its DROP and ASN-DROP are used from the daily download instead.
 - **Shodan's port list** was already read; commonly abused open ports (23, 445, 3389, …) now get their own note.
+
+## Phone text sizes and the embedded frame's height (2026-11-11)
+
+- The lists' credit line (`#srcCredit`, `#sgSrc`) was 11.5px, below the contract's 12px floor for secondary text
+  (docs/tool-contract.md section 5); it and the one-line tags beside the /24 portrait now read 12px, with the tag
+  box grown to 20px so nothing clips. `npm run mobile -- ipqs` reports no text under 12px in any language.
+- The checkup embed (check.1ms.dog) reports its frame height from a ResizeObserver on `.app`. A source's answer
+  changes that height, and reading layout inside the observer's own callback is what browsers report as
+  "ResizeObserver loop completed with undelivered notifications" — most of the ipqs errors in the week's report
+  came from the page's first day (2,215 on 11-04, 63 on 11-05, a handful a day since), not from the live paint of
+  11-10. The measurement now waits for the next animation frame and runs at most once per frame, so the callback
+  never forces layout mid-delivery; the reported size stays the same, one frame later.

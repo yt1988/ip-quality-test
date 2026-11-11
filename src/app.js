@@ -491,11 +491,21 @@ import { reportOf } from "./report.mjs";
     const path = D.paths[LANG] + "r/" + await encode(pack({ ...snap, details: false }));
     post({ type: "result", lang: LANG, path, grade: r.grade, score: r.score, headline: t("g_" + r.grade), stats, findings, facts });
   }
-  // the frame's height follows the content
+  // the frame's height follows the content. The measurement waits for the next frame: reading layout inside the
+  // observer's own callback is what browsers report as "ResizeObserver loop" when the page has just changed (every
+  // source that answers changes the height), and one read per frame is enough for a frame that only reports its size.
   if (EMBED) {
     const app = $(".app");
-    let lastH = 0;
-    new ResizeObserver(() => { const h = Math.ceil(app.getBoundingClientRect().height); if (h !== lastH) post({ type: "size", height: lastH = h }); }).observe(app);
+    let lastH = 0, queued = false;
+    new ResizeObserver(() => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        const h = Math.ceil(app.getBoundingClientRect().height);
+        if (h !== lastH) post({ type: "size", height: lastH = h });
+      });
+    }).observe(app);
   }
   $("#rerun").onclick = () => { findExits(); run(lastIp, false); };
   // the cached answer says how old it is; this asks the sources again (the Worker's rate limit still applies)
