@@ -165,6 +165,10 @@ h2 { font-size: 15px; font-weight: 700; }
 .cf-w:not(:empty) { margin-top: 6px; }
 .cf-w iframe { max-width: 100%; }
 #cft[hidden], #cfGo[hidden], #cfX[hidden] { display: none; }
+/* the two cards of the visitor's own connection are in the markup, as they will look, from the first paint — the page
+   then never moves when the check starts. A page that isn't the visitor's own check (a typed address, a shared
+   result, an embed) is known before the paint (the head script's data-own) and keeps them out */
+html:not([data-own]) .cnt, html:not([data-own]) .cft { display: none; }
 /* the /24 portrait: a card of its own between the hero and the sources, made to be read at a glance. The verdict
    (how many of the 256 neighbours are listed) and one line on what the /24 is; then the grid of its 256 addresses,
    32 a row (16 on a phone), each square the colour of its worst listing and green when on none; the address pointed

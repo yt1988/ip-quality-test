@@ -839,6 +839,9 @@ import { reportOf } from "./report.mjs";
     // no card, and both are known before the check starts
     const own = CN_ON && !SHARED && (!lastIp || EX.has(lastIp));
     if (!CN_ON || (!own && (!snap || !mine()))) { box.hidden = true; return; }
+    // the head script leaves the card out on a page that isn't the visitor's own check; a check of one of the
+    // visitor's exits is theirs, so the page says so here (the same switch the first paint was drawn with)
+    document.documentElement.setAttribute("data-own", "");
     box.hidden = false;
     if (!snap) return;
     const [hits, tcp] = await Promise.all([cnDns, cnTcp]);
@@ -918,6 +921,7 @@ import { reportOf } from "./report.mjs";
     const wait = !SNAP && !EMBED && !SHARE_CODE && !cfKeyDead && (!lastIp || EX.has(lastIp));
     box.hidden = !(res || can || wait);
     if (box.hidden) { $("#cfW").textContent = ""; cfUnhold(); return; }
+    document.documentElement.setAttribute("data-own", "");
     if (res) cfCard(res, CF_LV[res], t("cf_v_" + res), t("cf_" + res), cfRead(res));
     else cfCard("idle", "info", t("cf_q"), t("cf_idle"), esc(t("cf_priv")));
     // the button is part of the card's question: it is drawn with the card, not a moment later (the press before the

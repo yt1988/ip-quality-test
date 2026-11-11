@@ -291,3 +291,22 @@ so instead of the card vanishing.
 Measured with the smoke's own method (a buffered `PerformanceObserver`, 1280×900): 0.15 before, 0.01–0.03 after. What
 is left is a block whose height depends on its answer — the connection cells grow when a network name wraps to two
 lines — and that is allowed by §4 (states may differ by 2–3 lines).
+
+## The first paint is the check's layout, not the empty page (2026-11-11)
+
+The blocks drawn at check start were still drawn *after* the first paint: the page ships them `hidden` and the module
+script reveals them. When the script answers quickly no one sees it; when the font or the script lands after the first
+paint, that first paint has no cards at all, and the reveal moves the sources section by 200 px in one go — a CLS of
+0.13 on the live page in about one run in four, against 0.02 otherwise (measured with `npm run cls -- ipqs`).
+
+So the two cards of the visitor's own connection are in the markup, in the state they will be in: `#cnt` with its two
+waiting cells, `#cft` with its question (`data-i` fills the text at build time) and its button. `#cft` is hidden by
+CSS unless the page is the visitor's own check: the head script sets `data-own` when the URL has no `ip` parameter, is
+not a shared result and is not an embed — before the first paint, so those pages never flash the cards. A check of one
+of the visitor's own exits is theirs: `cnShow` sets `data-own` itself when it shows the card.
+
+The /24 card stays out of the markup on purpose: its height depends on the address's family (a 256-cell grid, or the
+one-line IPv6 card), which a self check doesn't know until the shell answers — and at 1280×900 the card is below the
+fold anyway, so its arrival moves nothing visible.
+
+Local measurement with the script delayed 0, 400, 1200 and 2500 ms: 0.012, 0.03, 0.012, 0.012.
