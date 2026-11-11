@@ -186,8 +186,15 @@ import { reportOf } from "./report.mjs";
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
-    $("#fresh").hidden = true; $("#conf").hidden = true; $("#hist").hidden = true; $("#skipN").hidden = true;
-    $("#nextG").hidden = true; $("#appealBtn").hidden = true;
+    $("#fresh").hidden = true; $("#skipN").hidden = true;
+    // the three notes under the verdict keep their lines from the start and fill in place, so nothing below them (the
+    // facts, the exits, the whole page) moves when the answer is in; a note that doesn't apply keeps its line empty
+    for (const id of ["#conf", "#hist", "#nextG"]) { const e = $(id); e.hidden = false; e.innerHTML = "&nbsp;"; }
+    $("#appealBtn").hidden = true;
+    // every block takes its place and its height as the check starts (contract §4「多路查询」): the /24 card and the
+    // two cards of the visitor's own connection are drawn here as skeletons, so nothing below them moves when the
+    // answers come in. A shared result draws from the packed answer instead (right after this call).
+    if (!SHARED) segStart(ip, ip ? family(ip) : 4);
     cnShow(); cfShow();
     markExit(ip || selfIp);
   }
@@ -457,12 +464,12 @@ import { reportOf } from "./report.mjs";
       hEl.textContent = t("hist_prev", { date: new Date(prev.at).toLocaleString(LANG), g: prev.g, s: prev.s }) + " " +
         t(d > 0 ? "hist_delta_up" : d < 0 ? "hist_delta_down" : "hist_delta_same", { n: Math.abs(d) });
       hEl.hidden = false;
-    } else hEl.hidden = true;
+    } else hEl.innerHTML = "&nbsp;";
     // what it would take to reach the next grade (the cap notes above already say why the grade can stop short)
     const up = [[85, "A"], [70, "B"], [50, "C"], [30, "D"]].find(([s]) => s > r.score);
-    if (up && r.grade === gradeOf(r.score)) { nEl.textContent = t("next_grade", { n: up[0] - r.score, s: up[0], g: up[1] }); nEl.hidden = false; }
-    else if (!up && r.grade === "A") { nEl.textContent = t("next_top"); nEl.hidden = false; }
-    else nEl.hidden = true;
+    if (up && r.grade === gradeOf(r.score)) nEl.textContent = t("next_grade", { n: up[0] - r.score, s: up[0], g: up[1] });
+    else if (!up && r.grade === "A") nEl.textContent = t("next_top");
+    else nEl.innerHTML = "&nbsp;";
     if (!SHARED) histPut(CUR.ip, r.score, r.grade);
     // where the points went: one colored line per deduction, the same color as its segment of the ring
     $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-k="${p.k.slice(2)}" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
@@ -676,15 +683,15 @@ import { reportOf } from "./report.mjs";
   // /24. Not in the line check (D.seg empty there too) and absent without the service.
   // The card takes its place as soon as the check knows the address, as it will look (a grey grid of 256 squares, the
   // checked one ringed, the legend, the lists' credit), and fills in when the answer comes, so nothing around it moves.
-  let segP = null;
+  let segP = null, segKey = null;
+  // ip null: the card is drawn as it will look, with the grid waiting, for a check whose address is not known yet
+  // (a self check learns it from the shell a moment later) — the card is in place before the address is
   function segStart(ip, v) {
-    segP = null;
-    if (!D.seg || EMBED || !ip) { $("#sgt").hidden = true; return; }
-    if (v === 6) { segV6({ r: { summary: {} } }); return; }
-    segP = getJ(D.seg + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null);
-    const base = ip.split(".").slice(0, 3).join("."), me = +ip.split(".")[3];
+    if (!D.seg || EMBED) { segP = null; segKey = null; $("#sgt").hidden = true; return; }
+    if (ip && v === 6) { segV6({ r: { summary: {} } }); return; }
+    const base = ip ? ip.split(".").slice(0, 3).join(".") : "", me = ip ? +ip.split(".")[3] : -1;
     $("#sgV6").hidden = true; $("#sgBody").hidden = false;
-    $("#sgN").textContent = `${base}.0 – ${base}.255`;
+    $("#sgN").textContent = ip ? `${base}.0 – ${base}.255` : "–";
     const vd = $("#sgVerdict"); vd.className = "sg-verdict wait"; vd.textContent = t("sg_v_wait");
     $("#sgMeta").innerHTML = "&nbsp;"; $("#sgVs").hidden = true;
     sgCells = []; sgPick = -1;
@@ -694,6 +701,10 @@ import { reportOf } from "./report.mjs";
     $("#sgNote").innerHTML = "&nbsp;";
     $("#sgSrc").innerHTML = sgCredit(null);
     $("#sgt").hidden = false;
+    if (!ip) { segP = null; segKey = null; return; }
+    // the same /24 is asked once: a second call for it (the server's start message after reset already drew it)
+    // keeps the request that is in flight
+    if (segKey !== ip) { segKey = ip; segP = getJ(D.seg + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null); }
   }
   // the lists' credit (IP2Proxy LITE and Spamhaus ask for it), with the oldest list's date
   const SG_SRC = [["proxy", "IP2Proxy LITE", "https://lite.ip2location.com"], ["bad", "IPsum", "https://github.com/stamparm/ipsum"],
@@ -821,16 +832,19 @@ import { reportOf } from "./report.mjs";
   };
   async function cnShow() {
     const box = $("#cnt"), snap = SNAP;
-    // a shared result, someone else's address, or no reading from either server: no card
     // someone else's address: say why the tests aren't here, with the way back to the visitor's own check
     $("#cnx").hidden = !(CN_ON && snap && !SHARED && !mine());
-    if (!CN_ON || !snap || !mine()) { box.hidden = true; return; }
+    // the visitor's own check is known before the answers: the card is there from the start, its two cells waiting
+    // (reset drew them), so the page never moves when they come in. A shared result and someone else's address have
+    // no card, and both are known before the check starts
+    const own = CN_ON && !SHARED && (!lastIp || EX.has(lastIp));
+    if (!CN_ON || (!own && (!snap || !mine()))) { box.hidden = true; return; }
+    box.hidden = false;
+    if (!snap) return;
     const [hits, tcp] = await Promise.all([cnDns, cnTcp]);
     if (snap !== SNAP) return;
     const s = snap.r.summary, exit = { ip: snap.ip, asn: s.asn, cc: s.cc, type: s.type, ips: [...EX.keys()] };
     const d = hits && readDns(hits, exit), c = readConn(tcp, exit, navigator.userAgent);
-    box.hidden = !(hits || c);
-    if (box.hidden) return;
     const off = `<span class="m">${esc(t("cn_none"))}</span>`;
     if (!d) finding("dns", "none", off, t(hits ? "cn_d_none" : "cn_d_down"));
     else {
@@ -859,8 +873,11 @@ import { reportOf } from "./report.mjs";
   // The Worker names the site key (GET /api/turnstile; 404 without one, and the card stays hidden) and verifies the
   // token (POST). "pass": no tick needed; "click": Turnstile asked for one first (before-interactive-callback) and
   // then passed; "fail": refused. The answer is then read against the guess, which says where the trouble likely is.
-  let CFK = null, cfId = null, cfP = null;
-  if (!EMBED && !SHARE_CODE) getJ("/api/turnstile", 4000).then(j => { if (j && j.sitekey) { CFK = j.sitekey; cfShow(); } }).catch(() => {});
+  let CFK = null, cfId = null, cfP = null, cfKeyDead = false;
+  // a Worker without a key (404) has no card at all: the card drawn at the start of the check goes away
+  const cfKey = () => { cfKeyDead = !CFK; cfShow(); };
+  if (!EMBED && !SHARE_CODE) getJ("/api/turnstile", 4000)
+    .then(j => { if (j && j.sitekey) CFK = j.sitekey; cfKey(); }).catch(cfKey);
   const CF_LV = { pass: "ok", click: "warn", fail: "bad" };
   // state: idle | run | ask | err | pass | click | fail. Until the answer the card keeps its question, icon and colour
   // (only the line under it and the button change), so the one big change on the card is the answer itself
@@ -896,11 +913,16 @@ import { reportOf } from "./report.mjs";
     const box = $("#cft"), res = SNAP && SNAP.cf;
     // a shared result shows the sender's answer when it holds one; a check of another address has nothing to test
     const can = !!(CFK && SNAP && mine());
-    box.hidden = !(res || can);
+    // the visitor's own check draws the card as the check starts — the question is the card's own state — so the
+    // answer never moves the page. A page whose Worker names no key, or a check of someone else, has no card
+    const wait = !SNAP && !EMBED && !SHARE_CODE && !cfKeyDead && (!lastIp || EX.has(lastIp));
+    box.hidden = !(res || can || wait);
     if (box.hidden) { $("#cfW").textContent = ""; cfUnhold(); return; }
     if (res) cfCard(res, CF_LV[res], t("cf_v_" + res), t("cf_" + res), cfRead(res));
     else cfCard("idle", "info", t("cf_q"), t("cf_idle"), esc(t("cf_priv")));
-    cfGo(can ? (res ? "cf_again" : "cf_go") : "");
+    // the button is part of the card's question: it is drawn with the card, not a moment later (the press before the
+    // key is in is ignored by the click handler, and the card is gone if there is no key at all)
+    cfGo(res || can || wait ? (res ? "cf_again" : "cf_go") : "");
   }
   const loadTurnstile = () => cfP ||= new Promise((ok, no) => {
     const s = document.createElement("script");

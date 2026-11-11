@@ -263,3 +263,31 @@ a value that ends in an ellipsis hides the answer the tool exists to give. So `.
 and `.pa` (a source's value) wrap instead of truncating (`overflow-wrap: anywhere` for a name with no spaces), and a
 row grows to fit it — `.pr` is `min-height` + a little padding rather than a fixed 34px. Names and labels keep their
 ellipsis; it is only answers that may no longer be shortened.
+
+## No block waits for its answer to take its place (2026-11-11)
+
+The shell's smoke run gave this page a CLS of 0.15 against the 0.1 line in `docs/tool-contract.md` §4「多路查询」. The
+page was drawing only part of itself at the start of a check and growing as answers came in: the /24 card appeared
+with the server's first message, the connection card only once both servers had answered, the Turnstile card once its
+key had arrived, and the verdict's notes (confidence, last check, next grade) at the end — each one pushing the
+sources section down, and the verdict pushing the facts down inside the card.
+
+So every block now takes its place and its height as the check starts, at the moment the check starts:
+
+- `/24` (`#sgt`): `reset()` calls `segStart` — with the address when the check already knows it (a typed address), or
+  as a waiting grid when it doesn't (a self check learns its address from the shell a moment later). The card is a
+  section below the hero, but it was still moving the sources section under it.
+- connection (`#cnt`): drawn with its two cells waiting whenever the check is the visitor's own; a check of someone
+  else's address and a shared result have no card, and both are known before the check starts.
+- Cloudflare check (`#cft`): drawn at the start with the question the card is in anyway, so the answer never moves it.
+  A Worker that names no key (404) has no card, and that arrives before the answer does.
+- verdict notes: `#conf`, `#hist` and `#nextG` keep their lines from the first paint (`&nbsp;`, `#conf` two lines);
+  a note that doesn't apply keeps its line empty rather than vanishing at the end. The row with the share button is
+  already as tall as the button.
+
+A block no longer disappears when its answer is missing, either: if neither connection server answers, both cells say
+so instead of the card vanishing.
+
+Measured with the smoke's own method (a buffered `PerformanceObserver`, 1280×900): 0.15 before, 0.01–0.03 after. What
+is left is a block whose height depends on its answer — the connection cells grow when a network name wraps to two
+lines — and that is allowed by §4 (states may differ by 2–3 lines).

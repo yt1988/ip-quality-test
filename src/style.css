@@ -67,7 +67,9 @@ h2 { font-size: 15px; font-weight: 700; }
 .gauge.busy .g-fg { stroke: var(--ink); stroke-dashoffset: 75 !important; animation: spin 1s linear infinite; transform-origin: 60px 60px; transition: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .verdict { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 6px; }
-.v-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+/* the share button joins the row when the result is in; the row is already as tall as the button, so it doesn't push
+   the sentence (and everything under it) down a moment later */
+.v-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; min-height: 30px; }
 .v-h { font-size: 17px; font-weight: 700; line-height: 1.3; }
 #shareBtn[hidden] { display: none; }
 .v-d { color: var(--muted); font-size: 13px; line-height: 1.5; min-height: 3em; }
@@ -76,8 +78,11 @@ h2 { font-size: 15px; font-weight: 700; }
 .parts span { display: inline-flex; align-items: center; gap: 5px; color: var(--pc); font-weight: 600; cursor: help; outline: none; }
 .parts span i { width: 8px; height: 8px; border-radius: 2px; background: var(--pc); }
 .parts span b { font: 600 12.5px var(--f-num); }
-/* how much the verdict rests on: the sources that answered, the ones with risk data, and any disagreement */
+/* how much the verdict rests on: the sources that answered, the ones with risk data, and any disagreement.
+   Its two lines are there from the start (a note below the verdict keeps its lines and fills in place), so the
+   facts under it never move when the answer is in */
 .conf { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+#conf { min-height: 3em; }
 .conf[hidden], .skip-n[hidden] { display: none !important; }
 /* the source rows a deployment can't ask (needs keys): said once above the list */
 .skip-n { margin: -2px 0 12px; font-size: 12.5px; color: var(--muted); }
