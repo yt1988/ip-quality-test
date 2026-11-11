@@ -42,8 +42,13 @@ h2 { font-size: 15px; font-weight: 700; }
 .verdict .ul:hover, .col > .ul:hover { color: var(--ink); }
 .ul[hidden], .eg[hidden] { display: none !important; }
 #facts .asl { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
-.verdict .ul, .col > .ul, .sec-h .eg { display: inline-flex; align-items: center; gap: 3px; align-self: flex-start; }
+/* a wrapped link balances its lines, so the last one ends well short of the edge and the arrow after it fits:
+   Chinese lets a line break anywhere, and the arrow would otherwise start a line of its own */
+.verdict .ul, .col > .ul { display: block; align-self: flex-start; text-wrap: balance; }
+.sec-h .eg { display: inline-flex; align-items: center; gap: 3px; }
 .xl { width: .95em; height: .95em; flex: none; }
+/* in a wrapped link the arrow rides after the last word, not beside the whole paragraph */
+.verdict .ul .xl, .col > .ul .xl { margin-left: 3px; vertical-align: -1px; }
 #facts .asl:hover { color: var(--ink); }
 
 /* the score: ring, verdict, and the deductions in their colors */

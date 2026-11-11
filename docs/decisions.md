@@ -243,3 +243,15 @@ and `rate_limit` in the JSON, so a 429 is not a mystery.
 Go tests cover the four cloud parsers, `CloudOfIP` (including replacing one provider's ranges), `BogonOf` (v4 and v6)
 and `NearOf`'s union count; `src/score.mjs` tests cover the edge skipping the hosting deduction, the cloud/neighbour/
 routing/OTX notes, and that none of them adds a deduction.
+
+## The arrow after a wrapped link stays with the text (2026-11-11)
+
+The links under the verdict end in an external-link arrow. Laid out as a flex row the arrow sat at the right edge of
+the whole paragraph, beside the first line, not after the last word (the owner's screenshot). Inline it is worse:
+Chinese lets a line break anywhere, including right before an inline icon, so a paragraph that fills its column leaves
+the arrow alone on a line of its own — a word joiner before the icon does not stop it.
+
+So the link is a block (`display: block`, `align-self: flex-start`), the arrow is inline after the text, and the link
+balances its lines (`text-wrap: balance`). The last line then ends well short of the column's edge and the arrow fits
+after the last word. `text-wrap` older than Chrome 114 / Safari 17.5 / Firefox 121 simply wraps as before, and may
+leave the arrow on its own line — degrade, not break.
