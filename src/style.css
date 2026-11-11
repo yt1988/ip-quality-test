@@ -78,9 +78,14 @@ h2 { font-size: 15px; font-weight: 700; }
 .skip-n { margin: -2px 0 12px; font-size: 12.5px; color: var(--muted); }
 /* the privacy switch: keep every source answer on our server (the browser-asked rows then stay empty) */
 .priv { margin: -4px 0 4px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
-.priv label { display: inline-flex; align-items: center; gap: 6px; color: var(--fg); font-size: 13px; cursor: pointer; }
-.priv input { width: 14px; height: 14px; accent-color: var(--fg); }
-.priv p { margin: 2px 0 0 20px; }
+.priv label { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 26px; color: var(--fg); font-size: 13px; cursor: pointer; }
+/* the native box stays 1px and invisible (the switch draws the 18px one), so the tap target is the whole label */
+.priv input { position: absolute; left: 0; top: 50%; width: 1px; height: 1px; margin: 0; opacity: 0; }
+.priv .box { flex: none; width: 18px; height: 18px; border: 1.5px solid var(--line); border-radius: 5px; background: var(--bg); transition: background .12s, border-color .12s; }
+.priv input:checked + .box { background: var(--ink); border-color: var(--ink); }
+.priv input:checked + .box::after { content: ""; display: block; width: 9px; height: 5px; margin: 2px 0 0 2.5px; border: 2px solid var(--ink-fg); border-top: 0; border-right: 0; transform: rotate(-45deg); }
+.priv input:focus-visible + .box { outline: 2px solid var(--ink); outline-offset: 2px; }
+.priv p { margin: 2px 0 0 24px; }
 /* a source that failed: counted, and marked where its group's count is shown */
 .fail-n { color: var(--bad); font-variant-numeric: tabular-nums; }
 /* the /24 card: check a neighbour of the address being looked at */
