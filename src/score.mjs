@@ -33,6 +33,13 @@ export function assess(results, dnsbl = []) {
   const routing = by.routing || {}, ptr = by.ptr || {};
   const listBad = +L.bad || 0, listDrop = L.drop === true, listAsn = L.asndrop === true;
   const listRelay = L.relay === true, listTorRelay = L.torrelay === true;
+  // the provider's own cloud/CDN range, the /24's list counts, the bogon flag and the OTX pulses: facts the page
+  // shows beside the score (an edge is shared infrastructure, so it does not take the hosting deduction)
+  const cloud = by.lists?.cloud || null, region = by.lists?.region || null;
+  const edge = by.lists?.edge === true, bogon = by.lists?.bogon === true, near = by.lists?.near || null;
+  const route = { firstSeen: routing.firstSeen || null, seen: +routing.seen || 0, of: +routing.of || 0,
+    moas: routing.moas === true, asns: +routing.asns || 0 };
+  const otx = by.otx?.otx || null;
 
   // country: the one most sources agree on; city and network from the most trusted source that agrees
   const ccVotes = count(geo, r => r.data.cc), cc = ccVotes.size ? top(ccVotes)[0] : null;
@@ -91,8 +98,9 @@ export function assess(results, dnsbl = []) {
   // ---- the score: start at 100, take off for each finding (each part is shown on the page)
   const parts = [];
   const take = (k, pts, p) => { pts = Math.round(pts); if (pts > 0) parts.push({ k, pts, p }); };
-  // a data-center majority takes the full 20: a clean server address tops out at B, never "residential-looking" A
-  take("p_hosting", (type === "hosting" ? 20 : 20 * hostShare) * HALF(typeVotes), { n: tv.get("hosting") || 0, of: typeVotes });
+  // a data-center majority takes the full 20: a clean server address tops out at B, never "residential-looking" A.
+  // A CDN edge is shared infrastructure, not a host someone rented, so it does not take this deduction.
+  if (!edge) take("p_hosting", (type === "hosting" ? 20 : 20 * hostShare) * HALF(typeVotes), { n: tv.get("hosting") || 0, of: typeVotes });
   if (type !== "hosting") take("p_business", 5 * share("business") * HALF(typed.length), {});
   take("p_proxy", 20 * rate(flags.proxy), { n: flags.proxy.yes, of: flags.proxy.of });
   take("p_vpn", 15 * rate(flags.vpn), { n: flags.vpn.yes, of: flags.vpn.of });
@@ -145,6 +153,15 @@ export function assess(results, dnsbl = []) {
   if (ptr.fcrdns === false && ptr.host) note("info", "n_fcrdns_no");
   if (cap) note("warn", cap.k, { ...cap.p, g: grade });
   if (flags.relay.yes) note("info", "n_relay");
+  if (bogon) note("bad", "n_bogon");
+  if (edge) note("info", "n_edge", { p: cloud || "" });
+  else if (cloud) note("info", "n_cloud", { p: cloud + (region ? " · " + region : "") });
+  if (near && near.listed) note("warn", "n_near", { n: near.listed, of: near.of || 256, bad: near.bad || 0 });
+  if (route.of && route.seen / route.of < 0.1) note("warn", "n_route_low", { seen: route.seen, of: route.of });
+  if (route.moas) note("info", "n_route_moas", { n: route.asns });
+  if (otx && otx.white) note("good", "n_otx_white");
+  else if (otx && otx.pulses >= 3) note("warn", "n_otx", { n: otx.pulses });
+  else if (otx && otx.pulses) note("info", "n_otx_some", { n: otx.pulses });
   if (by.ipinfo?.anycast) note("info", "n_anycast");
   if (tags.length && tags.some(t => ["vpn", "proxy", "tor"].includes(t))) note("warn", "n_scan_tags", { list: tags });
   if (ports.length) note("info", "n_ports", { list: ports.slice(0, 8) });
@@ -195,7 +212,9 @@ export function assess(results, dnsbl = []) {
       riskSources, dnsbl: { listed: bl.length, checked: blChecked, weighted: Math.round(blW * 10) / 10 }, cap: cap ? cap.k : null,
       lists: { bad: listBad, drop: listDrop, asndrop: listAsn, relay: listRelay, torrelay: listTorRelay, proxy: L.proxy === true, vpn: L.vpn === true,
         dc: L.dc === true, at: L.at || null },
-      routing: { announced: typeof routing.announced === "boolean" ? routing.announced : null, rpki: routing.rpki || null, prefix: routing.prefix || null },
+      cloud, region, edge, bogon, near, route, otx, abuse: routing.abuse || null,
+      routing: { announced: typeof routing.announced === "boolean" ? routing.announced : null, rpki: routing.rpki || null, prefix: routing.prefix || null,
+        firstSeen: route.firstSeen, seen: route.seen, of: route.of, moas: route.moas, asns: route.asns },
       ptr: { host: ptr.host || null, fcrdns: typeof ptr.fcrdns === "boolean" ? ptr.fcrdns : null, type: ptr.ptrType || null },
     },
   };

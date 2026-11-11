@@ -202,3 +202,44 @@ the PTR in parallel, within 5 seconds.
   came from the page's first day (2,215 on 11-04, 63 on 11-05, a handful a day since), not from the live paint of
   11-10. The measurement now waits for the next animation frame and runs at most once per frame, so the callback
   never forces layout mid-delivery; the reported size stays the same, one frame later.
+
+## The 2026-11-11 batch: new evidence beside the score, and how far it may move it (2026-11-11)
+
+Five new kinds of evidence went in, and only two of them touch the score. The line is: a finding is something a source
+asserts about the address (a proxy flag, a list entry, a blocklist answer); everything else is a hint to look into, and
+a hint must not lower a score a visitor cannot argue with.
+
+- **Cloud ranges** (AWS, GCP, Cloudflare, Fastly; daily download, read by the lists service) name the provider and its
+  region, and mark a CDN edge. An edge is shared by many sites, so it no longer takes the data-center deduction
+  (which would have capped an ordinary Cloudflare edge at B); an EC2 address still does. The provider that publishes
+  the range is a fact, not a vote: it is not counted into the network-type tally.
+- **Team Cymru fullbogons** say the space was never allocated. Shown as a note; no points, because a bogon is
+  usually the visitor's mistake (a reserved address), not a reputation finding.
+- **The /24's neighbourhood counts** now come with `/v1/ip` (the index already computed them for `/v1/seg`) and are
+  the fifth fact on the page. Shown, not scored: a whole /24 being listed is real evidence, but the address itself may
+  be clean, and the /24 card is one click away. Revisit after two weeks of data.
+- **RIPEstat routing-status and abuse-contact-finder** fold into the existing routing source (one extra request each,
+  at once): since when the prefix is routed, how many RIS peers see it, whether several networks announce it, and the
+  network's abuse contact. Low visibility and MOAS are notes; the abuse contact feeds the appeal panel.
+- **AlienVault OTX** is a new source (keyless, CORS, server-first with a browser retry like ISC). Its pulses are
+  reports someone shared, so they are shown and never scored; a whitelist / false-positive mark reads as good.
+
+Two features ride on the same data:
+
+- **The appeal panel** (`#appealBtn`, only when there is something to appeal) names the network's abuse contact from
+  RIPEstat, links each blocklist's own lookup/delist page, and links Spamhaus for DROP. This is the first screen here
+  that answers "I was misjudged, what now?".
+- **A privacy switch** (`#srvOnly`, `localStorage`): with it on, the sources that would be asked from the browser stay
+  empty and only our server sees the address. Default stays as it was (browser sources on); the switch is for
+  visitors who would rather have fewer rows than another third party seeing their address.
+
+Smaller pieces from the same report: the history line now says which way the score moved; the finding under the
+verdict says what the next grade would take; a group's header counts the sources that failed (`✕n`) instead of
+counting them as answered silently; DroneBL and blocklist.de reason codes are read as words (open proxy, spam, bot,
+attack), any other code stays the number the list gave; the help gains an entry on what the score cannot see; the API
+gains `GET /api` (a machine-readable list) and `GET /openapi.json`, plus `X-RateLimit-Limit` / `X-RateLimit-Window`
+and `rate_limit` in the JSON, so a 429 is not a mystery.
+
+Go tests cover the four cloud parsers, `CloudOfIP` (including replacing one provider's ranges), `BogonOf` (v4 and v6)
+and `NearOf`'s union count; `src/score.mjs` tests cover the edge skipping the hosting deduction, the cloud/neighbour/
+routing/OTX notes, and that none of them adds a deduction.

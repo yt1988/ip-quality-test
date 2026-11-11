@@ -173,3 +173,35 @@ test("routing and reverse DNS findings", () => {
   assert.equal(a.summary.ptr.fcrdns, false);
   assert.equal(a.summary.ptr.type, "dynamic");
 });
+
+test("a CDN edge does not take the data-center deduction, and the cloud is named", () => {
+  const a = assess([...home(), r("lists", { type: "hosting", lists: { dc: true }, cloud: "cloudflare", edge: true, near: { of: 256, listed: 3, bad: 0 } })], noBl());
+  assert.equal(a.summary.cloud, "cloudflare");
+  assert.equal(a.summary.edge, true);
+  assert.equal(a.parts.some(p => p.k === "p_hosting"), false);
+  assert.ok(a.notes.some(n => n.k === "n_edge" && n.p.p === "cloudflare"));
+  assert.ok(a.notes.some(n => n.k === "n_near" && n.p.n === 3 && n.p.bad === 0));
+  // a cloud range that is not an edge still says so, and keeps the deduction
+  const ec2 = assess([...home(), r("lists", { type: "hosting", lists: { dc: true }, cloud: "aws", region: "eu-central-1" })], noBl());
+  assert.ok(ec2.notes.some(n => n.k === "n_cloud" && n.p.p === "aws · eu-central-1"));
+  assert.ok(ec2.parts.some(p => p.k === "p_hosting"));
+});
+
+test("a new or barely visible route, and OTX pulses, are said and never scored", () => {
+  const a = assess([...home(),
+    r("routing", { announced: true, firstSeen: "2026-11-01T00:00:00", seen: 4, of: 300, asns: 2, moas: true, abuse: "abuse@example.net" }),
+    r("otx", { otx: { pulses: 5, white: false, names: [] } })], noBl());
+  assert.ok(a.notes.some(n => n.k === "n_route_low" && n.p.seen === 4 && n.p.of === 300));
+  assert.ok(a.notes.some(n => n.k === "n_route_moas" && n.p.n === 2));
+  assert.ok(a.notes.some(n => n.k === "n_otx" && n.p.n === 5));
+  assert.equal(a.summary.abuse, "abuse@example.net");
+  assert.equal(a.summary.route.firstSeen, "2026-11-01T00:00:00");
+  // nothing in the breakdown comes from the routing or the OTX answer
+  assert.deepEqual(a.parts.map(p => p.k), home().length && assess(home(), noBl()).parts.map(p => p.k));
+});
+
+test("a bogon is said, and a whitelisted OTX reads as good", () => {
+  const a = assess([...home(), r("lists", { lists: {}, bogon: true }), r("otx", { otx: { pulses: 0, white: true } })], noBl());
+  assert.ok(a.notes.some(n => n.k === "n_bogon"));
+  assert.ok(a.notes.some(n => n.k === "n_otx_white"));
+});

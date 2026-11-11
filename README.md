@@ -2,7 +2,7 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-How clean is your IP? [IPQS](https://ipqs.1ms.dog) asks up to 17 IP intelligence sources without an API key (nine asked by the server, seven by your browser, and Cloudflare's view of your own address) and 9 DNS blocklists about an address at once, shows each answer as it arrives, then turns them into one 0–100 score with a verdict for everyday uses. Check an IPv4 or IPv6 address, or type a hostname.
+How clean is your IP? [IPQS](https://ipqs.1ms.dog) asks up to 18 IP intelligence sources without an API key (ten asked by the server, seven by your browser, and Cloudflare's view of your own address) and 9 DNS blocklists about an address at once, shows each answer as it arrives, then turns them into one 0–100 score with a verdict for everyday uses. Check an IPv4 or IPv6 address, or type a hostname.
 
 **Live:** https://ipqs.1ms.dog
 
@@ -24,7 +24,9 @@ How clean is your IP? [IPQS](https://ipqs.1ms.dog) asks up to 17 IP intelligence
 - **Residential, mobile or data center**, by how many sources agree.
 - **Native or broadcast IP**: the regional registry's country (RDAP) against where the databases place the address.
 - **VPN, proxy, Tor and iCloud Private Relay flags**, counted per source, plus the Tor Project's own exit list and its list of relays (a relay is not an exit).
-- **Public blocklists and routing**: IPsum's combined score, Spamhaus DROP (whole ranges) and ASN-DROP (whole networks), whether the covering prefix is announced in BGP, and whether its RPKI record is valid.
+- **Public blocklists and routing**: IPsum's combined score, Spamhaus DROP (whole ranges) and ASN-DROP (whole networks), whether the covering prefix is announced in BGP, whether its RPKI record is valid, since when it is routed and how many RIS peers see it, and whether more than one network announces it (MOAS).
+- **Cloud and CDN**: AWS, Google Cloud, Cloudflare and Fastly publish the ranges they use. The page names the provider (with its region, when the provider publishes one) and marks a CDN edge, which isn't counted as a rented host. Unallocated space (Team Cymru's fullbogons) is named too.
+- **Neighbours and threat intelligence**: how many of the 256 addresses in the same /24 public lists name, and the AlienVault OTX pulses that mention the address (pulses are reports someone shared, not a verdict, so they are shown and never scored).
 - **Fraud and abuse scores** from the sources that have them, averaged with weights.
 - **Reverse DNS**: the PTR name, whether it resolves forward back to the address (mail servers check this), and whether it reads like a home pool or a server.
 - **Mail blocklists** (SpamCop, DroneBL, Barracuda, PSBL, Mailspike, UCEPROTECT, GBUdb, blocklist.de, Anonmails).
@@ -48,9 +50,10 @@ Your own IPv4 and IPv6 are both found (the IPv4-only and IPv6-only hosts are ask
 | IP.SB | – | location, network (asked from the browser) |
 | iplocation.net | – | location, ISP |
 | GeoJS | – | location, network |
-| 1ms public lists | – | IPsum, Spamhaus DROP and ASN-DROP, Apple Private Relay, Tor relays for this exact address (IPv4 and IPv6; needs the lists service) |
+| 1ms public lists | – | IPsum, Spamhaus DROP and ASN-DROP, Apple Private Relay, Tor relays for this exact address; the cloud ranges of AWS, Google Cloud, Cloudflare and Fastly; Team Cymru's fullbogons; the /24's list counts (needs the lists service) |
 | SANS ISC | – | DShield attack reports and threat feeds (IPv4) |
-| RIPEstat | – | announced prefix, origin AS, RPKI status |
+| AlienVault OTX | – | threat-intelligence pulses that mention the address, and a whitelist / false-positive mark |
+| RIPEstat | – | announced prefix, origin AS, RPKI status, since when the prefix is routed, how many RIS peers see it, MOAS, and the network's abuse contact |
 | Reverse DNS | – | PTR name, forward confirmation, home-pool or server naming |
 | RDAP (RIR) | – | registration country, net name, range |
 | ip.guide | – | the network's registered country and RIR |
@@ -73,6 +76,8 @@ Every address starts at 100. Points come off for what the sources find: up to 20
 
 Grades: A 85+, B 70+, C 50+, D 30+, F below — with ceilings the score can't lift: on a mail blocklist an address is never A, on two or more lists never above C, on a public list (IPsum, DROP or ASN-DROP) never A and on two of them never above C, and fewer than two sources with risk data stops at B; a Tor exit is always F. The page shows a confidence line with the sources that answered, the ones that said anything about risk, and whether they disagreed.
 
+A CDN edge keeps its provider's name but not the data-center deduction: an edge is shared infrastructure, not a host someone rented. The neighbourhood counts, a route that is young or barely visible, a prefix several networks announce, OTX pulses and a fullbogon are shown beside the score and do not move it: they are hints to look into, not findings, and each keeps its evidence reachable on the page.
+
 The logic is in [`src/score.mjs`](src/score.mjs) and has unit tests.
 
 ## API
@@ -82,9 +87,11 @@ GET /api/check                  your own address
 GET /api/check?ip=<addr>        any public IPv4 or IPv6 address
 GET /api/check?format=json      the same answers and score as one JSON document
 GET /api/resolve?host=<name>    the first public address a hostname resolves to
+GET /api                        the endpoints, machine-readable
+GET /openapi.json               the OpenAPI 3.1 document
 ```
 
-The streamed answer is NDJSON: a `start` line listing the rows, one `src` line per source and one `bl` line per blocklist as they answer, then a `done` line with `score`, `grade`, `parts`, `notes`, `uses` and `summary`. `?format=json` waits for every source and returns `{ip, version, self, at, cached, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}` (CORS open); notes and deductions carry an i18n key and parameters, not a sentence. Answers are cached for six hours per address. Fresh lookups are limited to 20 a minute per visitor.
+The streamed answer is NDJSON: a `start` line listing the rows, one `src` line per source and one `bl` line per blocklist as they answer, then a `done` line with `score`, `grade`, `parts`, `notes`, `uses` and `summary`. `?format=json` waits for every source and returns `{ip, version, self, at, cached, rate_limit, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}` (CORS open); notes and deductions carry an i18n key and parameters, not a sentence. Answers are cached for six hours per address. Fresh lookups are limited to 20 a minute per visitor: `X-RateLimit-Limit` and `X-RateLimit-Window` say the policy on every answer, `rate_limit` repeats it in the JSON, and a 429 carries `Retry-After` with `{error: "rate"}` (a cached answer doesn't count).
 
 ```bash
 curl -s 'https://ipqs.1ms.dog/api/check?ip=8.8.8.8&format=json' | jq '{score, grade, cc: .summary.cc, asn: .summary.asn}'

@@ -1,6 +1,6 @@
 # IP Quality Test (IPQS) · 1ms.dog
 
-> Free IP quality check. Asks up to 23 IP intelligence sources (Cloudflare, ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, ipwho.is, IP.SB, iplocation.net, GeoJS, RDAP (RIR), ip.guide, Shodan InternetDB, Tor Project, 1ms public lists, SANS ISC, RIPEstat, Reverse DNS, IPQualityScore, AbuseIPDB, Scamalytics, ipdata) and
+> Free IP quality check. Asks up to 24 IP intelligence sources (Cloudflare, ip-api.com, proxycheck.io, IPQuery, ipapi.is, IP2Location, IPinfo, ipwho.is, IP.SB, iplocation.net, GeoJS, RDAP (RIR), ip.guide, Shodan InternetDB, Tor Project, 1ms public lists, SANS ISC, RIPEstat, AlienVault OTX, Reverse DNS, IPQualityScore, AbuseIPDB, Scamalytics, ipdata) and
 > 9 DNS blocklists about an address, then gives a 0–100 score (A–F), whether it is residential or data
 > center, native or broadcast (registered country vs. location), VPN/proxy/Tor flags, and what that means for
 > streaming, AI services, CAPTCHAs, sign-ups and sending mail. Each source's answer is shown with a link to check it.

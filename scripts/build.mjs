@@ -30,7 +30,7 @@ export const FINDS = [...PROFILE, ...USES];
 // the source groups of the second card, in the order the rows are drawn
 const nameOf = id => (SOURCES.find(s => s.id === id) || DNSBL.find(s => s.id === id)).name;
 export const GROUPS = [
-  ["intel", ["lists", "cloudflare", "ipapi", "ipquery", "ipapiis", "ipinfo", "ipwho", "ipsb", "iplocation", "geojs", "isc", "proxycheck", "ip2location", "ipqs", "abuseipdb", "scamalytics", "ipdata"]],
+  ["intel", ["lists", "cloudflare", "ipapi", "ipquery", "ipapiis", "ipinfo", "ipwho", "ipsb", "iplocation", "geojs", "isc", "otx", "proxycheck", "ip2location", "ipqs", "abuseipdb", "scamalytics", "ipdata"]],
   ["reg", ["rdap", "ipguide", "routing", "ptr", "shodan", "tor"]],
   ["dnsbl", DNSBL.map(x => x.id)],
 ].map(([g, ids]) => [g, ids.map(id => [id, nameOf(id)])]);

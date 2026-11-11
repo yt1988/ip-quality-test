@@ -2,7 +2,7 @@
 
 [English](README.md) · **简体中文**
 
-你的 IP 有多干净？[IPQS](https://ipqs.1ms.dog) 同时向 17 个不需要密钥的 IP 情报来源（其中 9 个由服务器查询、7 个由浏览器直接查询，Cloudflare 另提供本机地址的边缘视角）和 9 个 DNS 黑名单查询一个地址，哪个先返回就先显示哪个，全部返回后给出 0–100 的评分，以及对常见用途的判断。可以查 IPv4、IPv6，也可以直接输入域名。
+你的 IP 有多干净？[IPQS](https://ipqs.1ms.dog) 同时向 18 个不需要密钥的 IP 情报来源（其中 10 个由服务器查询、7 个由浏览器直接查询，Cloudflare 另提供本机地址的边缘视角）和 9 个 DNS 黑名单查询一个地址，哪个先返回就先显示哪个，全部返回后给出 0–100 的评分，以及对常见用途的判断。可以查 IPv4、IPv6，也可以直接输入域名。
 
 **在线使用：** https://ipqs.1ms.dog
 
@@ -24,7 +24,9 @@
 - **家宽、移动网络还是机房**，按有多少个来源同意来判断。
 - **原生 IP 还是广播 IP**：比较地址注册机构（RDAP）记录的国家和各数据库给出的位置。
 - **VPN、代理、Tor 和 iCloud Private Relay 标记**，逐个来源统计，另外查 Tor 项目自己的出口列表和中继列表（中继不是出口）。
-- **公开黑名单和路由**：IPsum 的综合收录数、Spamhaus DROP（整段）和 ASN-DROP（整个网络）、覆盖它的前缀有没有在 BGP 中宣告、RPKI 记录是否有效。
+- **公开黑名单和路由**：IPsum 的综合收录数、Spamhaus DROP（整段）和 ASN-DROP（整个网络）、覆盖它的前缀有没有在 BGP 中宣告、RPKI 记录是否有效、从什么时候开始公告、有多少 RIS 节点看得到它、是否有多家网络同时公告（MOAS）。
+- **云厂商和 CDN**：AWS、Google Cloud、Cloudflare、Fastly 公布的自有网段。页面会写明是哪家（服务商给出区域时一并显示），并标出 CDN 边缘——边缘是共用的基础设施，不按“租来的服务器”扣机房分。从未分配的地址（Team Cymru fullbogons）也会提示。
+- **邻域和威胁情报**：同一个 /24 的 256 个地址里有多少被公开名单点名，以及 AlienVault OTX 有哪些情报提到它（pulse 是别人的报告，不是判决，只展示、不扣分）。
 - **欺诈和滥用分数**：有这项数据的来源加权平均。
 - **反向解析**：PTR 名称、正向能否解析回这个地址（邮件服务器会查）、名称看起来像家宽动态池还是服务器。
 - **邮件黑名单**（SpamCop、DroneBL、Barracuda、PSBL、Mailspike、UCEPROTECT、GBUdb、blocklist.de、Anonmails）。
@@ -48,9 +50,10 @@
 | IP.SB | 否 | 位置、网络（由浏览器查询） |
 | iplocation.net | 否 | 位置、运营商 |
 | GeoJS | 否 | 位置、网络 |
-| 1ms 公开名单 | 否 | 这个地址在 IPsum、Spamhaus DROP 和 ASN-DROP、Apple Private Relay、Tor 中继里的记录（IPv4 和 IPv6；需要名单服务） |
+| 1ms 公开名单 | 否 | 这个地址在 IPsum、Spamhaus DROP 和 ASN-DROP、Apple Private Relay、Tor 中继里的记录；AWS、Google Cloud、Cloudflare、Fastly 的自有网段；Team Cymru fullbogons；所在 /24 的名单计数（需要名单服务） |
 | SANS ISC | 否 | DShield 攻击报告和威胁情报源（IPv4） |
-| RIPEstat | 否 | 宣告的前缀、来源 AS、RPKI 状态 |
+| AlienVault OTX | 否 | 提到这个地址的威胁情报 pulse，以及白名单／误报标记 |
+| RIPEstat | 否 | 宣告的前缀、来源 AS、RPKI 状态、前缀从何时开始公告、多少 RIS 节点可见、MOAS、网络的滥用联系人 |
 | 反向 DNS | 否 | PTR 名称、正向确认、动态池或服务器命名 |
 | RDAP（各 RIR） | 否 | 注册国家、网络名、地址段 |
 | ip.guide | 否 | 所属网络的注册国家和 RIR |
@@ -71,6 +74,8 @@
 
 等级：A 85 以上，B 70 以上，C 50 以上，D 30 以上，F 低于 30，并有以下分数抬不上去的上限：在邮件黑名单上最高 B，两份以上最高 C；在公开名单上（IPsum、DROP、ASN-DROP）最高 B，两份以上最高 C；风险来源少于两个也最高 B；Tor 出口固定 F。页面上会显示置信度：有几个来源回答、几个给出了风险数据、它们有没有分歧。
 
+CDN 边缘会写明是哪个服务商，但不扣机房分：边缘是共用的基础设施，不是某个人租的服务器。邻域计数、刚开始公告或几乎没人看得见的路由、多家网络同时公告、OTX 情报、fullbogon 都只展示在分数旁边，不参与扣分：它们是值得进一步查的线索，不是结论，每条都能在页面上点开证据。
+
 规则在 [`src/score.mjs`](src/score.mjs)，有单元测试。
 
 ## API
@@ -80,9 +85,11 @@ GET /api/check                  本机地址
 GET /api/check?ip=<地址>        任意公网 IPv4 或 IPv6 地址
 GET /api/check?format=json      同样的回答和评分，一次性返回 JSON
 GET /api/resolve?host=<域名>    域名解析到的第一个公网地址
+GET /api                        接口清单（给脚本读）
+GET /openapi.json               OpenAPI 3.1 文档
 ```
 
-流式返回 NDJSON：先是一行 `start`（列出所有行），每个来源返回时一行 `src`，每个黑名单一行 `bl`，最后一行 `done`，包含 `score`、`grade`、`parts`、`notes`、`uses` 和 `summary`。`?format=json` 会等所有来源返回，给出 `{ip, version, self, at, cached, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}`（开放 CORS）；`notes` 和扣分项带的是文案 key 和参数，不是整句。每个地址的结果缓存 6 小时。每个访问者每分钟最多 20 次新查询。
+流式返回 NDJSON：先是一行 `start`（列出所有行），每个来源返回时一行 `src`，每个黑名单一行 `bl`，最后一行 `done`，包含 `score`、`grade`、`parts`、`notes`、`uses` 和 `summary`。`?format=json` 会等所有来源返回，给出 `{ip, version, self, at, cached, rate_limit, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}`（开放 CORS）；`notes` 和扣分项带的是文案 key 和参数，不是整句。每个地址的结果缓存 6 小时。每个访问者每分钟最多 20 次新查询：每个回答都带 `X-RateLimit-Limit` 和 `X-RateLimit-Window`，JSON 里的 `rate_limit` 重复这条规则，429 带 `Retry-After` 和 `{error: "rate"}`（命中缓存不计次）。
 
 ```bash
 curl -s 'https://ipqs.1ms.dog/api/check?ip=8.8.8.8&format=json' | jq '{score, grade, cc: .summary.cc, asn: .summary.asn}'

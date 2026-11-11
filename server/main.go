@@ -214,6 +214,11 @@ type IPAnswer struct {
 	PTR    string  `json:"ptr,omitempty"`
 	Prefix string  `json:"prefix,omitempty"`
 	ASNs   []int   `json:"asns,omitempty"`
+	Cloud  string  `json:"cloud,omitempty"`  // aws, gcp, azure, cloudflare, fastly: the provider's own published range
+	Region string  `json:"region,omitempty"` // the provider's region for that range, when it publishes one
+	Edge   bool    `json:"edge,omitempty"`   // a CDN edge: shared infrastructure, not a host someone rented
+	Bogon  bool    `json:"bogon,omitempty"`  // on Team Cymru's fullbogon list: space that was never allocated
+	Near   *Near   `json:"near,omitempty"`   // the /24's list counts (IPv4 only)
 }
 
 // publicIP: an address the public lists and resolvers can say something about.
@@ -287,6 +292,12 @@ func (s *Server) serveIP(w http.ResponseWriter, r *http.Request) {
 	}
 	if px != nil {
 		out.Prefix, out.ASNs = px.Prefix, px.ASNs
+	}
+	out.Cloud, out.Region, out.Edge = idx.CloudOfIP(a)
+	out.Bogon = idx.BogonOf(a)
+	if u, ok := v4(a.String()); ok {
+		n := idx.NearOf(u >> 8)
+		out.Near = &n
 	}
 	json.NewEncoder(w).Encode(out)
 }

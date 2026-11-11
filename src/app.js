@@ -3,7 +3,7 @@
 // The score and findings come once every source is in. A shared link (src/share.mjs) draws someone else's answers the
 // same way, without asking anything. Strings: window.L1MS.
 import { family, canon, isPublic } from "./ip.mjs";
-import { assess } from "./score.mjs";
+import { assess, gradeOf } from "./score.mjs";
 import { ccOfName, SOURCES } from "./sources.mjs";
 import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.mjs";
 import { readDns, readConn } from "./conn.mjs";
@@ -20,7 +20,9 @@ import { reportOf } from "./report.mjs";
   const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
-  const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask", hist: "ipqs:hist" };
+  const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask", hist: "ipqs:hist", srv: "ipqs:srvonly" };
+  // the visitor can keep the browser from asking the sources that limit Cloudflare's addresses; the setting is local
+  const srvOnly = () => store.get(K.srv) === "1";
   // The addresses checked on this device, with their last score: kept in this browser only, never sent anywhere (the
   // same store the theme uses). A result says how the address read last time, when it was checked here before.
   const histGet = ip => { try { const m = JSON.parse(store.get(K.hist) || "{}"); return m && typeof m === "object" ? m : {}; } catch (e) { return {}; } };
@@ -121,7 +123,10 @@ import { reportOf } from "./report.mjs";
   function groupCounts() {
     for (const g in GROUP) {
       const rows = GROUP[g].filter(r => !r.hidden && !r.classList.contains("na"));
-      $("#n-" + g).textContent = rows.length ? `${rows.filter(r => !r.classList.contains("wait")).length} / ${rows.length}` : "–";
+      // a source that failed is counted as answered but marked, so a source that is down is visible rather than silent
+      const bad = rows.filter(r => r.classList.contains("fail")).length;
+      $("#n-" + g).innerHTML = rows.length ? `${rows.filter(r => !r.classList.contains("wait")).length} / ${rows.length}` +
+        (bad ? ` <span class="fail-n" data-why="${esc(t("src_fail_n", { n: bad }))}">✕${bad}</span>` : "") : "–";
     }
   }
   function prSet(id, cls, answer, risk, ms, why) {
@@ -150,8 +155,9 @@ import { reportOf } from "./report.mjs";
   const riskCell = v => typeof v === "number" ? `<b class="rk ${riskLv(v)}" data-p="risk">${v}</b>` : "";
   // a few extra facts are booleans or states of their own, not free text: translate their value too
   const XV = { x_fcrdns: v => t(v === "yes" ? "yes" : "no"), x_rpki: v => t("rpki_" + v) };
+  // an extra fact with no value of its own (a flag the source set) keeps its label alone
   const detail = (m, d) => [d.org && (d.asn ? "AS" + d.asn + " " : "") + d.org, d.city,
-    ...(d.extra || []).map(([k, v]) => t(k) + " " + (XV[k] ? XV[k](v) : v))].filter(Boolean).join(" · ");
+    ...(d.extra || []).map(([k, v]) => t(k) + (v === "" ? "" : " " + (XV[k] ? XV[k](v) : v)))].filter(Boolean).join(" · ");
   function fillSource(m) {
     if (!m.ok) { prSet(m.id, "fail", `<span class="m">${esc(t("src_fail"))}</span>`, "", "", m.err || ""); return; }
     prSet(m.id, "", answerOf(m.id, m.d), riskCell(m.d.risk), m.ms != null ? m.ms + " ms" : "", detail(m, m.d));
@@ -181,6 +187,7 @@ import { reportOf } from "./report.mjs";
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
     $("#fresh").hidden = true; $("#conf").hidden = true; $("#hist").hidden = true; $("#skipN").hidden = true;
+    $("#nextG").hidden = true; $("#appealBtn").hidden = true;
     cnShow(); cfShow();
     markExit(ip || selfIp);
   }
@@ -276,7 +283,10 @@ import { reportOf } from "./report.mjs";
       segStart(m.ip, m.v);
       const b = $("#facts b"); b.className = "ipv"; b.innerHTML = ipHtml(m.ip, m.v);
       // sources this deployment has no keys for stay out of the list (the same for every address); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
-      const cur = m, mine = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
+      const cur = m, browserIds = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
+      // with "server only" on, the rows stay (the counts and the layout don't move) but the page asks nothing itself
+      const mine = srvOnly() ? [] : browserIds;
+      if (srvOnly()) for (const id of browserIds) { SKIP[id] = "priv"; prSet(id, "na", `<span class="m">${esc(t("prv_skip"))}</span>`, "", ""); }
       // the sources this deployment has no keys for (hidden above): said once, because they decide the confidence
       const nKey = Object.keys(m.skip).filter(id => m.skip[id] === "key").length;
       const skn = $("#skipN"); skn.textContent = nKey ? t("skip_n", { n: nKey }) : ""; skn.hidden = !nKey;
@@ -291,7 +301,7 @@ import { reportOf } from "./report.mjs";
       if (m.self) noteMine(m.ip);
       progress();
     } else if (m.t === "src") {
-      if (!m.ok && SRCDEF[m.id] && SRCDEF[m.id].browser) {
+      if (!m.ok && !srvOnly() && SRCDEF[m.id] && SRCDEF[m.id].browser) {
         const cur = CUR;
         PEND.push(inBrowser(m.id, cur.ip).then(r => { if (CUR === cur) accept(r.ok ? r : m); }));
         return;
@@ -310,8 +320,13 @@ import { reportOf } from "./report.mjs";
   function blRow(m) {
     BLR.push(m);
     const hit = m.site ? `<a class="ft bad" data-p="dnsbl" href="${esc(m.site)}" target="_blank" rel="noopener noreferrer">${esc(t("bl_in"))}</a>` : `<span class="ft bad" data-p="dnsbl">${esc(t("bl_in"))}</span>`;
-    // a list that answers with a reason code says so on hover (DroneBL: 127.0.0.x, the list's own code)
-    const why = m.listed === true && m.codes && m.codes.length ? t("bl_codes", { list: m.codes.join(", ") }) : "";
+    // a list that answers with a reason code says so on hover: the codes DroneBL and blocklist.de publish are read as
+    // words, any other code stays as the number the list gave (a wrong guess would be worse than the number)
+    const BLC = { dronebl: { 2: "spam", 3: "bot", 5: "bot", 6: "proxy" }, blocklistde: { 2: "attack", 3: "attack", 4: "spam", 5: "attack", 6: "spam" } };
+    const codeMap = BLC[m.id] || {};
+    const why = m.listed === true && m.codes && m.codes.length
+      ? t("bl_codes", { list: [...new Set(m.codes.map(c => { const k = codeMap[+String(c).split(".").pop()]; return k ? t("blc_" + k) : c; }))].join(", ") })
+      : "";
     prSet(m.id, m.listed === true ? "hit-row" : m.listed === null ? "fail" : "", m.listed === true ? hit : `<span class="m">${esc(t(m.listed === false ? "bl_clean" : "src_fail"))}</span>`, "", "", why);
     livePaint();
   }
@@ -341,6 +356,8 @@ import { reportOf } from "./report.mjs";
   // live paint is dimmed, because more answers can still change it; finish() draws the same parts undimmed and then
   // the final-only ones (history, links, the list of deductions).
   let FINAL = false;
+  // the providers whose published ranges the lists server reads (proper names: no translation)
+  const CLOUD = { aws: "AWS", gcp: "Google Cloud", azure: "Azure", cloudflare: "Cloudflare", fastly: "Fastly" };
   function paintScore(r) {
     gauge.classList.remove("busy"); gauge.dataset.g = r.grade;
     $("#gNum").textContent = r.score; $("#gGrade").textContent = t("grade", { g: r.grade });
@@ -359,10 +376,15 @@ import { reportOf } from "./report.mjs";
     // a shared result without the address has no network or reverse DNS name either
     const hid = `<span class="m">${esc(t("r_hidden"))}</span>`, open = !SHARED || SHARED.i;
     set(1, s.cc ? `${flag(s.cc)} ${esc(where)}${cityMore}` : "–");
-    // the AS number opens the ASN lookup when the shell names it
+    // the AS number opens the ASN lookup when the shell names it; the provider's own range says which cloud it is
     const asTxt = s.asn ? (asnHost ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "AS" + s.asn)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">AS${s.asn}</a> ` : "AS" + s.asn + " ") : "";
-    set(2, !open ? hid : s.asn || s.org ? `${asTxt}<span class="m">${esc(s.org || "")}</span>` : "–");
+    const cloudTxt = s.cloud ? ` <span class="m" title="${esc(t(s.edge ? "v_edge" : "v_cloud", { p: CLOUD[s.cloud] || s.cloud, region: s.region || "" }))}">${esc(CLOUD[s.cloud] || s.cloud)}${s.region ? " · " + esc(s.region) : ""}${s.edge ? " · " + esc(t("v_edge_l")) : ""}</span>` : "";
+    set(2, !open ? hid : s.asn || s.org || s.cloud ? `${asTxt}${esc(s.org || "")}${cloudTxt}` : "–");
     set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
+    // the /24's own counts: how many of its addresses the public lists name (the rest of the picture is the card below)
+    const nr = s.near;
+    set(4, !nr ? "–" : `<span data-why="${esc(t("v_near", { n: nr.listed, of: nr.of || 256, bad: nr.bad || 0 }))}">${nr.listed}/${nr.of || 256}</span>` +
+      (nr.bad ? ` <span class="m" data-why="${esc(t("v_near_bad", { n: nr.bad }))}">${nr.bad}</span>` : ""));
   }
   function paintFindings(r) {
     const s = r.summary;
@@ -424,11 +446,21 @@ import { reportOf } from "./report.mjs";
     const cfEl = $("#conf");
     cfEl.textContent = t("conf", { lv: t("conf_" + cfd.level), n: cfd.sources, r: cfd.riskSources });
     cfEl.hidden = false;
-    // how this address read the last time it was checked on this device (local only; a shared result writes nothing)
+    // how this address read the last time it was checked on this device (local only; a shared result writes nothing),
+    // and which way the score has moved since
     const prev = !SHARED && CUR && CUR.ip ? histGet(CUR.ip)[CUR.ip] : null;
-    const hEl = $("#hist");
-    if (prev) { hEl.textContent = t("hist_prev", { date: new Date(prev.at).toLocaleString(LANG), g: prev.g, s: prev.s }); hEl.hidden = false; }
-    else hEl.hidden = true;
+    const hEl = $("#hist"), nEl = $("#nextG");
+    if (prev) {
+      const d = r.score - prev.s;
+      hEl.textContent = t("hist_prev", { date: new Date(prev.at).toLocaleString(LANG), g: prev.g, s: prev.s }) + " " +
+        t(d > 0 ? "hist_delta_up" : d < 0 ? "hist_delta_down" : "hist_delta_same", { n: Math.abs(d) });
+      hEl.hidden = false;
+    } else hEl.hidden = true;
+    // what it would take to reach the next grade (the cap notes above already say why the grade can stop short)
+    const up = [[85, "A"], [70, "B"], [50, "C"], [30, "D"]].find(([s]) => s > r.score);
+    if (up && r.grade === gradeOf(r.score)) { nEl.textContent = t("next_grade", { n: up[0] - r.score, s: up[0], g: up[1] }); nEl.hidden = false; }
+    else if (!up && r.grade === "A") { nEl.textContent = t("next_top"); nEl.hidden = false; }
+    else nEl.hidden = true;
     if (!SHARED) histPut(CUR.ip, r.score, r.grade);
     // where the points went: one colored line per deduction, the same color as its segment of the ring
     $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-k="${p.k.slice(2)}" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
@@ -453,6 +485,7 @@ import { reportOf } from "./report.mjs";
 
     const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
+    abBtn.hidden = !appealOf();
     showLinks(); segShow(); cnShow(); cfShow();
     $("#prog").classList.add("end"); $("#rerun").disabled = false; $("#shareBtn").hidden = false;
     const ageH = r.cached ? Math.max(1, Math.round((Date.now() - Date.parse(r.at)) / 3600e3)) : 0;
@@ -1037,6 +1070,37 @@ import { reportOf } from "./report.mjs";
   if (!EMBED && typeof window.msOpenReport === "function") {
     rpBtn.setAttribute("data-ms-report", t("rp_wrong") + (CJK ? "：" : ": "));
     rpBtn.hidden = false;
+  }
+
+  /* ---------- appealing a listing: who to write to, and where each list takes a correction ---------- */
+  // The sources say what is wrong; this says what can be done about it. The network's abuse contact comes from the RIR's
+  // public registry (RIPEstat), the delist pages from each blocklist, and Spamhaus's page for a DROP range. Shown only
+  // when there is something to appeal; someone else's clean result gets nothing.
+  const abBtn = $("#appealBtn");
+  const appealOf = () => {
+    const r = SNAP && SNAP.r; if (!r) return null;
+    const s = r.summary, listed = BLR.filter(b => b.listed === true), drop = !!(s.lists && (s.lists.drop || s.lists.asndrop));
+    return listed.length || drop || s.abuse ? { s, listed, drop } : null;
+  };
+  function appealBody({ s, listed, drop }) {
+    const sec = (h, body) => `<div class="ab-sec"><h3>${esc(h)}</h3>${body}</div>`;
+    const out = [
+      sec(t("ab_reg"), s.abuse ? `<p><a href="mailto:${esc(s.abuse)}">${esc(s.abuse)}</a></p>` : `<p class="m">${esc(t("ab_no_contact"))}</p>`),
+      sec(t("ab_lists"), listed.length ? `<ul>${listed.map(b => `<li>${b.site ? `<a href="${esc(b.site)}" target="_blank" rel="noopener noreferrer">${esc(b.name)}</a>` : esc(b.name)}</li>`).join("")}</ul>` : `<p class="m">${esc(t("ab_none"))}</p>`),
+    ];
+    if (drop) out.push(sec(t("ab_drop"), `<p><a href="https://check.spamhaus.org/" target="_blank" rel="noopener noreferrer">check.spamhaus.org</a></p>`));
+    out.push(`<p class="m ab-tip">${esc(t("ab_tip"))}</p>`);
+    return out.join("");
+  }
+  abBtn.onclick = () => { const a = appealOf(); if (!a) return; $("#abBody").innerHTML = appealBody(a); openDlg("appeal"); };
+
+  /* ---------- asking only this site's server ---------- */
+  // Some sources limit Cloudflare's shared addresses, so the page asks them from the visitor's browser by default.
+  // Turning this on keeps everything on our server: fewer third parties see the address, and those rows stay empty.
+  const svOnly = $("#srvOnly");
+  if (svOnly) {
+    svOnly.checked = srvOnly();
+    svOnly.onchange = () => { store.set(K.srv, svOnly.checked ? "1" : "0"); run(lastIp, false); };
   }
 
   let toastEl, toastT = 0;

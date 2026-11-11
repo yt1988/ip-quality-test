@@ -293,12 +293,18 @@ export const SOURCES = [
       if (L.vpn) bits.push("VPN range");
       if (L.dc) bits.push("data-centre range");
       if (L.proxy) bits.push("open proxy");
+      // the /24's counts, the provider's own cloud range, and space that was never allocated: facts, not scores
+      const near = j.near && typeof j.near === "object" ? j.near : undefined;
+      const extra = bits.length ? [["x_lists", bits.join(" · ")]] : [];
+      if (j.cloud) extra.push(["x_cloud", j.cloud + (j.region ? " · " + j.region : "")]);
       return {
         host: j.ptr || undefined, type: L.dc ? "hosting" : undefined,
         proxy: L.proxy ? true : undefined, vpn: L.vpn ? true : undefined, tor: L.tor ? true : undefined,
         relay: L.relay ? true : undefined,
         abuser: L.bad >= 3 || L.drop || L.asndrop ? true : undefined,
-        lists: L, extra: bits.length ? [["x_lists", bits.join(" · ")]] : [],
+        lists: L, near, cloud: j.cloud || undefined, region: j.region || undefined,
+        edge: j.edge === true ? true : undefined, bogon: j.bogon === true ? true : undefined,
+        extra,
       };
     },
   },
@@ -335,16 +341,44 @@ export const SOURCES = [
     async run(ip) {
       const j = await getJSON(`https://stat.ripe.net/data/prefix-overview/data.json?resource=${encodeURIComponent(ip)}`, { ms: 5000 });
       const d = j.data || {}, as = (d.asns || [])[0] || {};
-      let rpki;
-      if (as.asn && d.resource) {
-        const r = await getJSON(`https://stat.ripe.net/data/rpki-validation/data.json?resource=AS${as.asn}&prefix=${encodeURIComponent(d.resource)}`, { ms: 5000 }).catch(() => null);
-        // the three states the page knows; anything else is left out rather than shown half-translated
-        rpki = r && r.data && /^(valid|invalid|unknown)$/i.test(r.data.status) ? r.data.status.toLowerCase() : undefined;
-      }
+      // three more answers about the same prefix, at once: the RPKI verdict, how long and how widely it is routed, and
+      // the network's abuse contact (the address the page offers when a visitor wants to appeal a listing)
+      const [r, st, ab] = await Promise.all([
+        as.asn && d.resource ? getJSON(`https://stat.ripe.net/data/rpki-validation/data.json?resource=AS${as.asn}&prefix=${encodeURIComponent(d.resource)}`, { ms: 5000 }).catch(() => null) : null,
+        d.resource ? getJSON(`https://stat.ripe.net/data/routing-status/data.json?resource=${encodeURIComponent(d.resource)}`, { ms: 5000 }).catch(() => null) : null,
+        getJSON(`https://stat.ripe.net/data/abuse-contact-finder/data.json?resource=${encodeURIComponent(ip)}`, { ms: 5000 }).catch(() => null),
+      ]);
+      // the three states the page knows; anything else is left out rather than shown half-translated
+      const rpki = r && r.data && /^(valid|invalid|unknown)$/i.test(r.data.status) ? r.data.status.toLowerCase() : undefined;
+      const sd = (st && st.data) || {}, seen = +(sd.visibility && sd.visibility.v4 && sd.visibility.v4.ris_peers_seeing) || 0,
+        of = +(sd.visibility && sd.visibility.v4 && sd.visibility.v4.total_ris_peers) || 0;
+      const abuse = ab && ab.data && (ab.data.abuse_contacts || []).find(Boolean);
       const extra = [];
       if (d.resource) extra.push(["x_prefix", d.resource]);
       if (rpki) extra.push(["x_rpki", rpki]);
-      return { asn: as.asn, org: as.holder, announced: d.announced === true, rpki, prefix: d.resource, extra };
+      // how long the prefix has been routed and how many RIS peers see it: a young or barely visible prefix is a hint
+      if (sd.first_seen && sd.first_seen.time && seen && of) extra.push(["x_route", String(sd.first_seen.time).slice(0, 10) + " · " + seen + "/" + of]);
+      return { asn: as.asn, org: as.holder, announced: d.announced === true, rpki, prefix: d.resource,
+        firstSeen: (sd.first_seen && sd.first_seen.time) || undefined, seen, of, asns: (d.asns || []).length,
+        moas: (d.asns || []).length > 1, abuse: abuse || undefined, extra };
+    },
+  },
+  {
+    // AlienVault OTX: the open threat-intelligence pulses that name the address. Pulses are reports someone shared,
+    // not a verdict — a popular address can be quoted by many — so this is shown, never scored.
+    id: "otx", name: "AlienVault OTX", browser: "retry",
+    site: ip => "https://otx.alienvault.com/indicator/ip/" + ip,
+    async run(ip) {
+      const j = await getJSON(`https://otx.alienvault.com/api/v1/indicators/IPv${family(ip)}/${encodeURIComponent(ip)}/general`);
+      const pi = j.pulse_info || {}, val = j.validation || [];
+      const white = val.some(x => /whitelist|false_positive/i.test(String(x.source || "") + " " + String(x.name || "")));
+      const names = (pi.pulses || []).map(p => p.name).filter(Boolean).slice(0, 3);
+      const pulses = +pi.count || 0;
+      // the pulse names as the row's text; a whitelist or false-positive mark has no value, only its own label
+      const extra = [];
+      if (pulses) extra.push(["x_otx", names.join(" · ") || String(pulses)]);
+      if (white) extra.push(["x_otx_white", ""]);
+      return { otx: { pulses, white, names }, extra };
     },
   },
   {

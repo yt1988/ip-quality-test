@@ -191,6 +191,10 @@ type Index struct {
 	Relay4, TorRelay4 Ranges
 	Relay6, TorRelay6 Ranges6
 	ASNDrop           []uint32
+	Cloud             []CloudRange // the providers' own published ranges (AWS, GCP, Cloudflare, Fastly)
+	Cloud6            []CloudRange6
+	Bogon             Ranges // Team Cymru's fullbogons: address space no one may route
+	Bogon6            Ranges6
 }
 
 // IPLists: what the lists say about one address. The IPv4-only lists are false for IPv6.
@@ -254,6 +258,129 @@ func (idx *Index) OfIP(a netip.Addr, asns []int) (out IPLists) {
 			break
 		}
 	}
+	return
+}
+
+// Cloud: which hosting or CDN network an address belongs to, from the providers' own published ranges. A range may
+// say which region it is (AWS and GCP do), and CDN ranges are marked as edges: an edge is shared infrastructure,
+// not a server someone rented.
+type CloudRange struct {
+	F, T   uint32
+	P      uint8 // index into cloudNames
+	Region string
+	Edge   bool
+}
+
+type CloudRange6 struct {
+	F, T   A16
+	P      uint8
+	Region string
+	Edge   bool
+}
+
+var cloudNames = []string{"aws", "gcp", "azure", "cloudflare", "fastly"}
+
+func cloudID(name string) uint8 {
+	for i, n := range cloudNames {
+		if n == name {
+			return uint8(i)
+		}
+	}
+	return 0
+}
+
+// CloudOfIP: the provider, region and whether it is a CDN edge, for an address in one of the published ranges.
+func (idx *Index) CloudOfIP(a netip.Addr) (name, region string, edge bool) {
+	if idx == nil {
+		return
+	}
+	if a.Is4() {
+		u, ok := v4(a.String())
+		if !ok {
+			return
+		}
+		i := sort.Search(len(idx.Cloud), func(i int) bool { return idx.Cloud[i].F > u }) - 1
+		if i >= 0 && idx.Cloud[i].T >= u {
+			r := idx.Cloud[i]
+			return cloudNames[r.P], r.Region, r.Edge
+		}
+		return
+	}
+	if a.Is6() && !a.Is4In6() {
+		x := A16(a.As16())
+		i := sort.Search(len(idx.Cloud6), func(i int) bool { return cmp16(idx.Cloud6[i].F, x) > 0 }) - 1
+		if i >= 0 && cmp16(idx.Cloud6[i].T, x) >= 0 {
+			r := idx.Cloud6[i]
+			return cloudNames[r.P], r.Region, r.Edge
+		}
+	}
+	return
+}
+
+// BogonOf: space on Team Cymru's fullbogon list — never allocated, or reserved and not meant to be routed.
+func (idx *Index) BogonOf(a netip.Addr) bool {
+	if idx == nil {
+		return false
+	}
+	if a.Is4() {
+		if u, ok := v4(a.String()); ok {
+			return idx.Bogon.Has(u)
+		}
+		return false
+	}
+	return a.Is6() && !a.Is4In6() && idx.Bogon6.Has(a)
+}
+
+// Near: how many addresses of the /24 an address is in are named by the lists. Listed counts every address any list
+// names; the per-list counts say which list (an address named by two lists counts once in Listed).
+type Near struct {
+	Of     int `json:"of"`
+	Listed int `json:"listed"`
+	Bad    int `json:"bad"`
+	Proxy  int `json:"proxy"`
+	Tor    int `json:"tor"`
+	VPN    int `json:"vpn"`
+	DC     int `json:"dc"`
+	Drop   int `json:"drop"`
+}
+
+// maskInRanges: the offsets of a /24 (lo..hi) that a merged range list covers.
+func maskInRanges(r Ranges, lo, hi uint32) Mask {
+	var m Mask
+	i := sort.Search(len(r.T), func(i int) bool { return r.T[i] >= lo })
+	for ; i < len(r.F) && r.F[i] <= hi; i++ {
+		f, t := max(r.F[i], lo), min(r.T[i], hi)
+		for off := int(f - lo); off <= int(t-lo); off++ {
+			m.set(off, off)
+		}
+	}
+	return m
+}
+
+// NearOf: the /24's list counts for the address at seg<<8. IPv6 has no /24, so this is only asked for IPv4.
+func (idx *Index) NearOf(seg uint32) (n Near) {
+	n.Of = 256
+	if idx == nil {
+		return
+	}
+	lo, hi := seg<<8, seg<<8|0xff
+	bad, _ := idx.Bad.Of(seg)
+	px := idx.Proxy.Of(seg)
+	tor := idx.Tor.Of(seg)
+	vpn := maskInRanges(idx.VPN, lo, hi)
+	dc := maskInRanges(idx.DC, lo, hi)
+	drop := maskInRanges(idx.Drop, lo, hi)
+	var all Mask
+	for i := range all {
+		all[i] = bad[i] | px[i] | tor[i] | vpn[i] | dc[i] | drop[i]
+	}
+	n.Listed = all.Count()
+	n.Bad = bad.Count()
+	n.Proxy = px.Count()
+	n.Tor = tor.Count()
+	n.VPN = vpn.Count()
+	n.DC = dc.Count()
+	n.Drop = drop.Count()
 	return
 }
 
@@ -497,6 +624,134 @@ func parseASNDrop(r io.Reader) ([]uint32, error) {
 	return out, nil
 }
 
+// AWS's ip-ranges.json: every prefix with its region and service. CloudFront's prefixes are the CDN edge.
+func parseAWS(r io.Reader) (v4 []CloudRange, v6 []CloudRange6, err error) {
+	var j struct {
+		Prefixes []struct {
+			Prefix  string `json:"ip_prefix"`
+			Region  string `json:"region"`
+			Service string `json:"service"`
+		} `json:"prefixes"`
+		V6 []struct {
+			Prefix  string `json:"ipv6_prefix"`
+			Region  string `json:"region"`
+			Service string `json:"service"`
+		} `json:"ipv6_prefixes"`
+	}
+	if err = json.NewDecoder(bufio.NewReaderSize(r, 1<<20)).Decode(&j); err != nil {
+		return
+	}
+	p := cloudID("aws")
+	for _, x := range j.Prefixes {
+		if f, t, ok := rangeOf(x.Prefix); ok {
+			v4 = append(v4, CloudRange{F: f, T: t, P: p, Region: x.Region, Edge: x.Service == "CLOUDFRONT"})
+		}
+	}
+	for _, x := range j.V6 {
+		if f, t, ok := cloudRange6(x.Prefix); ok {
+			v6 = append(v6, CloudRange6{F: f, T: t, P: p, Region: x.Region, Edge: x.Service == "CLOUDFRONT"})
+		}
+	}
+	return
+}
+
+// GCP's cloud.json: ipv4Prefix or ipv6Prefix with a scope.
+func parseGCP(r io.Reader) (v4 []CloudRange, v6 []CloudRange6, err error) {
+	var j struct {
+		Prefixes []struct {
+			V4    string `json:"ipv4Prefix"`
+			V6    string `json:"ipv6Prefix"`
+			Scope string `json:"scope"`
+		} `json:"prefixes"`
+	}
+	if err = json.NewDecoder(bufio.NewReaderSize(r, 1<<20)).Decode(&j); err != nil {
+		return
+	}
+	p := cloudID("gcp")
+	for _, x := range j.Prefixes {
+		if x.V4 != "" {
+			if f, t, ok := rangeOf(x.V4); ok {
+				v4 = append(v4, CloudRange{F: f, T: t, P: p, Region: x.Scope})
+			}
+		}
+		if x.V6 != "" {
+			if f, t, ok := cloudRange6(x.V6); ok {
+				v6 = append(v6, CloudRange6{F: f, T: t, P: p, Region: x.Scope})
+			}
+		}
+	}
+	return
+}
+
+// Cloudflare's edge: one prefix per line.
+func parseCloudflare(r io.Reader) (v4 []CloudRange, v6 []CloudRange6, err error) {
+	p := cloudID("cloudflare")
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || line[0] == '#' {
+			continue
+		}
+		if f, t, ok := rangeOf(line); ok {
+			v4 = append(v4, CloudRange{F: f, T: t, P: p, Edge: true})
+		} else if f, t, ok := cloudRange6(line); ok {
+			v6 = append(v6, CloudRange6{F: f, T: t, P: p, Edge: true})
+		}
+	}
+	return v4, v6, sc.Err()
+}
+
+// Fastly's public IP list.
+func parseFastly(r io.Reader) (v4 []CloudRange, v6 []CloudRange6, err error) {
+	var j struct {
+		Addresses []string `json:"addresses"`
+		V6        []string `json:"ipv6_addresses"`
+	}
+	if err = json.NewDecoder(bufio.NewReaderSize(r, 1<<20)).Decode(&j); err != nil {
+		return
+	}
+	p := cloudID("fastly")
+	for _, s := range j.Addresses {
+		if f, t, ok := rangeOf(s); ok {
+			v4 = append(v4, CloudRange{F: f, T: t, P: p, Edge: true})
+		}
+	}
+	for _, s := range j.V6 {
+		if f, t, ok := cloudRange6(s); ok {
+			v6 = append(v6, CloudRange6{F: f, T: t, P: p, Edge: true})
+		}
+	}
+	return
+}
+
+// A CIDR or address as a v6 range; anything with a v4 prefix or no colon is not one.
+func cloudRange6(s string) (A16, A16, bool) {
+	p, err := netip.ParsePrefix(strings.TrimSpace(s))
+	if err != nil {
+		return A16{}, A16{}, false
+	}
+	if p.Addr().Is4() || p.Addr().Is4In6() {
+		return A16{}, A16{}, false
+	}
+	return range6(p.Masked())
+}
+
+// Team Cymru's fullbogon v6 list: one prefix per line.
+func parseBogon6(r io.Reader) (Ranges6, error) {
+	var rs [][2]A16
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || line[0] == '#' || line[0] == ';' {
+			continue
+		}
+		if f, t, ok := cloudRange6(line); ok {
+			rs = append(rs, [2]A16{f, t})
+		}
+	}
+	return merge6(rs), sc.Err()
+}
+
 // Sources, by list name. The IP2Proxy URL takes the account's download token.
 var sources = map[string]string{
 	"proxy":    "https://www.ip2location.com/download/?token=%s&file=PX1LITECSV",
@@ -508,6 +763,13 @@ var sources = map[string]string{
 	"relay":    "https://mask-api.icloud.com/egress-ip-ranges.csv",
 	"torrelay": "https://onionoo.torproject.org/details?type=relay&running=true&fields=or_addresses",
 	"asndrop":  "https://www.spamhaus.org/drop/asndrop.json",
+	"aws":      "https://ip-ranges.amazonaws.com/ip-ranges.json",
+	"gcp":      "https://www.gstatic.com/ipranges/cloud.json",
+	"cf4":      "https://www.cloudflare.com/ips-v4",
+	"cf6":      "https://www.cloudflare.com/ips-v6",
+	"fastly":   "https://api.fastly.com/public-ip-list",
+	"bogon4":   "https://www.team-cymru.org/Services/Bogons/fullbogons-ipv4.txt",
+	"bogon6":   "https://www.team-cymru.org/Services/Bogons/fullbogons-ipv6.txt",
 }
 
 var client = &http.Client{Timeout: 10 * time.Minute}
@@ -562,6 +824,86 @@ func loadPX1(path string, b bitset) error {
 	return errors.New("no CSV in the zip")
 }
 
+// mergeCloud: AWS publishes one prefix once per service (13.32.0.0/15 is both AMAZON and CLOUDFRONT), so ranges that
+// overlap are made one — an edge marking wins, a region is kept — and the lookup can then be a plain search over
+// disjoint ranges. IPv4 and IPv6 come from the same lists; each family has its own index.
+func mergeCloud(v []CloudRange) []CloudRange {
+	sort.Slice(v, func(i, j int) bool {
+		if v[i].F != v[j].F {
+			return v[i].F < v[j].F
+		}
+		return v[i].T > v[j].T
+	})
+	out := v[:0]
+	for _, r := range v {
+		if n := len(out); n > 0 && r.F <= out[n-1].T {
+			if r.T > out[n-1].T {
+				out[n-1].T = r.T
+			}
+			out[n-1].Edge = out[n-1].Edge || r.Edge
+			if out[n-1].Region == "" {
+				out[n-1].Region = r.Region
+			}
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+func mergeCloud6(v []CloudRange6) []CloudRange6 {
+	sort.Slice(v, func(i, j int) bool {
+		if c := cmp16(v[i].F, v[j].F); c != 0 {
+			return c < 0
+		}
+		return cmp16(v[i].T, v[j].T) > 0
+	})
+	out := v[:0]
+	for _, r := range v {
+		if n := len(out); n > 0 && cmp16(r.F, out[n-1].T) <= 0 {
+			if cmp16(r.T, out[n-1].T) > 0 {
+				out[n-1].T = r.T
+			}
+			out[n-1].Edge = out[n-1].Edge || r.Edge
+			if out[n-1].Region == "" {
+				out[n-1].Region = r.Region
+			}
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+// setCloud4 / setCloud6 replace one provider's ranges of that family (Cloudflare publishes its IPv4 and IPv6 edges as
+// two files, so the two sides are set apart); setCloud sets both.
+func (idx *Index) setCloud4(p uint8, v4 []CloudRange) {
+	keep := idx.Cloud[:0]
+	for _, x := range idx.Cloud {
+		if x.P != p {
+			keep = append(keep, x)
+		}
+	}
+	idx.Cloud = append(keep, mergeCloud(v4)...)
+	sort.Slice(idx.Cloud, func(i, j int) bool { return idx.Cloud[i].F < idx.Cloud[j].F })
+}
+
+func (idx *Index) setCloud6(p uint8, v6 []CloudRange6) {
+	keep := idx.Cloud6[:0]
+	for _, x := range idx.Cloud6 {
+		if x.P != p {
+			keep = append(keep, x)
+		}
+	}
+	idx.Cloud6 = append(keep, mergeCloud6(v6)...)
+	sort.Slice(idx.Cloud6, func(i, j int) bool { return cmp16(idx.Cloud6[i].F, idx.Cloud6[j].F) < 0 })
+}
+
+func (idx *Index) setCloud(p uint8, v4 []CloudRange, v6 []CloudRange6) {
+	idx.setCloud4(p, v4)
+	idx.setCloud6(p, v6)
+}
+
 // Update fetches every list into a new index, keeping the old copy of any list that fails, and writes it atomically.
 func Update(dir, token string, old *Index) (*Index, []error) {
 	idx := &Index{At: map[string]time.Time{}}
@@ -573,7 +915,8 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 		}
 	}
 	var errs []error
-	for _, name := range []string{"proxy", "bad", "tor", "vpn", "dc", "drop", "relay", "torrelay", "asndrop"} {
+	for _, name := range []string{"proxy", "bad", "tor", "vpn", "dc", "drop", "relay", "torrelay", "asndrop",
+		"aws", "gcp", "cf4", "cf6", "fastly", "bogon4", "bogon6"} {
 		url := sources[name]
 		if name == "proxy" {
 			if token == "" {
@@ -590,6 +933,9 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 		b, sc, rs := bitset{}, scores{}, [][2]uint32{}
 		r6 := [][2]A16{}
 		var asns []uint32
+		var cv4 []CloudRange
+		var cv6 []CloudRange6
+		var bog6 Ranges6
 		switch name {
 		case "proxy":
 			err = loadPX1(path, b)
@@ -609,13 +955,28 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 				asns, e = parseASNDrop(r)
 				return e
 			})
+		case "aws":
+			err = withFile(path, func(r io.Reader) error { var e error; cv4, cv6, e = parseAWS(r); return e })
+		case "gcp":
+			err = withFile(path, func(r io.Reader) error { var e error; cv4, cv6, e = parseGCP(r); return e })
+		case "cf4", "cf6":
+			err = withFile(path, func(r io.Reader) error { var e error; cv4, cv6, e = parseCloudflare(r); return e })
+		case "fastly":
+			err = withFile(path, func(r io.Reader) error { var e error; cv4, cv6, e = parseFastly(r); return e })
+		case "bogon4":
+			err = withFile(path, func(r io.Reader) error {
+				return parseLines(r, false, func(f, t uint32, _ int) { rs = append(rs, [2]uint32{f, t}) })
+			})
+		case "bogon6":
+			err = withFile(path, func(r io.Reader) error { var e error; bog6, e = parseBogon6(r); return e })
 		default:
 			err = withFile(path, func(r io.Reader) error {
 				return parseLines(r, false, func(f, t uint32, _ int) { rs = append(rs, [2]uint32{f, t}) })
 			})
 		}
 		os.Remove(path)
-		if err == nil && len(b) == 0 && len(sc) == 0 && len(rs) == 0 && len(r6) == 0 && len(asns) == 0 {
+		if err == nil && len(b) == 0 && len(sc) == 0 && len(rs) == 0 && len(r6) == 0 && len(asns) == 0 &&
+			len(cv4) == 0 && len(cv6) == 0 && len(bog6.F) == 0 {
 			err = errors.New("empty")
 		}
 		if err != nil {
@@ -641,6 +1002,17 @@ func Update(dir, token string, old *Index) (*Index, []error) {
 			idx.TorRelay4, idx.TorRelay6 = merge(rs), merge6(r6)
 		case "asndrop":
 			idx.ASNDrop = asns
+		case "aws", "gcp", "fastly":
+			idx.setCloud(cloudID(name), cv4, cv6)
+		case "cf4":
+			// Cloudflare publishes its IPv4 and IPv6 edges as two files: each replaces only its own family
+			idx.setCloud4(cloudID("cloudflare"), cv4)
+		case "cf6":
+			idx.setCloud6(cloudID("cloudflare"), cv6)
+		case "bogon4":
+			idx.Bogon = merge(rs)
+		case "bogon6":
+			idx.Bogon6 = bog6
 		}
 		idx.At[name] = time.Now().UTC()
 	}

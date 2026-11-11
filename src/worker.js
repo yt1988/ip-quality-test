@@ -17,6 +17,11 @@ import * as I18N from "./langs.mjs";
 
 const CACHE_TTL = 6 * 3600;
 const CACHE_VER = "v1";
+// The fresh-lookup limit the LIMIT binding enforces (wrangler.toml): said in the headers and the JSON, so scripts
+// can read the policy instead of guessing. Keep the two in step when the binding changes.
+const RATE_LIMIT = 20, RATE_WINDOW = 60;
+const rateLimit = env => env.LIMIT ? { limit: RATE_LIMIT, window: RATE_WINDOW, fresh_only: true } : null;
+const rateHeaders = env => env.LIMIT ? { "X-RateLimit-Limit": String(RATE_LIMIT), "X-RateLimit-Window": String(RATE_WINDOW) } : {};
 
 const json = (body, status = 200, extra = {}) => new Response(JSON.stringify(body), {
   status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extra },
@@ -133,7 +138,7 @@ async function check(request, env, ctx) {
   // a fresh lookup spends the sources' free quotas: limited per visitor when the binding exists
   if (!hit && env.LIMIT && me) {
     const { success } = await env.LIMIT.limit({ key: me });
-    if (!success) return json({ error: "rate" }, 429, { "Retry-After": "60" });
+    if (!success) return json({ error: "rate", limit: RATE_LIMIT, window: RATE_WINDOW }, 429, { "Retry-After": String(RATE_WINDOW), ...rateHeaders(env) });
   }
   const skip = Object.fromEntries(SOURCES.map(s => [s.id, skipOf(s, ip, self, env)]).filter(([, why]) => why));
   const blIds = v === 4 ? DNSBL.map(b => b.id) : [];
@@ -142,8 +147,8 @@ async function check(request, env, ctx) {
   // source). CORS is open: there is nothing to authenticate and the answer is public.
   if (url.searchParams.get("format") === "json") {
     const { sources, dnsbl: bl, at, cached, result } = await collect({ request, env, ctx, ip, self, v, hit, skip, send: async () => {} });
-    return json({ ip, version: v, self, at, cached, elsewhere: ELSEWHERE.map(([name, f]) => [name, f(ip)]), sources, dnsbl: bl, ...result },
-      200, { "Access-Control-Allow-Origin": "*" });
+    return json({ ip, version: v, self, at, cached, rate_limit: rateLimit(env), elsewhere: ELSEWHERE.map(([name, f]) => [name, f(ip)]), sources, dnsbl: bl, ...result },
+      200, { "Access-Control-Allow-Origin": "*", ...rateHeaders(env) });
   }
 
   const { readable, writable } = new TransformStream();
@@ -161,7 +166,7 @@ async function check(request, env, ctx) {
       await w.close().catch(() => {});
     }
   })());
-  return new Response(readable, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+  return new Response(readable, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...rateHeaders(env) } });
 }
 
 // A hostname the visitor typed: Cloudflare's DoH (A, else AAAA), the first public address, cached for six hours.
@@ -239,9 +244,86 @@ async function turnstile(request, env) {
   return json({ success: j.success === true, codes: j["error-codes"] || [] });
 }
 
+// The API's own description, for scripts: GET /api lists the endpoints and GET /openapi.json is the OpenAPI document.
+// Both are static, CORS-open and cached: API documentation is in English, as OpenAPI documents are.
+const API_VERSION = "1.0";
+function apiIndex() {
+  return {
+    name: "1ms.dog IP quality check", version: API_VERSION, openapi: "/openapi.json",
+    about: "Every answer is public and needs no key. A fresh check is limited per visitor address per minute; a cached answer (six hours) does not count.",
+    endpoints: [
+      { method: "GET", path: "/api/check", format: "application/x-ndjson", params: ["ip", "fresh"],
+        about: "One address, every source, streamed as it answers, then scored. No ip: the caller's own address." },
+      { method: "GET", path: "/api/check", format: "application/json", params: ["ip", "fresh", "format=json"],
+        about: "The same answers and score as one document, after every source has answered." },
+      { method: "GET", path: "/api/resolve", format: "application/json", params: ["host"], about: "The first public address a hostname resolves to." },
+      { method: "GET", path: "/api/turnstile", format: "application/json", about: "The Turnstile site key, when this deployment has one (404 otherwise)." },
+      { method: "POST", path: "/api/turnstile", format: "application/json", about: "Verifies a Turnstile token: body {token}." },
+      { method: "GET", path: "/r/{code}", format: "text/html", about: "A shared result page, with the grade in its link preview." },
+    ],
+  };
+}
+const ipParam = { name: "ip", in: "query", required: false, schema: { type: "string" }, description: "An IPv4 or IPv6 address. Left out, the caller's own address." };
+const noteSchema = { type: "object", properties: { lv: { enum: ["good", "info", "warn", "bad"] }, k: { type: "string", description: "i18n key" }, p: { type: "object" } } };
+const OPENAPI = {
+  openapi: "3.1.0",
+  info: { title: "1ms.dog IP quality check", version: API_VERSION, description: apiIndex().about },
+  servers: [{ url: "https://ipqs.1ms.dog" }],
+  paths: {
+    "/api/check": {
+      get: {
+        summary: "Check one address",
+        parameters: [ipParam, { name: "fresh", in: "query", schema: { enum: ["1"] }, description: "Skip the six-hour cache." },
+          { name: "format", in: "query", schema: { enum: ["json"] }, description: "Return one JSON document instead of the NDJSON stream." }],
+        responses: {
+          200: { description: "The stream (start, src and bl lines, then done) or the JSON document", content: { "application/json": { schema: { $ref: "#/components/schemas/Result" } } } },
+          400: { description: "bad_ip or private", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          429: { description: "Too many fresh checks from this address in a minute; X-RateLimit-Limit and X-RateLimit-Window say the policy, Retry-After when to try again", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          500: { description: "internal", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+        },
+      },
+    },
+    "/api/resolve": {
+      get: { summary: "Resolve a hostname to its first public address", parameters: [{ name: "host", in: "query", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "{ip, version}" }, 400: { description: "bad_host" }, 404: { description: "no_host" }, 502: { description: "internal" } } },
+    },
+    "/api/turnstile": {
+      get: { summary: "The site key", responses: { 200: { description: "{sitekey}" }, 404: { description: "not configured" } } },
+      post: { summary: "Verify a token", requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["token"], properties: { token: { type: "string" } } } } } },
+        responses: { 200: { description: "{success, codes}" }, 404: { description: "not configured" } } },
+    },
+  },
+  components: {
+    schemas: {
+      Error: { type: "object", properties: { error: { type: "string", enum: ["bad_ip", "private", "rate", "internal", "not_found", "bad_host", "no_host", "method", "bad_token"] } } },
+      Result: { type: "object", properties: {
+        ip: { type: "string" }, version: { type: "integer", enum: [4, 6] }, self: { type: "boolean" },
+        at: { type: "string", format: "date-time" }, cached: { type: "boolean" },
+        rate_limit: { type: ["object", "null"], properties: { limit: { type: "integer" }, window: { type: "integer", description: "seconds" }, fresh_only: { type: "boolean" } } },
+        score: { type: "integer", minimum: 0, maximum: 100 }, grade: { enum: ["A", "B", "C", "D", "F"] },
+        parts: { type: "array", items: { type: "object", properties: { k: { type: "string" }, pts: { type: "integer" }, p: { type: "object" } } } },
+        notes: { type: "array", items: noteSchema },
+        uses: { type: "object", additionalProperties: { type: "object", properties: { lv: { enum: ["good", "warn", "bad"] }, why: { type: "string" } } } },
+        confidence: { type: "object", properties: { level: { enum: ["low", "mid", "high"] }, sources: { type: "integer" }, riskSources: { type: "integer" } } },
+        summary: { type: "object", description: "What was found: location, network, flags, lists, cloud, /24 neighbours, routing, OTX, DNSBL counts" },
+        sources: { type: "array", items: { type: "object", properties: { id: { type: "string" }, ok: { type: "boolean" }, ms: { type: "integer" }, d: { type: "object" }, err: { type: "string" } } } },
+        dnsbl: { type: "array", items: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, listed: { type: ["boolean", "null"] }, codes: { type: "array", items: { type: "string" } } } } },
+        elsewhere: { type: "array", description: "[name, url] pairs for looking the address up by hand" },
+      } },
+    },
+  },
+};
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === "/api" || url.pathname === "/openapi.json") {
+      if (request.method !== "GET") return json({ error: "method" }, 405, { Allow: "GET" });
+      const body = url.pathname === "/api" ? apiIndex() : OPENAPI;
+      const r = json(body, 200, { "Access-Control-Allow-Origin": "*" });
+      r.headers.set("Cache-Control", "public, max-age=3600");
+      return r;
+    }
     if (url.pathname === "/api/check") {
       if (request.method !== "GET") return json({ error: "method" }, 405, { Allow: "GET" });
       try { return await check(request, env, ctx); }

@@ -55,6 +55,7 @@
               <p class="parts" id="parts">&nbsp;</p>
               <p class="conf" id="conf" hidden></p>
               <p class="conf" id="hist" hidden></p>
+              <p class="conf" id="nextG" hidden></p>
               <a class="ul" id="ckLink" hidden target="_blank" rel="noopener"><span data-i="ck_more"></span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
               <a class="ul mine" id="whoLink" hidden target="_blank" rel="noopener"><span data-i="who_more"></span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
               <a class="ul mine" id="ulLink" hidden target="_blank" rel="noopener"><span data-i="ul_more"></span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a>
@@ -66,6 +67,7 @@
             <li><span data-i="r_loc"></span><b><i class="skl"></i></b></li>
             <li><span data-i="r_net"></span><b><i class="skl"></i></b></li>
             <li><span data-i="r_host"></span><b><i class="skl"></i></b></li>
+            <li><span data-i="r_near"></span><b><i class="skl"></i></b></li>
           </ul>
           <div class="sec-h mine"><span data-i="mine_h"></span><a class="eg" id="egLink" hidden target="_blank" rel="noopener"><span data-i="ex_more"></span><svg class="xl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6"/></svg></a></div>
           <ul class="exits mine" id="exList"><li class="xr sk"><i class="skl"></i></li><li class="xr sk"><i class="skl"></i></li></ul>
@@ -98,7 +100,7 @@
       <div class="bar">
         <div class="prog" id="prog"><i></i></div>
         <span class="prog-t" id="progTxt">&nbsp;</span>
-        <div class="acts"><a class="btn" id="batchLink" href="{{homeHref}}batch/" data-i="b_link"></a><button class="btn" id="fresh" type="button" hidden data-i="fresh"></button><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun"></span></button></div>
+        <div class="acts"><a class="btn" id="batchLink" href="{{homeHref}}batch/" data-i="b_link"></a><button class="btn" id="appealBtn" type="button" hidden data-i="ab_btn"></button><button class="btn" id="fresh" type="button" hidden data-i="fresh"></button><button class="btn" id="rerun" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/></svg><span data-i="rerun"></span></button></div>
       </div>
     </section>
 
@@ -120,6 +122,7 @@
     <section class="probes card">
       <h2 data-i="h_src"></h2>
       <p class="skip-n" id="skipN" hidden></p>
+      <div class="priv"><label><input type="checkbox" id="srvOnly"><span data-i="prv_l"></span></label><p class="m" data-i="prv_d"></p></div>
       <div class="pgroups">{{groups}}</div>
       <p class="sg-src src-credit" id="srcCredit"></p>
     </section>
@@ -143,6 +146,13 @@
   </div>
 </div>
 
+<div class="scrim" id="appeal" hidden>
+  <div class="dialog ab" role="dialog" aria-modal="true" aria-labelledby="abT">
+    <div class="dlg-h"><h2 id="abT" data-i="ab_h"></h2>
+      <button class="icon-btn" data-close type="button" aria-label="{{a:a_close}}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+    <div class="ab-body" id="abBody"></div>
+  </div>
+</div>
 
 <script type="application/json" id="data">{{data}}</script>
 <script src="/assets/{{strings}}"></script>

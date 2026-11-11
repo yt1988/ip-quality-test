@@ -76,6 +76,13 @@ h2 { font-size: 15px; font-weight: 700; }
 .conf[hidden], .skip-n[hidden] { display: none !important; }
 /* the source rows a deployment can't ask (needs keys): said once above the list */
 .skip-n { margin: -2px 0 12px; font-size: 12.5px; color: var(--muted); }
+/* the privacy switch: keep every source answer on our server (the browser-asked rows then stay empty) */
+.priv { margin: -4px 0 4px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.priv label { display: inline-flex; align-items: center; gap: 6px; color: var(--fg); font-size: 13px; cursor: pointer; }
+.priv input { width: 14px; height: 14px; accent-color: var(--fg); }
+.priv p { margin: 2px 0 0 20px; }
+/* a source that failed: counted, and marked where its group's count is shown */
+.fail-n { color: var(--bad); font-variant-numeric: tabular-nums; }
 /* the /24 card: check a neighbour of the address being looked at */
 #sgPickGo { margin: 0 0 10px; }
 
@@ -266,6 +273,14 @@ h2 { font-size: 15px; font-weight: 700; }
 .dlg-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 12px 18px; border-bottom: 1px solid var(--line); }
 .dlg-h h2 { font-size: 16px; }
 .dialog.help { width: 860px; height: min(560px, calc(100vh - 32px)); }
+/* appealing a listing: who to write to, and where each list takes a correction */
+.dialog.ab { width: 520px; }
+.ab-body { padding: 14px 18px 18px; overflow: auto; font-size: 13.5px; line-height: 1.6; }
+.ab-sec { margin-bottom: 14px; }
+.ab-sec h3 { font-size: 13px; font-weight: 600; margin: 0 0 4px; color: var(--muted); }
+.ab-sec ul { margin: 0; padding-left: 18px; }
+.ab-sec a { color: var(--fg); }
+.ab-tip { margin: 0; font-size: 12.5px; }
 .help-b { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 0; flex: 1; }
 .help-nav { border-right: 1px solid var(--line); padding: 8px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
 .help-nav button { text-align: left; border: 0; background: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--muted); line-height: 1.4; }
