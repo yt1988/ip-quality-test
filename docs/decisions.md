@@ -345,5 +345,7 @@ button with no partner takes the whole row. Spacing and button size don't change
 (design.md §5).
 
 Found by Public at 375px after the base.css rename; the rules were the same before it, so this was older than the
-migration. At 320px the top bar (logo, language picker, three icon buttons) still overflows — that is the shared
-base.css's `.top-acts`, not this page.
+migration. At 320px the top bar still overflows on every tool of the suite — partly the shared `.top-acts`, partly
+fixed-width blocks a page draws itself — so 375 is the width phones are accepted at (docs/design.md §9 in
+1ms-shell). `npm run mobile` checks 375 and does not look for sideways scrolling: check that with
+`document.documentElement.scrollWidth > innerWidth`.
