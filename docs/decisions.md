@@ -335,3 +335,15 @@ components both draw, the other when a comment in `base.css` closes without open
 The rule for later: a page never overrides a shared class, it merges with one — so a class name on both sides means
 the page inherits every property it forgot to state. When adopting a new base, look at the page with the base's rules
 in mind, not only at what the base changed.
+
+## A phone row of four buttons is two columns (2026-11-12)
+
+When a result makes all four action buttons appear (batch, appeal, check again, run again) they don't fit one row on a
+phone: at 375px the row was 405px inside a 294px bar, and the page scrolled sideways to 438px — `flex-wrap: nowrap`
+plus a `white-space: nowrap` button means nothing could give. Under 460px the row is now a two-column grid, and a last
+button with no partner takes the whole row. Spacing and button size don't change; only the number of columns does
+(design.md §5).
+
+Found by Public at 375px after the base.css rename; the rules were the same before it, so this was older than the
+migration. At 320px the top bar (logo, language picker, three icon buttons) still overflows — that is the shared
+base.css's `.top-acts`, not this page.
