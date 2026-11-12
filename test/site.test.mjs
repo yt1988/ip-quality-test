@@ -40,6 +40,27 @@ test("every language has every string, with the same placeholders", async () => 
   }
 });
 
+test("base.css never defines a class this page defines, apart from the components both draw", async () => {
+  // A page rule wins over a same-named shared rule only for the properties it lists; every other property leaks in
+  // silently (the shared `.st` pill's 9px padding turned this page's 14px status dot into a 32px ellipse on 2026-11-12).
+  // The names below are components both files draw and the page means to extend: a shared rule for one of them may add
+  // properties on purpose. Any other shared name means one side has to be renamed.
+  const SHARED = "app bad btn dot icon-btn m ok pri sm top warn".split(" ");
+  const classes = async f => new Set([...(await readFile(new URL("../src/" + f, import.meta.url), "utf8"))
+    .replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/\.([a-zA-Z][\w-]*)/g)].map(m => m[1]));
+  const [base, style] = [await classes("base.css"), await classes("style.css")];
+  assert.deepEqual([...base].filter(c => style.has(c) && !SHARED.includes(c)).sort(), [],
+    "a class both files define: rename it on one side");
+});
+
+test("base.css is a whole file: every comment opens and closes", async () => {
+  // the copy step once dropped the `/*` of the ACCENT-end comment, which turned the `* { box-sizing: border-box }` right
+  // after it into text: every padded box in the page then grew by its padding
+  const css = await readFile(new URL("../src/base.css", import.meta.url), "utf8");
+  const rest = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.ok(!rest.includes("*/"), "a comment closes without opening: …" + rest.slice(Math.max(0, rest.indexOf("*/") - 60), rest.indexOf("*/") + 2));
+});
+
 test("source ids are unique and every source links somewhere", () => {
   const ids = [...SOURCES, ...DNSBL].map(s => s.id);
   assert.equal(new Set(ids).size, ids.length);

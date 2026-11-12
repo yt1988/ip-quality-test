@@ -310,3 +310,28 @@ one-line IPv6 card), which a self check doesn't know until the shell answers —
 fold anyway, so its arrival moves nothing visible.
 
 Local measurement with the script delayed 0, 400, 1200 and 2500 ms: 0.012, 0.03, 0.012, 0.012.
+
+## A shared class name reaches into the page it only half-matches (2026-11-12)
+
+Adopting the shared `assets/design/base.css` broke the page the same day: the findings' 14px status dots came out as
+32×14 ellipses and the verdict column centred its text. Two separate causes, both silent.
+
+The shared file used `.st` for its status pill and this page uses `.st` for the dot beside a finding. `base.css` is
+concatenated *before* `style.css`, so the page rule wins only for the properties it lists (here width, height, radius,
+grid, colour); base's `padding: 0 9px` and `height: 22px` were not listed and leaked in, and 14px plus 18px of padding
+with `border-radius: 50%` is an ellipse. The same happened to `.verdict`: the page's column never set `align-items`,
+`font-size` or `font-weight`, so it took base's `center`, `17px` and `600`.
+
+The other cause was in the copy itself: `src/base.css` had lost the `/*` that opens the `===== ACCENT ends =====`
+comment. The stray `*/` and the `*` that followed it were never parsed, so `* { box-sizing: border-box }` — the first
+rule after that comment — did not exist at all, and every padded box on the page grew by its padding. Nothing failed:
+the CSS was valid, the page just measured wrong.
+
+The shared file now avoids generic names for its components (`.pill`, `.page-verdict`, `.page-h`, `.page-sub`,
+`.card-pad`, `.hint`, `.blank`, `.skel`), and this page keeps `.st`, `.verdict` and `.skl` as its own. Two tests in
+`test/site.test.mjs` hold the line: one fails when the two files define the same class outside a short list of
+components both draw, the other when a comment in `base.css` closes without opening.
+
+The rule for later: a page never overrides a shared class, it merges with one — so a class name on both sides means
+the page inherits every property it forgot to state. When adopting a new base, look at the page with the base's rules
+in mind, not only at what the base changed.
