@@ -349,3 +349,21 @@ migration. At 320px the top bar still overflows on every tool of the suite — p
 fixed-width blocks a page draws itself — so 375 is the width phones are accepted at (docs/design.md §9 in
 1ms-shell). `npm run mobile` checks 375 and does not look for sideways scrolling: check that with
 `document.documentElement.scrollWidth > innerWidth`.
+
+## An error blamed on this page's inline script may come from somewhere else (2026-11-13)
+
+Issue #112 listed 22 errors in 7 days on `/zh-cn/`: `Failed to execute 'appendChild' on 'Node': Invalid or unexpected
+token` at `:1503:27` and `Unexpected token 'this'` at `:290:4`. Neither can be this page. The served document is 463
+lines and every inline script in it is one line; and "Failed to execute 'appendChild'" is what Chrome says when a
+`<script>` element that *someone built in JavaScript* fails to parse — the position is inside that script's text, not
+the document's.
+
+This page never appends an inline script: it creates one script element, Turnstile's `api.js`, and sets `src`. The same
+message, from the same Windows desktop Chrome and Edge versions, comes from other tools of the suite with entirely
+different code (home, who, check, ipv6, egress) — so the text being parsed is injected into every page on those
+machines by an extension, an antivirus web shield or a proxy, and Chrome blames the page it was injected into.
+The report's `page` field is empty for the same reason: the injected script runs while the head is still being parsed,
+before this page's hashed scripts exist, so the beacon's build lookup finds nothing.
+
+`npm run check -- ipqs` passes; the fix, if it is one, belongs in the shell's error beacon (skip an
+`appendChild`-attributed syntax error whose source is a page URL), not on this page.
