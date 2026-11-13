@@ -414,7 +414,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   }
   $("#shareBtn").onclick = async () => {
     if (!okRows().length && !okSegs().length) return;
-    const { share } = await import("/assets/share/share.js?v=9");
+    const { share } = await import("/assets/share/share.js?v=10");
     const S = okSegs().map(g => ({ base: g.base, lo: g.lo, bits: g.bits, sts: g.d.cells.map(c => c.st), kind: g.d.kind.kind, prefix: g.d.prefix && !g.d.prefix.none ? g.d.prefix : null }));
     const link = withIp => location.origin + SELF + "#b=" + packRows(rows, { at: at || new Date().toISOString(), withIp, segs: S });
     const links = { false: link(false), true: link(true) };
@@ -450,7 +450,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
       cur = segs.length ? 0 : -1;
       segList(); if (segs.length) segOpen(0);
       if (rows.length) draw();
-      import("/assets/share/share.js?v=9").then(({ received }) =>
+      import("/assets/share/share.js?v=10").then(({ received }) =>
         received({ lang: LANG, ts: Date.parse(P.at) || Date.now(), at: segs.length ? $("#seg") : $("#res"), test: () => { location.href = SELF; } }), () => {});
     }
   }
