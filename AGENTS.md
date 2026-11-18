@@ -138,3 +138,8 @@ name clients); fetch errors are stripped of the URL so the token never reaches t
   addresses stay out unless the visitor ticks the box in the share dialog.
 - `public/assets/share/` is a verbatim copy of 1ms.dog's shared share dialog: don't edit it here.
 - Commit messages say what changed and why, in plain sentences.
+
+## 提交说明
+
+- 用英文，一句话说清改了什么。
+- 引用站内 issue 时只写 `#<数字>`，不要写 `yt1988/<私有仓库>#<数字>`，也不要写出私有仓库的名字；公开仓库的历史里不该出现内部仓库。
