@@ -509,3 +509,9 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .wl-sc[data-g="C"] { --gc: var(--t3); } .wl-sc[data-g="D"] { --gc: var(--t4); } .wl-sc[data-g="F"] { --gc: var(--t5); }
 .wl-at, .wl-d { color: var(--muted); font-size: 12px; }
 .wl-d:empty { display: none; }
+
+/* the next step from what the check found */
+.treat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.treat-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.55; }
+.treat-list li:first-child { border-top: 0; }
+.treat-list a.mini { flex: none; text-decoration: none; color: var(--fg); }

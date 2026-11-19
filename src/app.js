@@ -449,6 +449,24 @@ import { reportOf } from "./report.mjs";
       : `${nr.listed}/${nOf}` + (nBad ? ` <span class="m">${nBad}</span>` : "");
     set(4, !nr ? "–" : `<span data-why="${esc(nearWhy)}">${nearVal}</span>`);
   }
+  // what to do about what the check found: the shortest path from a reading to an action
+  function paintTreat(r) {
+    const s = r.summary, F = s.flags || {}, out = [];
+    const hits = BLR.filter(b => b.listed === true);
+    if (hits.length) out.push({ k: "treat_bl", p: { list: list(hits.map(b => b.name)) }, act: "appeal" });
+    if (s.type === "hosting") out.push({ k: "treat_dc", p: {}, act: "batch" });
+    if (s.native === false) out.push({ k: "treat_broadcast", p: { reg: country(s.regCc), cc: country(s.cc) } });
+    if (s.ptr && s.ptr.fcrdns === false) out.push({ k: "treat_ptr", p: {} });
+    if (r.uses.mail && r.uses.mail.lv !== "good" && (s.type === "residential" || s.type === "mobile")) out.push({ k: "treat_mail", p: {} });
+    if ((s.risk ?? 0) >= 35 || (F.proxy && F.proxy.yes) || (F.vpn && F.vpn.yes)) out.push({ k: "treat_switch", p: {}, act: "batch" });
+    if (!out.length) out.push({ k: "treat_none", p: {} });
+    $("#treatList").innerHTML = out.slice(0, 4).map(x =>
+      `<li><span>${esc(t(x.k, x.p))}</span>` +
+      (x.act === "appeal" ? `<button class="mini" type="button" data-open="appeal">${esc(t("treat_appeal"))}</button>`
+        : x.act === "batch" ? `<a class="mini" href="${D.paths[LANG]}batch/">${esc(t("treat_batch"))}</a>` : "") + `</li>`).join("");
+    $("#treat").hidden = false;
+    $$("#treatList [data-open]").forEach(b => { b.onclick = () => openDlg(b.dataset.open); });
+  }
   function paintFindings(r) {
     const s = r.summary;
     // what the address is: a short answer per cell, the sentence behind it on hover
@@ -546,6 +564,7 @@ import { reportOf } from "./report.mjs";
     paintFacts(r);
 
     paintFindings(r);
+    paintTreat(r);
 
     // every deduction: its finding tinted in its color with the points, and every source mark that caused it
     for (const f in PARTS_OF) {
