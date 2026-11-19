@@ -449,6 +449,37 @@ import { reportOf } from "./report.mjs";
       : `${nr.listed}/${nOf}` + (nBad ? ` <span class="m">${nBad}</span>` : "");
     set(4, !nr ? "–" : `<span data-why="${esc(nearWhy)}">${nearVal}</span>`);
   }
+  // the three axes: IP layer (what this check can see), region/support, and account (what it cannot see)
+  function paintUse3(r) {
+    const s = r.summary, F = s.flags || {};
+    const set = (id, lv, text) => { const el = $("#" + id); if (el) el.innerHTML = `<i class="dot ${lv}"></i>${esc(text)}`; };
+    const lvOf = x => x === "good" ? "ok" : x === "warn" ? "warn" : x === "bad" ? "bad" : "unk";
+    const txtOf = x => x && t("lv_" + x) || t("ax_unknown");
+    const canTest = !!unlock;
+    for (const id of ["u3-ai-test", "u3-stream-test"]) {
+      const a = $("#" + id);
+      if (a) { a.hidden = !canTest; if (canTest) a.href = unlock + D.paths[LANG]; }
+    }
+    const blocked = s.cc && r.uses.ai.why === "u_ai_region";
+    set("u3-ai-region", blocked ? "bad" : s.cc ? "ok" : "unk", blocked ? t("ax_unsupported") : s.cc ? t("ax_supported") : t("ax_unknown"));
+    set("u3-ai-account", "unk", t("ax_unknown"));
+    set("u3-ai-ip", lvOf(r.uses.ai.lv), txtOf(r.uses.ai.lv));
+    const cat = s.native === false || s.ccs.length > 1 ? ["warn", t("ax_maybe")] : ["unk", t("ax_inferred")];
+    set("u3-stream-catalog", cat[0], cat[1]);
+    set("u3-stream-account", "unk", t("ax_unknown"));
+    set("u3-stream-ip", lvOf(r.uses.stream.lv), txtOf(r.uses.stream.lv));
+    set("u3-account-ip", lvOf(r.uses.account.lv), txtOf(r.uses.account.lv));
+    const anonN = ["proxy", "vpn", "tor"].filter(k => F[k] && F[k].yes > 0).length;
+    set("u3-account-proxy", anonN ? "warn" : "ok", anonN ? t("ax_sources", { n: anonN }) : t("f_none"));
+    set("u3-account-account", "unk", t("ax_unknown"));
+    const dnsbl = s.dnsbl || { listed: 0, checked: 0 };
+    set("u3-mail-dnsbl", !dnsbl.checked ? "unk" : dnsbl.listed ? "bad" : "ok",
+      !dnsbl.checked ? t("ax_unknown") : dnsbl.listed ? t("fs_listed", { n: dnsbl.listed, of: dnsbl.checked }) : `${t("bl_clean")} 0/${dnsbl.checked}`);
+    set("u3-mail-ptr", s.ptr && s.ptr.fcrdns === true ? "ok" : s.ptr && s.ptr.fcrdns === false ? "warn" : "unk",
+      s.ptr && s.ptr.fcrdns === true ? t("yes") : s.ptr && s.ptr.fcrdns === false ? t("no") : t("ax_unknown"));
+    set("u3-mail-send", lvOf(r.uses.mail.lv), txtOf(r.uses.mail.lv));
+    $("#use3").hidden = false;
+  }
   // what to do about what the check found: the shortest path from a reading to an action
   function paintTreat(r) {
     const s = r.summary, F = s.flags || {}, out = [];
@@ -564,6 +595,7 @@ import { reportOf } from "./report.mjs";
     paintFacts(r);
 
     paintFindings(r);
+    paintUse3(r);
     paintTreat(r);
 
     // every deduction: its finding tinted in its color with the points, and every source mark that caused it
