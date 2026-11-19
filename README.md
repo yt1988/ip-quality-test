@@ -101,13 +101,6 @@ Shared results live at `/r/<code>` (or `/<lang>/r/<code>`): the code is the answ
 
 The [Connection Checkup](https://check.1ms.dog) frames the page at `?embed=checkup`: when the shell names the checkup (`<meta name="check">`) and the frame sits on it, the page checks the current address at once, shows only the score, and posts its progress, height and result (with a `/r/` link that leaves the address out) to that origin only. The protocol is in 1ms-shell's `docs/checkup.md`.
 
-## MCP server
-
-`mcp/` is a small, dependency-free [Model Context Protocol](https://modelcontextprotocol.io/) server for the public API:
-`check_ip`, `check_self`, `explain_score`, `resolve_host` and `batch_check`. Run it with `node mcp/index.mjs`; the
-Claude Desktop / Claude Code configuration and the tool list are in [mcp/README.md](mcp/README.md). It needs no key
-and adds no logging.
-
 ## Self-hosting
 
 ```bash

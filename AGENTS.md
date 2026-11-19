@@ -17,7 +17,6 @@ more sources.
 | Pages | `src/page.html`, `src/batch.html` → `public/` | the check (`/`, `/<lang>/`) and the batch page (`/batch/`), 10 languages, built by `scripts/build.mjs` |
 | Page code | `src/app.js`, `src/batch.js` (+ the pure `src/*.mjs` they share with the tests) | bundled by esbuild into `public/assets/` |
 | Worker | `src/worker.js` | `GET /api/check` (NDJSON stream: one line per source, then the score; `?format=json` for one document), `GET /api/resolve` (a hostname → its public address), shared-result previews, Turnstile |
-| MCP server | `mcp/` | a dependency-free Model Context Protocol server over the public API (`check_ip`, `explain_score`, `resolve_host`, `batch_check`); see [mcp/README.md](mcp/README.md) |
 | Sources | `src/sources.mjs` | each source's request and how its answer is read; `browser: "only" / "retry"` marks the ones the page asks itself |
 | Score | `src/score.mjs` | deductions, grade, notes and the five uses; the same code runs in the Worker and the page |
 | Local history | `src/app.js` (`ipqs:hist`) | the last 30 addresses checked on the device, in `localStorage` only; never sent anywhere |
