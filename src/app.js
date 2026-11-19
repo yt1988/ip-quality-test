@@ -26,41 +26,12 @@ import { reportOf } from "./report.mjs";
   // The addresses checked on this device, with their last score: kept in this browser only, never sent anywhere (the
   // same store the theme uses). A result says how the address read last time, when it was checked here before.
   const histGet = ip => { try { const m = JSON.parse(store.get(K.hist) || "{}"); return m && typeof m === "object" ? m : {}; } catch (e) { return {}; } };
-  // one check's own reading: enough to say what changed next time, without keeping a profile of the address
-  const snapOf = r => {
-    const s = r.summary;
-    return { s: r.score, g: r.grade, at: Date.now(), risk: s.risk ?? null, type: s.type || null, cc: s.cc || null,
-      city: s.city || null, native: s.native, anon: ["proxy", "vpn", "tor"].filter(k => s.flags[k] && s.flags[k].yes > 0),
-      dnsbl: s.dnsbl ? s.dnsbl.listed : 0, lists: s.lists ? (s.lists.bad || 0) : 0,
-      drop: !!(s.lists && s.lists.drop), asndrop: !!(s.lists && s.lists.asndrop),
-      uses: Object.fromEntries(["stream", "ai", "captcha", "account", "mail"].map(k => [k, r.uses[k] ? r.uses[k].lv : null])) };
-  };
-  function histPut(ip, snap) {
+  function histPut(ip, score, grade) {
     if (!ip) return;
-    const m = histGet(), old = m[ip];
-    delete m[ip];
-    const prev = old ? Object.fromEntries(Object.entries(old).filter(([k]) => k !== "prev")) : null;
-    m[ip] = { ...snap, prev };
+    const m = histGet(); delete m[ip]; m[ip] = { s: score, g: grade, at: Date.now() };
     // newest first, 30 addresses: enough to look back without holding a profile of everything ever checked
     const keep = Object.fromEntries(Object.entries(m).sort((a, b) => b[1].at - a[1].at).slice(0, 30));
     try { store.set(K.hist, JSON.stringify(keep)); } catch (e) {}
-  }
-  const typeText = t2 => t2 ? t("t_" + t2) : "–";
-  const anonText = a => a && a.length ? a.map(x => x === "proxy" ? t("tag_proxy") : x === "vpn" ? "VPN" : "Tor").join(t("v_join")) : t("f_none");
-  // the signals that changed since the last check on this device (score itself is in the hist line)
-  function histDiff(prev, cur) {
-    if (!prev) return [];
-    const out = [];
-    const add = (k, a, b) => { if (String(a) !== String(b)) out.push(t(k, { a, b })); };
-    add("hist_risk", prev.risk ?? "–", cur.risk ?? "–");
-    add("hist_type", typeText(prev.type), typeText(cur.type));
-    add("hist_city", prev.city || "–", cur.city || "–");
-    add("hist_anon", anonText(prev.anon), anonText(cur.anon));
-    add("hist_dnsbl", prev.dnsbl ?? 0, cur.dnsbl ?? 0);
-    add("hist_lists", prev.lists ?? 0, cur.lists ?? 0);
-    if (prev.drop !== cur.drop) out.push(t("hist_drop", { a: prev.drop ? "DROP" : "–", b: cur.drop ? "DROP" : "–" }));
-    if (prev.asndrop !== cur.asndrop) out.push(t("hist_drop", { a: prev.asndrop ? "ASN-DROP" : "–", b: cur.asndrop ? "ASN-DROP" : "–" }));
-    return out;
   }
   // Taiwan is "中国台湾 / Taiwan, China" with the PRC flag (1ms-shell docs/tool-contract.md §5); every other region by its system name
   const TW = { "zh-CN": "中国台湾", "zh-TW": "中國台灣", en: "Taiwan, China", ja: "中国台湾", ko: "중국 대만", es: "Taiwán, China", fr: "Taïwan, Chine", de: "Taiwan, China", pt: "Taiwan, China", ru: "Тайвань, Китай" };
@@ -124,28 +95,8 @@ import { reportOf } from "./report.mjs";
 
   /* ---------- hide the address (for screenshots) ---------- */
   const eye = $("#eye"), masked = () => store.get(K.mask) === "1";
-  const applyMask = () => { $("#facts").classList.toggle("masked", masked()); $("#exList").classList.toggle("masked", masked()); $("#sgt").classList.toggle("masked", masked()); eye.textContent = t(masked() ? "show" : "hide"); drawWatch(); };
+  const applyMask = () => { $("#facts").classList.toggle("masked", masked()); $("#exList").classList.toggle("masked", masked()); $("#sgt").classList.toggle("masked", masked()); eye.textContent = t(masked() ? "show" : "hide"); };
   eye.onclick = () => { store.set(K.mask, masked() ? "0" : "1"); applyMask(); };
-  // the addresses checked on this device, newest first: a way back to a result without keeping anything on the server
-  function drawWatch() {
-    const el = $("#watch"), list = $("#watchList");
-    if (!el) return;
-    // a shared result is someone else's page: don't show the visitor's own local history there
-    if (SHARE_CODE) { el.hidden = true; return; }
-    const m = histGet();
-    const items = Object.entries(m).sort((a, b) => (b[1].at || 0) - (a[1].at || 0)).slice(0, 8);
-    el.hidden = !items.length;
-    if (!items.length) { list.innerHTML = ""; return; }
-    list.innerHTML = items.map(([ip, x]) => {
-      const shown = masked() ? t("r_hidden") : ip;
-      const d = x.prev ? x.s - x.prev.s : null;
-      return `<li><a class="wl-ip" href="${D.paths[LANG]}?ip=${encodeURIComponent(ip)}">${esc(shown)}</a>` +
-        `<span class="wl-sc" data-g="${esc(x.g || "F")}">${x.s} ${esc(x.g || "")}</span>` +
-        `<span class="wl-at">${esc(new Date(x.at).toLocaleDateString(LANG))}</span>` +
-        `<span class="wl-d">${d == null || d === 0 ? "" : (d > 0 ? "+" : "") + d}</span></li>`;
-    }).join("");
-  }
-  $("#watchClear").onclick = () => { store.set(K.hist, "{}"); drawWatch(); };
   applyMask();
 
   /* ---------- pieces ---------- */
@@ -480,24 +431,6 @@ import { reportOf } from "./report.mjs";
     set("u3-mail-send", lvOf(r.uses.mail.lv), txtOf(r.uses.mail.lv));
     $("#use3").hidden = false;
   }
-  // what to do about what the check found: the shortest path from a reading to an action
-  function paintTreat(r) {
-    const s = r.summary, F = s.flags || {}, out = [];
-    const hits = BLR.filter(b => b.listed === true);
-    if (hits.length) out.push({ k: "treat_bl", p: { list: list(hits.map(b => b.name)) }, act: "appeal" });
-    if (s.type === "hosting") out.push({ k: "treat_dc", p: {}, act: "batch" });
-    if (s.native === false) out.push({ k: "treat_broadcast", p: { reg: country(s.regCc), cc: country(s.cc) } });
-    if (s.ptr && s.ptr.fcrdns === false) out.push({ k: "treat_ptr", p: {} });
-    if (r.uses.mail && r.uses.mail.lv !== "good" && (s.type === "residential" || s.type === "mobile")) out.push({ k: "treat_mail", p: {} });
-    if ((s.risk ?? 0) >= 35 || (F.proxy && F.proxy.yes) || (F.vpn && F.vpn.yes)) out.push({ k: "treat_switch", p: {}, act: "batch" });
-    if (!out.length) out.push({ k: "treat_none", p: {} });
-    $("#treatList").innerHTML = out.slice(0, 4).map(x =>
-      `<li><span>${esc(t(x.k, x.p))}</span>` +
-      (x.act === "appeal" ? `<button class="mini" type="button" data-open="appeal">${esc(t("treat_appeal"))}</button>`
-        : x.act === "batch" ? `<a class="mini" href="${D.paths[LANG]}batch/">${esc(t("treat_batch"))}</a>` : "") + `</li>`).join("");
-    $("#treat").hidden = false;
-    $$("#treatList [data-open]").forEach(b => { b.onclick = () => openDlg(b.dataset.open); });
-  }
   function paintFindings(r) {
     const s = r.summary;
     // what the address is: a short answer per cell, the sentence behind it on hover
@@ -570,15 +503,12 @@ import { reportOf } from "./report.mjs";
     cfEl.hidden = false;
     // how this address read the last time it was checked on this device (local only; a shared result writes nothing),
     // and which way the score has moved since
-    const old = !SHARED && CUR && CUR.ip ? histGet(CUR.ip)[CUR.ip] : null;
-    const snap = snapOf(r);
-    const changes = old && old.type !== undefined ? histDiff(old, snap) : [];
+    const prev = !SHARED && CUR && CUR.ip ? histGet(CUR.ip)[CUR.ip] : null;
     const hEl = $("#hist"), nEl = $("#nextG");
-    if (old) {
-      const d = r.score - old.s;
-      hEl.textContent = t("hist_prev", { date: new Date(old.at).toLocaleString(LANG), g: old.g, s: old.s }) + " " +
-        t(d > 0 ? "hist_delta_up" : d < 0 ? "hist_delta_down" : "hist_delta_same", { n: Math.abs(d) }) + " " +
-        (changes.length ? t("hist_changes", { list: list(changes) }) : t("hist_nochange"));
+    if (prev) {
+      const d = r.score - prev.s;
+      hEl.textContent = t("hist_prev", { date: new Date(prev.at).toLocaleString(LANG), g: prev.g, s: prev.s }) + " " +
+        t(d > 0 ? "hist_delta_up" : d < 0 ? "hist_delta_down" : "hist_delta_same", { n: Math.abs(d) });
       hEl.hidden = false;
     } else hEl.innerHTML = "&nbsp;";
     // what it would take to reach the next grade (the cap notes above already say why the grade can stop short)
@@ -586,7 +516,7 @@ import { reportOf } from "./report.mjs";
     if (up && r.grade === gradeOf(r.score)) nEl.textContent = t("next_grade", { n: up[0] - r.score, s: up[0], g: up[1] });
     else if (!up && r.grade === "A") nEl.textContent = t("next_top");
     else nEl.innerHTML = "&nbsp;";
-    if (!SHARED) { histPut(CUR.ip, snap); drawWatch(); }
+    if (!SHARED) histPut(CUR.ip, r.score, r.grade);
     // where the points went: one colored line per deduction, the same color as its segment of the ring
     $("#parts").innerHTML = r.parts.map(p => `<span style="--pc:var(--p-${p.k.slice(2)})" data-k="${p.k.slice(2)}" data-why="${esc(why(p))}" tabindex="0"><i></i><b>−${p.pts}</b>${esc(t("pp_" + p.k.slice(2)))}</span>`).join("") || "&nbsp;";
     let at = r.score;
@@ -596,7 +526,6 @@ import { reportOf } from "./report.mjs";
 
     paintFindings(r);
     paintUse3(r);
-    paintTreat(r);
 
     // every deduction: its finding tinted in its color with the points, and every source mark that caused it
     for (const f in PARTS_OF) {
