@@ -173,17 +173,20 @@ export async function build({ check = false } = {}) {
     ["", "batch/"].flatMap(p => langs.map(([, s]) => `  <url>\n    <loc>${SITE + path(s) + p}</loc>\n` + langs.map(([l, s2]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE + path(s2) + p}"/>`).join("\n") +
       `\n    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE}/${p}"/>\n  </url>`)).join("\n") + "\n</urlset>\n";
   files["robots.txt"] = `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE}/sitemap.xml\n`;
-  files["llms.txt"] = `# IP Quality Test (IPQS) · 1ms.dog
+  const liveSources = SOURCES.filter(s => !s.key), keyedSources = SOURCES.filter(s => s.key);
+  files["llms.txt"] = `# IP Quality Test · 1ms.dog
 
-> Free IP quality check. Asks up to ${SOURCES.length} IP intelligence sources (${SOURCES.map(s => s.name).join(", ")}) and
+> Free IP quality check. Asks ${liveSources.length} keyless IP intelligence sources (${liveSources.map(s => s.name).join(", ")}) and
 > ${DNSBL.length} DNS blocklists about an address, then gives a 0–100 score (A–F), whether it is residential or data
 > center, native or broadcast (registered country vs. location), VPN/proxy/Tor flags, and what that means for
 > streaming, AI services, CAPTCHAs, sign-ups and sending mail. Each source's answer is shown with a link to check it.
+> ${keyedSources.length} more sources need an API key (${keyedSources.map(s => s.name).join(", ")}); the live 1ms.dog site does not enable them.
 
 - Page: ${SITE}/ (also ${langs.slice(1).map(([, s]) => "/" + s + "/").join(", ")})
 - Any address or hostname: ${SITE}/?ip=8.8.8.8
 - Up to 20 addresses at once, as one table: ${SITE}/batch/
 - API (NDJSON stream, one line per source, then the score; add &format=json for one document): ${SITE}/api/check?ip=8.8.8.8
+- OpenAPI: ${SITE}/openapi.json
 - Source code: https://github.com/yt1988/ip-quality-test
 
 - More 1ms.dog tools: https://1ms.dog/

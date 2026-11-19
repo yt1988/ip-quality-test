@@ -41,13 +41,22 @@ export function assess(results, dnsbl = []) {
     moas: routing.moas === true, asns: +routing.asns || 0 };
   const otx = by.otx?.otx || null;
 
-  // country: the one most sources agree on; city and network from the most trusted source that agrees
+  // country: the one most sources agree on; city from the city most of those sources agree on, with the preferred
+  // source only breaking a tie (showing one source's city when two others say another is a false pinpoint)
   const ccVotes = count(geo, r => r.data.cc), cc = ccVotes.size ? top(ccVotes)[0] : null;
   const ccs = [...ccVotes.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => ({ cc: c, by: geo.filter(r => r.data.cc === c).map(r => r.id) }));
   const pref = r => { const i = GEO_PREF.indexOf(r.id); return i < 0 ? 99 : i; };
-  const geoMain = geo.filter(r => r.data.cc === cc).sort((a, b) => pref(a) - pref(b));
-  const city = (geoMain.find(r => r.data.city) || {}).data?.city || null;
-  // every city the databases gave, most agreed on first (the one shown is the most trusted source's, as before)
+  const cityRows = geo.filter(r => r.data.cc === cc && r.data.city);
+  const cityKey = r => String(r.data.city).toLowerCase().trim();
+  const cityVotes = count(cityRows, cityKey);
+  const cityRanked = [...cityVotes.entries()]
+    .map(([key, n]) => ({ key, n, pref: Math.min(...cityRows.filter(r => cityKey(r) === key).map(pref)) }))
+    .sort((a, b) => b.n - a.n || a.pref - b.pref);
+  const cityTop = cityRanked.length ? cityRanked[0].key : null;
+  const city = cityTop
+    ? (cityRows.slice().sort((a, b) => pref(a) - pref(b)).find(r => cityKey(r) === cityTop) || {}).data?.city || null
+    : null;
+  // every city the databases gave, most agreed on first
   const cityMap = new Map();
   for (const r of geo) if (r.data.city) {
     const k = String(r.data.city).toLowerCase().trim();
@@ -78,6 +87,9 @@ export function assess(results, dnsbl = []) {
   // yes/no flags: how many of the sources that say anything say yes
   const flag = k => { const s = results.filter(r => typeof r.data[k] === "boolean"); const y = s.filter(r => r.data[k]); return { yes: y.length, of: s.length, by: y.map(r => r.id) }; };
   const flags = { proxy: flag("proxy"), vpn: flag("vpn"), tor: flag("tor"), relay: flag("relay"), abuser: flag("abuser") };
+  // a single source's proxy/VPN/Tor flag is a hint, not a finding: ip-api alone calls 8.8.8.8 a proxy. Abuse reports
+  // and the authoritative Private Relay list still count half from one source.
+  const rateMulti = f => f.yes >= 2 ? f.yes / f.of : 0;
   const rate = f => f.of ? f.yes / f.of * HALF(f.of) : 0;
   const torListed = by.tor?.tor === true;
   const anyFlag = flags.proxy.yes || flags.vpn.yes || flags.tor.yes;
@@ -102,9 +114,9 @@ export function assess(results, dnsbl = []) {
   // A CDN edge is shared infrastructure, not a host someone rented, so it does not take this deduction.
   if (!edge) take("p_hosting", (type === "hosting" ? 20 : 20 * hostShare) * HALF(typeVotes), { n: tv.get("hosting") || 0, of: typeVotes });
   if (type !== "hosting") take("p_business", 5 * share("business") * HALF(typed.length), {});
-  take("p_proxy", 20 * rate(flags.proxy), { n: flags.proxy.yes, of: flags.proxy.of });
-  take("p_vpn", 15 * rate(flags.vpn), { n: flags.vpn.yes, of: flags.vpn.of });
-  take("p_tor", torListed ? 75 : 75 * rate(flags.tor), { n: flags.tor.yes, of: flags.tor.of });
+  take("p_proxy", 20 * rateMulti(flags.proxy), { n: flags.proxy.yes, of: flags.proxy.of });
+  take("p_vpn", 15 * rateMulti(flags.vpn), { n: flags.vpn.yes, of: flags.vpn.of });
+  take("p_tor", torListed ? 75 : 75 * rateMulti(flags.tor), { n: flags.tor.yes, of: flags.tor.of });
   take("p_abuser", 10 * rate(flags.abuser), { n: flags.abuser.yes, of: flags.abuser.of });
   if (risk !== null) take("p_risk", 0.35 * risk * HALF(risks.length), { v: risk });
   take("p_dnsbl", Math.min(24, 6 * blW), { n: bl.length });
@@ -133,7 +145,7 @@ export function assess(results, dnsbl = []) {
   const notes = [];
   const note = (lv, k, p = {}) => notes.push({ lv, k, p });
   if (torListed || rate(flags.tor) >= 0.5) note("bad", "n_tor");
-  else if (flags.vpn.yes || flags.proxy.yes) note(rate(flags.vpn) + rate(flags.proxy) >= 0.5 ? "bad" : "warn", "n_anon", { n: new Set([...flags.vpn.by, ...flags.proxy.by]).size });
+  else if (flags.vpn.yes || flags.proxy.yes) note(rateMulti(flags.vpn) + rateMulti(flags.proxy) >= 0.5 ? "bad" : "warn", "n_anon", { n: new Set([...flags.vpn.by, ...flags.proxy.by]).size });
   else if (typeVotes && !flags.relay.yes) note("good", "n_noanon");
   if (type) note(type === "hosting" ? "warn" : type === "residential" || type === "mobile" ? "good" : "info", "n_type_" + type);
   if (type === "mobile") note("info", "n_cgnat");
@@ -156,7 +168,12 @@ export function assess(results, dnsbl = []) {
   if (bogon) note("bad", "n_bogon");
   if (edge) note("info", "n_edge", { p: cloud || "" });
   else if (cloud) note("info", "n_cloud", { p: cloud + (region ? " · " + region : "") });
-  if (near && near.listed) note("warn", "n_near", { n: near.listed, of: near.of || 256, bad: near.bad || 0 });
+  if (near && near.listed) {
+    // a /24 that is wholly a hosting/proxy range is not a /24 of malicious addresses: say which one it is
+    const nOf = near.of || 256, nBad = near.bad || 0, nDc = near.dc || 0;
+    note(nBad ? "warn" : "info", nBad ? "n_near_bad" : nDc >= nOf * 0.9 ? "n_near_dc" : "n_near",
+      { n: near.listed, of: nOf, bad: nBad, dc: nDc });
+  }
   if (route.of && route.seen / route.of < 0.1) note("warn", "n_route_low", { seen: route.seen, of: route.of });
   if (route.moas) note("info", "n_route_moas", { n: route.asns });
   if (otx && otx.white) note("good", "n_otx_white");
@@ -173,7 +190,7 @@ export function assess(results, dnsbl = []) {
   const uses = {};
   const set = (k, lv, why) => { uses[k] = { lv, why }; };
   // streaming: catalogs follow the location; VPN and data-center detection is what blocks
-  if (torListed || rate(flags.vpn) + rate(flags.proxy) >= 0.5) set("stream", "bad", "u_stream_vpn");
+  if (torListed || rateMulti(flags.vpn) + rateMulti(flags.proxy) >= 0.5) set("stream", "bad", "u_stream_vpn");
   else if (hosting || anyFlag) set("stream", "warn", hosting ? "u_stream_dc" : "u_stream_flag");
   else if (native === false || ccs.length > 1) set("stream", "warn", "u_stream_geo");
   else set("stream", "good", "u_stream_ok");
@@ -203,7 +220,7 @@ export function assess(results, dnsbl = []) {
   const single = ["proxy", "vpn", "tor", "abuser"].some(k => flags[k].of === 1 && flags[k].yes > 0);
   const answered = results.length;
   const level = answered < 3 || riskSources < 2 ? "low" : split || single ? "mid" : "high";
-  const confidence = { level, sources: answered, riskSources };
+  const confidence = { level, sources: answered, riskSources, riskScores: risks.length };
 
   return {
     score, grade, parts, notes, uses, confidence,

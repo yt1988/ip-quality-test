@@ -388,10 +388,17 @@ import { reportOf } from "./report.mjs";
     const cloudTxt = s.cloud ? ` <span class="m" title="${esc(t(s.edge ? "v_edge" : "v_cloud", { p: CLOUD[s.cloud] || s.cloud, region: s.region || "" }))}">${esc(CLOUD[s.cloud] || s.cloud)}${s.region ? " · " + esc(s.region) : ""}${s.edge ? " · " + esc(t("v_edge_l")) : ""}</span>` : "";
     set(2, !open ? hid : s.asn || s.org || s.cloud ? `${asTxt}${esc(s.org || "")}${cloudTxt}` : "–");
     set(3, !open ? (s.host ? hid : "–") : s.host ? `<span class="num">${esc(s.host)}</span>` : "–");
-    // the /24's own counts: how many of its addresses the public lists name (the rest of the picture is the card below)
-    const nr = s.near;
-    set(4, !nr ? "–" : `<span data-why="${esc(t("v_near", { n: nr.listed, of: nr.of || 256, bad: nr.bad || 0 }))}">${nr.listed}/${nr.of || 256}</span>` +
-      (nr.bad ? ` <span class="m" data-why="${esc(t("v_near_bad", { n: nr.bad }))}">${nr.bad}</span>` : ""));
+    // the /24's own counts: how many of its addresses the public lists name (the rest of the picture is the card below).
+    // A whole hosting/proxy range is not a whole malicious range: 8.8.8.8's /24 is 256/256 only because it is a
+    // data-centre range, and showing "256/256" alone reads as "all 256 are bad".
+    const nr = s.near, nOf = nr ? (nr.of || 256) : 0, nBad = nr ? (nr.bad || 0) : 0, nDc = nr ? (nr.dc || 0) : 0;
+    const nearWhy = !nr ? "" : nBad ? t("v_near", { n: nr.listed, of: nOf, bad: nBad }) + " · " + t("v_near_bad", { n: nBad })
+      : nDc >= nOf * 0.9 ? t("v_near_dc", { dc: nDc, of: nOf })
+      : t("v_near", { n: nr.listed, of: nOf, bad: 0 });
+    const nearVal = !nr ? "–" : nDc >= nOf * 0.9
+      ? `${nDc}/${nOf} <span class="m">${esc(t("v_near_dc_short"))}</span>`
+      : `${nr.listed}/${nOf}` + (nBad ? ` <span class="m">${nBad}</span>` : "");
+    set(4, !nr ? "–" : `<span data-why="${esc(nearWhy)}">${nearVal}</span>`);
   }
   function paintFindings(r) {
     const s = r.summary;
@@ -422,7 +429,7 @@ import { reportOf } from "./report.mjs";
     else finding("risk", riskLv(s.risk), `${s.risk} <span class="m">${esc(t("fs_avg", { n: s.risks.length }))}</span>`,
       s.risks.map(x => (PR[x.id] ? PR[x.id].querySelector(".pn").textContent : x.id) + " " + x.v).join(" · "));
     if (!F.abuser.of) finding("abuse", "none", nodata());
-    else finding("abuse", F.abuser.yes ? "bad" : "ok", esc(F.abuser.yes ? `${F.abuser.yes}/${F.abuser.of}` : t("q_abuse_no")),
+    else finding("abuse", F.abuser.yes ? "bad" : "ok", esc(F.abuser.yes ? `${F.abuser.yes}/${F.abuser.of}` : t("q_abuse_no")) + ` <span class="m">${F.abuser.of}</span>`,
       F.abuser.yes ? t("fv_abuse_yes", { n: F.abuser.yes, of: F.abuser.of }) : "");
     const hits = BLR.filter(b => b.listed === true);
     if (!s.dnsbl.checked) finding("dnsbl", "none", `<span class="m">${esc(t(CUR.v === 6 ? "skip_v4" : "q_nodata"))}</span>`);
@@ -435,7 +442,9 @@ import { reportOf } from "./report.mjs";
   function livePaint() {
     if (FINAL || !CUR || (!RES.length && !BLR.length)) return;
     let r; try { r = assess(RES, BLR); } catch (e) { return; }
-    paintScore(r); paintFacts(r); paintFindings(r);
+    // A partial assess starts at 100, so painting the number now shows a made-up grade that then drops (8.8.8.8
+    // flashed 100/B before becoming 70/B). The score waits for finish(); the facts and findings fill in live.
+    paintFacts(r); paintFindings(r);
     gauge.classList.add("live"); $("#facts").classList.add("live");
     for (const c of $$(".fc, .uc")) c.classList.add("live");
   }
@@ -453,7 +462,7 @@ import { reportOf } from "./report.mjs";
     // how much the verdict rests on: the sources that answered, the ones with risk data, and any disagreement
     const cfd = r.confidence || { level: "low", sources: RES.length, riskSources: 0 };
     const cfEl = $("#conf");
-    cfEl.textContent = t("conf", { lv: t("conf_" + cfd.level), n: cfd.sources, r: cfd.riskSources });
+    cfEl.textContent = t("conf", { lv: t("conf_" + cfd.level), n: cfd.sources, r: cfd.riskSources, v: cfd.riskScores ?? 0 });
     cfEl.hidden = false;
     // how this address read the last time it was checked on this device (local only; a shared result writes nothing),
     // and which way the score has moved since
@@ -967,7 +976,9 @@ import { reportOf } from "./report.mjs";
 
   /* ---------- share: the 1ms.dog dialog (/assets/share/, copied from 1ms-shell) with this result's card and link ---------- */
   const shareLink = async withLoc => location.origin + D.paths[LANG] + "r/" + await encode(pack({ ...SNAP, details: withLoc }));
-  const shareTitle = () => t("og_r_title", { g: SNAP.r.grade, s: SNAP.r.score, v: t("g_" + SNAP.r.grade) });
+  // "My IP quality" is only true for the visitor's own check; a shared or looked-up address is "IP quality result"
+  const isSelfCheck = () => !!(CUR && CUR.self);
+  const shareTitle = () => t(isSelfCheck() ? "og_r_title" : "og_r_title_other", { g: SNAP.r.grade, s: SNAP.r.score, v: t("g_" + SNAP.r.grade) });
   const stamp = () => new Date(SNAP.at).toISOString().slice(0, 16).replace(/[-:T]/g, "");
   const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const loadImg = src => new Promise(res => { const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null); img.src = src; });
@@ -1005,7 +1016,7 @@ import { reportOf } from "./report.mjs";
     g.textBaseline = "alphabetic";
 
     // title, then the country (and, when asked, the city, address and network)
-    font(700, 50); text(fit(t("card_title"), W - 2 * P), P, kit.top + 44, C.fg);
+    font(700, 50); text(fit(t(isSelfCheck() ? "card_title" : "card_title_other"), W - 2 * P), P, kit.top + 44, C.fg);
     let my = kit.top + 94;
     const fl = s.cc ? await loadImg(`/flags/${flagCode(s.cc)}.svg`) : null;
     font(500, 28);

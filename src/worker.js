@@ -211,7 +211,8 @@ async function shared(request, env, m) {
   res.headers.delete("ETag");
   const { res: results, bl } = unpackResults(P), r = assess(results, bl);
   const fill = (s, v) => { for (const k in v) s = s.split("{" + k + "}").join(v[k]); return s; };
-  const title = fill(d.og_r_title, { g: r.grade, s: r.score, v: d["g_" + r.grade] }), desc = d["d_" + r.grade];
+  // a shared result is someone else's result (or a link opened later): never "my IP quality"
+  const title = fill(d.og_r_title_other, { g: r.grade, s: r.score, v: d["g_" + r.grade] }), desc = d["d_" + r.grade];
   const image = url.origin + "/og/" + (slug || "en") + "-" + r.grade.toLowerCase() + ".png";
   const set = v => ({ element(e) { e.setAttribute("content", v); } });
   return new HTMLRewriter()

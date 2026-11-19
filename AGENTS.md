@@ -7,7 +7,7 @@ accounts, its product decisions) are in the private repository 1ms-shell; nothin
 
 ## What it is
 
-IPQS checks an IP address against 17 keyless IP intelligence sources (the page itself asks three of them; Cloudflare
+IPQS checks an IP address against 18 keyless IP intelligence sources (the page itself asks three of them; Cloudflare
 adds its view of the visitor's own address) and nine DNS blocklists, and turns their answers into one 0–100 score,
 with what it means for streaming, AI services, CAPTCHAs, sign-ups and mail. With free API keys its owner can add six
 more sources.

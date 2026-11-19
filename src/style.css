@@ -485,3 +485,12 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt-sum-a { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .bt-sum .btn[hidden] { display: none; }
 .bt-sum:not([hidden]) + .bt-seg, .bt-sum:not([hidden]) + .bt-seg[hidden] + .bt-res { border-top: 0; padding-top: 0; margin-top: 0; }
+
+/* touch: the contract's 32px floor, 44px for the controls a thumb lands on (audit 2026-11-19) */
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .btn.sm { min-height: 40px; }
+  .mini, .rp-btn { display: inline-flex; align-items: center; min-height: 32px; padding: 1px 8px; }
+  .icon-btn { min-width: 36px; min-height: 36px; }
+  .xr, .priv label { min-height: 44px; }
+}

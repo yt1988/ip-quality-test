@@ -57,11 +57,13 @@ test("broadcast IP, split geolocation and unsupported AI regions", () => {
   assert.ok(b.notes.some(n => n.k === "n_broadcast_as"));
 });
 
-test("one source out of many takes off only part of a flag's points", () => {
+test("a single source's proxy/VPN flag is a hint, not a deduction", () => {
   const one = assess([r("a", { vpn: true }), r("b", { vpn: false }), r("c", { vpn: false }), r("d", { vpn: false })]);
   const all = assess([r("a", { vpn: true }), r("b", { vpn: true })]);
   const pts = a => (a.parts.find(p => p.k === "p_vpn") || { pts: 0 }).pts;
-  assert.ok(pts(one) > 0 && pts(one) < pts(all));
+  assert.equal(pts(one), 0);                 // one source alone: a warning, not a deduction
+  assert.equal(pts(all), 15);
+  assert.equal(one.uses.stream.lv, "warn"); // it still affects what the address is good for
 });
 
 test("grades and type names", () => {
@@ -99,12 +101,15 @@ test("a mail blocklist caps the grade: one list at most B, two at most C; UCEPRO
   assert.equal(u.parts.find(p => p.k === "p_dnsbl").pts, 3);
 });
 
-test("a single-source finding counts half, and too few risk sources stop the grade at B", () => {
+test("a single-source proxy/VPN flag is a hint; a single abuse report still counts half", () => {
   const one = assess([r("ipapi", { cc: "DE", vpn: true })]);
   const two = assess([r("a", { vpn: true }), r("b", { vpn: true })]);
   const pts = x => (x.parts.find(p => p.k === "p_vpn") || { pts: 0 }).pts;
   assert.equal(pts(two), 15);
-  assert.equal(pts(one), 8);          // one source, so half of 15, rounded
+  assert.equal(pts(one), 0);          // one source: note and a "warn" use, no points
+  // an abuse report from one source is still evidence, at half weight
+  const abuse = assess([r("ipapi", { cc: "DE", abuser: true })]);
+  assert.equal(abuse.parts.find(p => p.k === "p_abuser").pts, 5);
   // one source only said anything about risk: no A, whatever the score
   const gate = assess([r("ipapi", { cc: "DE", proxy: false })]);
   assert.equal(gate.score, 100);
@@ -122,10 +127,13 @@ test("confidence: sources answered, sources with risk data, and disagreement", (
   assert.equal(few.confidence.sources, 1);
 });
 
-test("cities: every database's city is kept, the most agreed on first", () => {
+test("cities: the city most sources agree on wins; a preferred source only breaks a tie", () => {
   const a = assess([r("ipapi", { cc: "US", city: "Ashburn" }), r("ipquery", { cc: "US", city: "Mountain View" }), r("ipapiis", { cc: "US", city: "Mountain View" })]);
-  assert.equal(a.summary.city, "Ashburn");             // the most trusted source among those agreeing on the country
+  assert.equal(a.summary.city, "Mountain View");       // 2 sources, not the preferred ip-api alone
   assert.deepEqual(a.summary.cities.map(c => [c.city, c.by.length]), [["Mountain View", 2], ["Ashburn", 1]]);
+  // a tie goes to the preferred source
+  const tie = assess([r("ipapi", { cc: "US", city: "Ashburn" }), r("ipinfo", { cc: "US", city: "Mountain View" })]);
+  assert.equal(tie.summary.city, "Mountain View");     // ipinfo is first in GEO_PREF
 });
 
 test("a Tor exit is F by its own points", () => {
@@ -185,6 +193,13 @@ test("a CDN edge does not take the data-center deduction, and the cloud is named
   const ec2 = assess([...home(), r("lists", { type: "hosting", lists: { dc: true }, cloud: "aws", region: "eu-central-1" })], noBl());
   assert.ok(ec2.notes.some(n => n.k === "n_cloud" && n.p.p === "aws · eu-central-1"));
   assert.ok(ec2.parts.some(p => p.k === "p_hosting"));
+});
+
+test("a /24 that is wholly a hosting/proxy range is not a /24 of malicious addresses", () => {
+  const dc = assess([...home(), r("lists", { lists: { dc: true }, near: { of: 256, listed: 256, bad: 0, dc: 256 } })], noBl());
+  assert.ok(dc.notes.some(n => n.k === "n_near_dc" && n.p.dc === 256 && n.p.bad === 0));
+  const bad = assess([...home(), r("lists", { lists: {}, near: { of: 256, listed: 4, bad: 2, dc: 1 } })], noBl());
+  assert.ok(bad.notes.some(n => n.k === "n_near_bad" && n.p.bad === 2));
 });
 
 test("a new or barely visible route, and OTX pulses, are said and never scored", () => {
