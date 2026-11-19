@@ -187,6 +187,7 @@ export async function build({ check = false } = {}) {
 - Up to 20 addresses at once, as one table: ${SITE}/batch/
 - API (NDJSON stream, one line per source, then the score; add &format=json for one document): ${SITE}/api/check?ip=8.8.8.8
 - OpenAPI: ${SITE}/openapi.json
+- MCP server (local, no key): https://github.com/yt1988/ip-quality-test/tree/main/mcp
 - Source code: https://github.com/yt1988/ip-quality-test
 
 - More 1ms.dog tools: https://1ms.dog/
