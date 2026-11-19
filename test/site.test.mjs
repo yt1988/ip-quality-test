@@ -66,3 +66,15 @@ test("source ids are unique and every source links somewhere", () => {
   assert.equal(new Set(ids).size, ids.length);
   for (const s of SOURCES) assert.match(s.site("1.2.3.4"), /^https:\/\//, s.id);
 });
+
+test("every host the page asks itself is allowed by connect-src", async () => {
+  // the page-side sources (browser: "only" or "retry") are blocked by the CSP's connect-src before CORS matters; a
+  // missing host is console noise in every checkup frame (AlienVault OTX was missed on 2026-11-19)
+  const headers = await readFile(new URL("../public/_headers", import.meta.url), "utf8");
+  const hosts = [
+    "api.ipquery.io", "api.ipapi.is", "ipinfo.io", "ipwho.is", "api.ip.sb", "get.geojs.io",
+    "rdap.arin.net", "rdap.org", "rdap.apnic.net", "rdap.db.ripe.net", "rdap.lacnic.net", "rdap.afrinic.net",
+    "isc.sans.edu", "otx.alienvault.com",
+  ];
+  for (const host of hosts) assert.match(headers, new RegExp("connect-src[^;]*https://" + host.replace(/\./g, "\\.")), host);
+});
