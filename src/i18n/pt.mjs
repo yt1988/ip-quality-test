@@ -306,6 +306,8 @@ export default {
   b_fit_warn: "Utilizável",
   b_fit_bad: "Não recomendado",
   b_fit_note: "Estimado a partir de sinais de IP, não é a decisão oficial da plataforma.",
+  use_note: "Estes usos são estimados a partir de sinais de IP. Se uma conta funciona também depende de KYC, pagamento, histórico, dispositivo e conteúdo; uma ferramenta de IP não vê isso.",
+  use_unknown: "conta?",
   n_cap_bl: "Está em {n} listas negras de e-mail, então a nota fica em {g} no máximo.",
   n_cap_conf: "Poucas fontes deram dados de risco, então a nota fica em {g} no máximo.",
   conf: "Confiança: {lv} · {n} fontes responderam, {r} com sinais de risco ({v} com pontuação numérica)",

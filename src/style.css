@@ -82,6 +82,7 @@ h2 { font-size: 15px; font-weight: 700; }
    Its two lines are there from the start (a note below the verdict keeps its lines and fills in place), so the
    facts under it never move when the answer is in */
 .conf { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.use-note { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
 #conf { min-height: 3em; }
 .conf[hidden], .skip-n[hidden] { display: none !important; }
 /* the source rows a deployment can't ask (needs keys): said once above the list */

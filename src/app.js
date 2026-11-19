@@ -436,7 +436,13 @@ import { reportOf } from "./report.mjs";
     else finding("dnsbl", hits.length ? "bad" : "ok", hits.length ? esc(t("fs_listed", { n: hits.length, of: s.dnsbl.checked })) : `${esc(t("bl_clean"))} <span class="m">${s.dnsbl.checked}</span>`,
       hits.length ? t("bl_listed", { list: list(hits.map(b => b.name)) }) : t("q_bl_clean", { n: s.dnsbl.checked }));
     // what it is good for: a verdict each, the reason on hover
-    for (const u of ["stream", "ai", "captcha", "account", "mail"]) { const x = r.uses[u], lv = x.lv === "good" ? "ok" : x.lv; finding(u, lv, `<span class="tag ${x.lv}">${esc(t("lv_" + x.lv))}</span>`, t(x.why)); }
+    for (const u of ["stream", "ai", "captcha", "account", "mail"]) {
+      const x = r.uses[u], lv = x.lv === "good" ? "ok" : x.lv;
+      // the account behind the use is outside what an IP check can see (KYC, payment, history, device, content):
+      // the cards stay short, the note under them and the hover text say it
+      const why = ["stream", "ai", "account"].includes(u) ? t(x.why) + " " + t("use_note") : t(x.why);
+      finding(u, lv, `<span class="tag ${x.lv}">${esc(t("lv_" + x.lv))}</span>`, why);
+    }
   }
   // the answers so far, drawn while the rest are still coming; a slower source must not hold the whole result back
   function livePaint() {

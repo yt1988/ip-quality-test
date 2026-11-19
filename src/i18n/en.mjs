@@ -306,6 +306,8 @@ export default {
   b_fit_warn: "OK",
   b_fit_bad: "Avoid",
   b_fit_note: "Inferred from IP-level signals, not the platform's official decision.",
+  use_note: "These uses are inferred from IP-level signals. Whether an account works also depends on KYC, payment, account history, device and content — an IP tool cannot see that.",
+  use_unknown: "account?",
   n_cap_bl: "It is on {n} mail blocklists, so the grade stops at {g}.",
   n_cap_conf: "Too few sources reported risk data, so the grade stops at {g}.",
   conf: "Confidence: {lv} · {n} sources answered, {r} with risk signals ({v} with a numeric score)",

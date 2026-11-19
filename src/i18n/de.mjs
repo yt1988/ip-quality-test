@@ -306,6 +306,8 @@ export default {
   b_fit_warn: "Nutzbar",
   b_fit_bad: "Nicht empfohlen",
   b_fit_note: "Aus IP-Signalen geschätzt, keine offizielle Entscheidung der Plattform.",
+  use_note: "Diese Nutzungen sind aus IP-Signalen geschätzt. Ob ein Konto funktioniert, hängt auch von KYC, Zahlung, Kontoverlauf, Gerät und Inhalt ab – ein IP-Tool sieht das nicht.",
+  use_unknown: "Konto?",
   n_cap_bl: "Sie steht auf {n} E-Mail-Blocklisten, daher ist die Note höchstens {g}.",
   n_cap_conf: "Zu wenige Quellen lieferten Risikodaten, daher ist die Note höchstens {g}.",
   conf: "Aussagekraft: {lv} · {n} Quellen antworteten, {r} mit Risikosignalen ({v} mit Zahlenwert)",
