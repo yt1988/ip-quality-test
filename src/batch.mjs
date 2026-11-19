@@ -188,9 +188,20 @@ export function unpackRows(code) {
 
 // sort keys: the column's value as a number (unknown last whichever way), the row's place to break ties
 const ORDER = { type: TYPES, ai: LV, stream: LV };
+// A row's fit for one purpose: the main page's use verdict (good/warn/bad), best first. A shared row carries only
+// ai/stream, so account and mail stay unknown rather than being guessed from the score.
+export function fitOf(row, purpose) {
+  if (!purpose || purpose === "general" || !row || !row.r) return null;
+  const u = row.u && row.u[purpose];
+  const lv = u ? u.lv : purpose === "ai" ? row.r.ai : purpose === "stream" ? row.r.stream : null;
+  if (!lv) return { n: -1, lv: "unknown", why: null };
+  return { n: lv === "good" ? 2 : lv === "warn" ? 1 : 0, lv, why: u ? u.why : null };
+}
+
 export function sortKey(row, col) {
   const r = row.r;
   if (col === "i") return row.i;
+  if (col === "fit") return row.fit && row.fit.n >= 0 ? row.fit.n : null;
   if (!r) return null;
   if (col === "score") return r.score;
   if (col === "ip") return row.ip;

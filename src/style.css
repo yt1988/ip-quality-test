@@ -386,6 +386,8 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 .bt-ask textarea::placeholder { font-family: var(--f-ui); }
 .bt-ask textarea:focus { border-color: var(--ink); }
 .bt-row { display: flex; align-items: center; gap: 12px; }
+.bt-purpose { display: flex; align-items: center; gap: 6px; flex: none; font-size: 13px; color: var(--muted); }
+.bt-purpose select { height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: 14px var(--f-ui); }
 .bt-hint { margin: 0; flex: 1; min-width: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
 .bt-res { display: flex; flex-direction: column; gap: 10px; }
 .bt-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; min-height: 30px; }
@@ -418,6 +420,7 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
   .bt { padding: 16px 16px 14px; }
   .bt-wrap { margin: 0 -16px; padding: 0 16px; }
   .bt-row { flex-wrap: wrap; } .bt-row .btn { width: 100%; }
+  .bt-purpose, .bt-hint { flex: 1 1 100%; }
   .bt-acts { margin-left: 0; width: 100%; justify-content: space-between; }
 }
 .acts a.btn { text-decoration: none; color: inherit; }

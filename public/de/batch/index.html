@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/de.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Mehrere IPs prüfen · 1ms.dog","url":"https://ipqs.1ms.dog/de/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Bis zu 20 IPv4- oder IPv6-Adressen einfügen und eine Tabelle erhalten: Qualitätswert und Note, Privatanschluss oder Rechenzentrum, native oder Broadcast-IP, VPN-, Proxy- oder Tor-Markierungen und ob KI-Dienste und Streaming funktionieren. Nach jeder Spalte sortierbar; geteilte Links enthalten die IPs standardmäßig nicht. Kostenlos, ohne Anmeldung.","inLanguage":"de","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.be165f1094.css">
+<link rel="stylesheet" href="/assets/app.478caa67dc.css">
 </head>
 <body>
 <div class="app">
@@ -71,6 +71,15 @@
         <label class="sr" for="ips" data-i="b_ph">IP-Adressen oder Bereiche einfügen, eine pro Zeile oder durch Leerzeichen oder Kommas getrennt</label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
+          <label class="bt-purpose"><span data-i="b_purpose">Zweck</span>
+            <select id="purpose">
+              <option value="general" data-i="b_p_general">Allgemein</option>
+              <option value="ai" data-i="b_p_ai">KI (Claude/ChatGPT)</option>
+              <option value="stream" data-i="b_p_stream">Streaming</option>
+              <option value="account" data-i="b_p_account">Registrierung &amp; Zahlung</option>
+              <option value="mail" data-i="b_p_mail">E-Mail</option>
+            </select>
+          </label>
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go">Prüfen</button>
         </div>
@@ -114,11 +123,13 @@
               <th><button type="button" data-sort="anon" data-i="b_c_anon">Proxy / VPN</button></th>
               <th><button type="button" data-sort="ai" data-i="b_c_ai">KI-Dienste</button></th>
               <th><button type="button" data-sort="stream" data-i="b_c_stream">Streaming</button></th>
+              <th><button type="button" data-sort="fit" data-i="b_c_fit">Eignung</button></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
         <p class="bt-note" data-i="b_note">Jede IP wird genau wie bei der Einzelprüfung bewertet; ein Klick auf die IP öffnet den vollständigen Bericht. Ein geteilter Link enthält nur die Ergebnisse der Tabelle, hinter dem # im Link, und erreicht daher nie den Server.</p>
+        <p class="bt-note" id="fitNote" hidden></p>
       </div>
     </section>
 
@@ -127,7 +138,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"de","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.de.24e7d842c8.js"></script>
-<script src="/assets/batch.3c6b267203.js"></script>
+<script src="/assets/l.de.c7fe888313.js"></script>
+<script src="/assets/batch.30985ce90f.js"></script>
 </body>
 </html>

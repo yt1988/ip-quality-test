@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/zh-tw.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"批次查 IP · 1ms.dog","url":"https://ipqs.1ms.dog/zh-tw/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"一次貼上最多 20 個 IPv4 或 IPv6 位址，列成一張表：純淨度分數和等級、家寬還是機房、原生 IP 還是廣播 IP、有沒有被標成 VPN、代理或 Tor，能不能用 AI 和串流。可以按任一欄排序，分享時預設不帶 IP。免費，不用註冊。","inLanguage":"zh-TW","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.be165f1094.css">
+<link rel="stylesheet" href="/assets/app.478caa67dc.css">
 </head>
 <body>
 <div class="app">
@@ -71,6 +71,15 @@
         <label class="sr" for="ips" data-i="b_ph">貼上 IP 位址或網段，每行一個，或用空格、逗號分開</label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
+          <label class="bt-purpose"><span data-i="b_purpose">用途</span>
+            <select id="purpose">
+              <option value="general" data-i="b_p_general">通用</option>
+              <option value="ai" data-i="b_p_ai">AI（Claude/ChatGPT）</option>
+              <option value="stream" data-i="b_p_stream">串流</option>
+              <option value="account" data-i="b_p_account">註冊付款</option>
+              <option value="mail" data-i="b_p_mail">寄信</option>
+            </select>
+          </label>
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go">開始查詢</button>
         </div>
@@ -114,11 +123,13 @@
               <th><button type="button" data-sort="anon" data-i="b_c_anon">代理 / VPN</button></th>
               <th><button type="button" data-sort="ai" data-i="b_c_ai">AI 服務</button></th>
               <th><button type="button" data-sort="stream" data-i="b_c_stream">串流</button></th>
+              <th><button type="button" data-sort="fit" data-i="b_c_fit">適合</button></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
         <p class="bt-note" data-i="b_note">每個 IP 的評分規則和單個查詢完全一樣，點 IP 能看完整報告。分享的連結只帶表格裡的結果，存在連結 # 後面，不會傳到伺服器。</p>
+        <p class="bt-note" id="fitNote" hidden></p>
       </div>
     </section>
 
@@ -127,7 +138,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"zh-TW","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.zh-tw.a4fb0fe679.js"></script>
-<script src="/assets/batch.3c6b267203.js"></script>
+<script src="/assets/l.zh-tw.6811205615.js"></script>
+<script src="/assets/batch.30985ce90f.js"></script>
 </body>
 </html>

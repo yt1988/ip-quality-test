@@ -3,7 +3,7 @@
 // location, network type, native or broadcast, anonymity flags, AI and streaming verdicts. Sortable by any column;
 // a shared link carries the rows in its #fragment, without the addresses unless the visitor ticks the box.
 // Strings: window.L1MS (the main page's, plus the b_* ones).
-import { parseList, rowOf, packRows, unpackRows, sortRows, MAX, SEGS, inRange, rangeLabel } from "./batch.mjs";
+import { parseList, rowOf, packRows, unpackRows, sortRows, fitOf, MAX, SEGS, inRange, rangeLabel } from "./batch.mjs";
 import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
 
 (function () {
@@ -31,6 +31,8 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   applyTheme(TH.includes(store.get(K.theme)) ? store.get(K.theme) : "system");
   thBtn.onclick = () => { const n = TH[(TH.indexOf(thBtn.dataset.th) + 1) % 3]; store.set(K.theme, n); applyTheme(n); };
   $("#lang").onchange = e => { const l = e.target.value; store.set(K.lang, l); location.href = D.paths[l] + "batch/" + location.search + location.hash; };
+  // picking a purpose ranks the finished rows by it; "general" returns to the pasted order
+  $("#purpose").onchange = () => { sort = $("#purpose").value === "general" ? { col: "i", dir: 1 } : { col: "fit", dir: -1 }; draw(); };
 
   const box = $("#ips"), hint = $("#hint"), go = $("#go");
   box.placeholder = t("b_ph");
@@ -44,6 +46,16 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   let rows = [], sort = { col: "i", dir: 1 }, shared = false, at = null;
   const tag = (lv, why) => lv ? `<span class="tag ${lv}"${why ? ` data-why="${esc(t(why))}" title="${esc(t(why))}"` : ""}>${esc(t("lv_" + lv))}</span>` : "–";
   const ANON = { tor: () => "Tor", vpn: () => "VPN", proxy: () => t("tag_proxy") };
+  // the purpose ranking: good/warn/bad from the same uses the main page shows; a shared row only carries ai/stream,
+  // so account and mail stay unknown rather than guessing from the score
+  const purposeSel = $("#purpose");
+  const fitTag = row => {
+    const f = row.fit;
+    if (!f) return "–";
+    if (f.lv === "unknown" || f.n < 0) return `<span class="m">–</span>`;
+    const k = f.lv === "good" ? "b_fit_good" : f.lv === "warn" ? "b_fit_warn" : "b_fit_bad";
+    return `<span class="tag ${f.lv}"${f.why ? ` data-why="${esc(t(f.why))}" title="${esc(t(f.why))}"` : ""}>${esc(t(k))}</span>`;
+  };
   function cells(row) {
     // an IPv6 prefix shows the prefix, with the address that stands for it in the link
     const label = row.net || row.ip, r = row.r, ip = row.ip
@@ -53,7 +65,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     const head = `<td class="n">${row.i + 1}</td><td class="ipc">${ip}</td>`;
     if (!r) {
       const st = row.st === "err" ? `<span class="tag bad">${esc(t("b_err"))}</span>` : `<span class="skl"></span>`;
-      return head + `<td colspan="7" class="bt-st">${st}</td>`;
+      return head + `<td colspan="8" class="bt-st">${st}</td>`;
     }
     const native = r.native == null ? "–" : r.native ? esc(t("fs_native")) : `${flag(r.regCc)}${esc(t("fs_broadcast"))}${r.regCc ? ` <span class="m">${esc(r.regCc)}</span>` : ""}`;
     const anon = r.anon.length ? r.anon.map(a => `<span class="ft bad">${esc(ANON[a]())}</span>`).join(" ") : `<span class="m">${esc(t("fs_clean"))}</span>`;
@@ -61,10 +73,13 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
       `<td>${r.cc ? `<span class="pl" title="${esc(country(r.cc))}">${flag(r.cc)}${esc(r.cc)}</span>` : "–"}</td>` +
       `<td class="sc"><b class="bt-sc" data-g="${r.grade}">${r.score}</b><span class="bt-g" data-g="${r.grade}">${r.grade}</span></td>` +
       `<td>${r.type ? esc(t("t_" + r.type)) : "–"}</td><td>${native}</td><td>${anon}</td>` +
-      `<td>${tag(r.ai, r.aiWhy)}</td><td>${tag(r.stream, r.streamWhy)}</td>`;
+      `<td>${tag(r.ai, r.aiWhy)}</td><td>${tag(r.stream, r.streamWhy)}</td><td>${fitTag(row)}</td>`;
   }
   function draw() {
+    const purpose = purposeSel.value;
+    for (const row of rows) row.fit = fitOf(row, purpose);
     $("#rows").innerHTML = sortRows(rows, sort.col, sort.dir).map(row => `<tr data-st="${row.st}">${cells(row)}</tr>`).join("");
+    const fn = $("#fitNote"); fn.hidden = purpose === "general"; fn.textContent = purpose === "general" ? "" : t("b_fit_note");
     $$("th [data-sort]").forEach(b => { const on = b.dataset.sort === sort.col; b.parentElement.setAttribute("aria-sort", on ? (sort.dir > 0 ? "ascending" : "descending") : "none"); });
     const done = rows.filter(r => r.st === "ok" || r.st === "err").length, segOk = segs.some(g => g.d);
     // the whole result's header, above the ranges and the table: what there is, and the share button for all of it
@@ -88,6 +103,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
       country: r.cc || null, score: r.score, grade: r.grade, type: r.type || null,
       native: r.native == null ? null : r.native, regCc: r.regCc || null,
       anon: r.anon, ai: r.ai || null, stream: r.stream || null,
+      fit: row.fit && row.fit.lv !== "unknown" ? row.fit.lv : null,
     };
   });
   const download = (name, text, type) => {
@@ -105,12 +121,13 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   $("#csvBtn").onclick = () => {
     const D = exportRows();
     if (!D.length) return;
-    const head = ["b_c_ip", "b_c_loc", "b_c_score", "b_c_type", "b_c_native", "b_c_anon", "b_c_ai", "b_c_stream"].map(k => t(k));
+    const head = ["b_c_ip", "b_c_loc", "b_c_score", "b_c_type", "b_c_native", "b_c_anon", "b_c_ai", "b_c_stream", "b_c_fit"].map(k => t(k));
     const lines = D.map(o => [
       o.net || o.ip || t("b_hidden"), o.country, o.score + " " + o.grade, o.type ? t("t_" + o.type) : "",
       o.native == null ? "" : o.native ? t("fs_native") : t("fs_broadcast") + (o.regCc ? " " + o.regCc : ""),
       o.anon.length ? o.anon.map(a => ANON[a]()).join(" / ") : t("fs_clean"),
       o.ai ? t("lv_" + o.ai) : "", o.stream ? t("lv_" + o.stream) : "",
+      o.fit ? t("b_fit_" + o.fit) : "",
     ].map(CELL).join(","));
     // a BOM, so Excel opens the CJK headers in UTF-8 rather than guessing
     download(`ipqs-batch-${stamp()}.csv`, "\ufeff" + [head.map(CELL).join(","), ...lines].join("\r\n"), "text/csv;charset=utf-8");
@@ -124,7 +141,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     b.onclick = () => {
       const c = b.dataset.sort;
       // a column picked for the first time sorts best first: highest score, most anonymity flags last
-      sort = sort.col === c ? { col: c, dir: -sort.dir } : { col: c, dir: c === "score" || c === "native" ? -1 : 1 };
+      sort = sort.col === c ? { col: c, dir: -sort.dir } : { col: c, dir: c === "score" || c === "native" || c === "fit" ? -1 : 1 };
       draw();
     };
   });
@@ -157,7 +174,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
     const me = ++run;
     shared = false; at = new Date().toISOString(); items = list;
     rows = list.map((x, i) => ({ i, ip: x.ip, ...(x.net ? { net: x.net } : {}), st: "wait", r: null }));
-    sort = { col: "i", dir: 1 };
+    sort = $("#purpose").value === "general" ? { col: "i", dir: 1 } : { col: "fit", dir: -1 };
     $("#res").hidden = false; go.disabled = true;
     draw();
     let next = 0;
@@ -165,7 +182,7 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
       while (next < rows.length && me === run) {
         const row = rows[next++];
         row.st = "run";
-        try { const e = await check(row.ip, me); if (me !== run) return; row.r = rowOf(e); row.st = "ok"; }
+        try { const e = await check(row.ip, me); if (me !== run) return; row.r = rowOf(e); row.u = e.uses; row.st = "ok"; }
         catch (e) { if (me !== run) return; row.st = "err"; }
         draw();
       }

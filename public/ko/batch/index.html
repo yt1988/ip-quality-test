@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/ko.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IP 일괄 조회 · 1ms.dog","url":"https://ipqs.1ms.dog/ko/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"IPv4 또는 IPv6 주소를 최대 20개 붙여 넣으면 하나의 표로 보여 줍니다: 품질 점수와 등급, 가정용 회선인지 데이터센터인지, 네이티브 IP인지 브로드캐스트 IP인지, VPN·프록시·Tor 표시, AI 서비스와 스트리밍 사용 가능 여부. 어느 열로든 정렬할 수 있고, 공유 링크에는 기본적으로 IP가 들어가지 않습니다. 무료, 가입 불필요.","inLanguage":"ko","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.be165f1094.css">
+<link rel="stylesheet" href="/assets/app.478caa67dc.css">
 </head>
 <body>
 <div class="app">
@@ -71,6 +71,15 @@
         <label class="sr" for="ips" data-i="b_ph">IP 주소나 대역을 붙여 넣으세요(한 줄에 하나, 또는 공백·쉼표로 구분)</label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
+          <label class="bt-purpose"><span data-i="b_purpose">용도</span>
+            <select id="purpose">
+              <option value="general" data-i="b_p_general">일반</option>
+              <option value="ai" data-i="b_p_ai">AI(Claude/ChatGPT)</option>
+              <option value="stream" data-i="b_p_stream">스트리밍</option>
+              <option value="account" data-i="b_p_account">가입·결제</option>
+              <option value="mail" data-i="b_p_mail">메일</option>
+            </select>
+          </label>
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go">조회</button>
         </div>
@@ -114,11 +123,13 @@
               <th><button type="button" data-sort="anon" data-i="b_c_anon">프록시 / VPN</button></th>
               <th><button type="button" data-sort="ai" data-i="b_c_ai">AI 서비스</button></th>
               <th><button type="button" data-sort="stream" data-i="b_c_stream">스트리밍</button></th>
+              <th><button type="button" data-sort="fit" data-i="b_c_fit">적합</button></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
         <p class="bt-note" data-i="b_note">각 IP의 채점 방식은 단일 조회와 똑같습니다. IP를 누르면 전체 보고서를 볼 수 있습니다. 공유 링크는 표의 결과만 링크의 # 뒤에 담기 때문에 서버로 전송되지 않습니다.</p>
+        <p class="bt-note" id="fitNote" hidden></p>
       </div>
     </section>
 
@@ -127,7 +138,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"ko","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.ko.f96b4c1311.js"></script>
-<script src="/assets/batch.3c6b267203.js"></script>
+<script src="/assets/l.ko.7a76496fa5.js"></script>
+<script src="/assets/batch.30985ce90f.js"></script>
 </body>
 </html>

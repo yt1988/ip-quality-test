@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseList, rowOf, packRows, unpackRows, sortRows, MAX } from "../src/batch.mjs";
+import { parseList, rowOf, packRows, unpackRows, sortRows, fitOf, MAX } from "../src/batch.mjs";
 
 test("parseList: splits on any separator, drops ports, private and repeated addresses, caps at MAX", () => {
   const r = parseList("8.8.8.8, 1.1.1.1:443\n[2001:4860:4860::8888]:53；10.0.0.1 8.8.8.8 nope 192.168.1.1、9.9.9.9");
@@ -52,6 +52,20 @@ test("format 1 batch links (shared before grades travelled) still open, their gr
   const p = unpackRows(v1);
   assert.equal(p.rows[0].ip, "8.8.8.8");
   assert.equal(p.rows[0].r.grade, "A");
+});
+
+test("sortRows: a purpose fit sorts best first, unknown last", () => {
+  const mk = (i, n) => ({ i, ip: "8.8.8." + i, st: "ok", r: rowOf(done), fit: n == null ? null : { n, lv: n === 2 ? "good" : n === 1 ? "warn" : "bad" } });
+  const rows = [mk(0, 1), mk(1, null), mk(2, 2), mk(3, 1)];
+  assert.deepEqual(sortRows(rows, "fit", -1).map(r => r.i), [2, 0, 3, 1]);
+});
+
+test("fitOf: a full result ranks by its use verdict; a shared row keeps account/mail unknown", () => {
+  const row = { r: rowOf(done), u: { ai: { lv: "warn", why: "u_ai_dc" }, mail: { lv: "good", why: "u_mail_ok" } } };
+  assert.deepEqual(fitOf(row, "ai"), { n: 1, lv: "warn", why: "u_ai_dc" });
+  assert.deepEqual(fitOf(row, "mail"), { n: 2, lv: "good", why: "u_mail_ok" });
+  assert.equal(fitOf({ r: rowOf(done) }, "account").lv, "unknown");
+  assert.equal(fitOf(row, "general"), null);
 });
 
 test("sortRows: by score high first, unknown last, ties by place", () => {

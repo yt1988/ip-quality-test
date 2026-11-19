@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/pt.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Verificar vários IPs · 1ms.dog","url":"https://ipqs.1ms.dog/pt/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"Cole até 20 endereços IPv4 ou IPv6 e receba uma só tabela: pontuação e nota de qualidade, residencial ou data center, IP nativo ou de broadcast, marcações de VPN, proxy ou Tor, e se serviços de IA e streaming vão funcionar. Ordene por qualquer coluna; links compartilhados não incluem os IPs por padrão. Grátis, sem cadastro.","inLanguage":"pt","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.be165f1094.css">
+<link rel="stylesheet" href="/assets/app.478caa67dc.css">
 </head>
 <body>
 <div class="app">
@@ -71,6 +71,15 @@
         <label class="sr" for="ips" data-i="b_ph">Cole endereços IP ou faixas, um por linha ou separados por espaços ou vírgulas</label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
+          <label class="bt-purpose"><span data-i="b_purpose">Uso</span>
+            <select id="purpose">
+              <option value="general" data-i="b_p_general">Geral</option>
+              <option value="ai" data-i="b_p_ai">IA (Claude/ChatGPT)</option>
+              <option value="stream" data-i="b_p_stream">Streaming</option>
+              <option value="account" data-i="b_p_account">Cadastro e pagamento</option>
+              <option value="mail" data-i="b_p_mail">E-mail</option>
+            </select>
+          </label>
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go">Verificar</button>
         </div>
@@ -114,11 +123,13 @@
               <th><button type="button" data-sort="anon" data-i="b_c_anon">Proxy / VPN</button></th>
               <th><button type="button" data-sort="ai" data-i="b_c_ai">Serviços de IA</button></th>
               <th><button type="button" data-sort="stream" data-i="b_c_stream">Streaming</button></th>
+              <th><button type="button" data-sort="fit" data-i="b_c_fit">Adequação</button></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
         <p class="bt-note" data-i="b_note">Cada IP recebe a nota exatamente como na verificação individual; clique num IP para ver o relatório completo. Um link compartilhado leva só os resultados da tabela, depois do # do link, então nunca chega ao servidor.</p>
+        <p class="bt-note" id="fitNote" hidden></p>
       </div>
     </section>
 
@@ -127,7 +138,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"pt","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.pt.299a1c94a1.js"></script>
-<script src="/assets/batch.3c6b267203.js"></script>
+<script src="/assets/l.pt.775232c9dd.js"></script>
+<script src="/assets/batch.30985ce90f.js"></script>
 </body>
 </html>

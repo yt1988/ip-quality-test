@@ -39,6 +39,15 @@
         <label class="sr" for="ips" data-i="b_ph"></label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
+          <label class="bt-purpose"><span data-i="b_purpose"></span>
+            <select id="purpose">
+              <option value="general" data-i="b_p_general"></option>
+              <option value="ai" data-i="b_p_ai"></option>
+              <option value="stream" data-i="b_p_stream"></option>
+              <option value="account" data-i="b_p_account"></option>
+              <option value="mail" data-i="b_p_mail"></option>
+            </select>
+          </label>
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go"></button>
         </div>
@@ -82,11 +91,13 @@
               <th><button type="button" data-sort="anon" data-i="b_c_anon"></button></th>
               <th><button type="button" data-sort="ai" data-i="b_c_ai"></button></th>
               <th><button type="button" data-sort="stream" data-i="b_c_stream"></button></th>
+              <th><button type="button" data-sort="fit" data-i="b_c_fit"></button></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
         <p class="bt-note" data-i="b_note"></p>
+        <p class="bt-note" id="fitNote" hidden></p>
       </div>
     </section>
 

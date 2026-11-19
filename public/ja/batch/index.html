@@ -38,7 +38,7 @@
 <meta name="twitter:image" content="https://ipqs.1ms.dog/og/ja.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IP 一括チェック · 1ms.dog","url":"https://ipqs.1ms.dog/ja/batch/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","description":"IPv4 または IPv6 アドレスを最大 20 個貼り付けると一つの表にまとめます：純度スコアとランク、住宅回線かデータセンターか、ネイティブ IP かブロードキャスト IP か、VPN・プロキシ・Tor の判定、AI サービスと動画配信が使えるか。どの列でも並べ替えでき、共有リンクには既定で IP を含めません。無料、登録不要。","inLanguage":"ja","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preload" href="/assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/app.be165f1094.css">
+<link rel="stylesheet" href="/assets/app.478caa67dc.css">
 </head>
 <body>
 <div class="app">
@@ -71,6 +71,15 @@
         <label class="sr" for="ips" data-i="b_ph">IP アドレスまたは範囲を貼り付け（1 行に 1 つ、またはスペースやカンマ区切り）</label>
         <textarea id="ips" name="ips" rows="5" spellcheck="false"></textarea>
         <div class="bt-row">
+          <label class="bt-purpose"><span data-i="b_purpose">用途</span>
+            <select id="purpose">
+              <option value="general" data-i="b_p_general">一般</option>
+              <option value="ai" data-i="b_p_ai">AI（Claude/ChatGPT）</option>
+              <option value="stream" data-i="b_p_stream">ストリーミング</option>
+              <option value="account" data-i="b_p_account">登録・支払い</option>
+              <option value="mail" data-i="b_p_mail">メール</option>
+            </select>
+          </label>
           <p class="bt-hint" id="hint" aria-live="polite"></p>
           <button class="btn pri" id="go" type="submit" data-i="b_go">チェック</button>
         </div>
@@ -114,11 +123,13 @@
               <th><button type="button" data-sort="anon" data-i="b_c_anon">プロキシ / VPN</button></th>
               <th><button type="button" data-sort="ai" data-i="b_c_ai">AI サービス</button></th>
               <th><button type="button" data-sort="stream" data-i="b_c_stream">動画配信</button></th>
+              <th><button type="button" data-sort="fit" data-i="b_c_fit">適合</button></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
         <p class="bt-note" data-i="b_note">各 IP の採点は単体チェックとまったく同じです。IP をクリックすると詳しいレポートを開きます。共有リンクは表の結果だけをリンクの # の後ろに入れるので、サーバーには送られません。</p>
+        <p class="bt-note" id="fitNote" hidden></p>
       </div>
     </section>
 
@@ -127,7 +138,7 @@
 </div>
 
 <script type="application/json" id="data">{"lang":"ja","paths":{"en":"/","zh-CN":"/zh-cn/","zh-TW":"/zh-tw/","ja":"/ja/","ko":"/ko/","es":"/es/","fr":"/fr/","de":"/de/","pt":"/pt/","ru":"/ru/"},"seg":"https://seg.1ms.dog:8444"}</script>
-<script src="/assets/l.ja.aca13521aa.js"></script>
-<script src="/assets/batch.3c6b267203.js"></script>
+<script src="/assets/l.ja.ebeeee3e9d.js"></script>
+<script src="/assets/batch.30985ce90f.js"></script>
 </body>
 </html>
