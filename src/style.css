@@ -498,3 +498,14 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
   .icon-btn { min-width: 36px; min-height: 36px; }
   .xr, .priv label { min-height: 44px; }
 }
+
+/* the checks kept in this browser: the last few addresses, newest first */
+.watch-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.watch-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.watch-list li:first-child { border-top: 0; }
+.wl-ip { font-family: var(--f-num); color: var(--fg); text-decoration: none; overflow-wrap: anywhere; }
+.wl-sc { font-family: var(--f-num); font-weight: 600; color: var(--gc, var(--fg)); }
+.wl-sc[data-g="A"] { --gc: var(--t1); } .wl-sc[data-g="B"] { --gc: var(--t2); }
+.wl-sc[data-g="C"] { --gc: var(--t3); } .wl-sc[data-g="D"] { --gc: var(--t4); } .wl-sc[data-g="F"] { --gc: var(--t5); }
+.wl-at, .wl-d { color: var(--muted); font-size: 12px; }
+.wl-d:empty { display: none; }
