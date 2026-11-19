@@ -400,37 +400,6 @@ import { reportOf } from "./report.mjs";
       : `${nr.listed}/${nOf}` + (nBad ? ` <span class="m">${nBad}</span>` : "");
     set(4, !nr ? "–" : `<span data-why="${esc(nearWhy)}">${nearVal}</span>`);
   }
-  // the three axes: IP layer (what this check can see), region/support, and account (what it cannot see)
-  function paintUse3(r) {
-    const s = r.summary, F = s.flags || {};
-    const set = (id, lv, text) => { const el = $("#" + id); if (el) el.innerHTML = `<i class="dot ${lv}"></i>${esc(text)}`; };
-    const lvOf = x => x === "good" ? "ok" : x === "warn" ? "warn" : x === "bad" ? "bad" : "unk";
-    const txtOf = x => x && t("lv_" + x) || t("ax_unknown");
-    const canTest = !!unlock;
-    for (const id of ["u3-ai-test", "u3-stream-test"]) {
-      const a = $("#" + id);
-      if (a) { a.hidden = !canTest; if (canTest) a.href = unlock + D.paths[LANG]; }
-    }
-    const blocked = s.cc && r.uses.ai.why === "u_ai_region";
-    set("u3-ai-region", blocked ? "bad" : s.cc ? "ok" : "unk", blocked ? t("ax_unsupported") : s.cc ? t("ax_supported") : t("ax_unknown"));
-    set("u3-ai-account", "unk", t("ax_unknown"));
-    set("u3-ai-ip", lvOf(r.uses.ai.lv), txtOf(r.uses.ai.lv));
-    const cat = s.native === false || s.ccs.length > 1 ? ["warn", t("ax_maybe")] : ["unk", t("ax_inferred")];
-    set("u3-stream-catalog", cat[0], cat[1]);
-    set("u3-stream-account", "unk", t("ax_unknown"));
-    set("u3-stream-ip", lvOf(r.uses.stream.lv), txtOf(r.uses.stream.lv));
-    set("u3-account-ip", lvOf(r.uses.account.lv), txtOf(r.uses.account.lv));
-    const anonN = ["proxy", "vpn", "tor"].filter(k => F[k] && F[k].yes > 0).length;
-    set("u3-account-proxy", anonN ? "warn" : "ok", anonN ? t("ax_sources", { n: anonN }) : t("f_none"));
-    set("u3-account-account", "unk", t("ax_unknown"));
-    const dnsbl = s.dnsbl || { listed: 0, checked: 0 };
-    set("u3-mail-dnsbl", !dnsbl.checked ? "unk" : dnsbl.listed ? "bad" : "ok",
-      !dnsbl.checked ? t("ax_unknown") : dnsbl.listed ? t("fs_listed", { n: dnsbl.listed, of: dnsbl.checked }) : `${t("bl_clean")} 0/${dnsbl.checked}`);
-    set("u3-mail-ptr", s.ptr && s.ptr.fcrdns === true ? "ok" : s.ptr && s.ptr.fcrdns === false ? "warn" : "unk",
-      s.ptr && s.ptr.fcrdns === true ? t("yes") : s.ptr && s.ptr.fcrdns === false ? t("no") : t("ax_unknown"));
-    set("u3-mail-send", lvOf(r.uses.mail.lv), txtOf(r.uses.mail.lv));
-    $("#use3").hidden = false;
-  }
   function paintFindings(r) {
     const s = r.summary;
     // what the address is: a short answer per cell, the sentence behind it on hover
@@ -467,13 +436,7 @@ import { reportOf } from "./report.mjs";
     else finding("dnsbl", hits.length ? "bad" : "ok", hits.length ? esc(t("fs_listed", { n: hits.length, of: s.dnsbl.checked })) : `${esc(t("bl_clean"))} <span class="m">${s.dnsbl.checked}</span>`,
       hits.length ? t("bl_listed", { list: list(hits.map(b => b.name)) }) : t("q_bl_clean", { n: s.dnsbl.checked }));
     // what it is good for: a verdict each, the reason on hover
-    for (const u of ["stream", "ai", "captcha", "account", "mail"]) {
-      const x = r.uses[u], lv = x.lv === "good" ? "ok" : x.lv;
-      // the account behind the use is outside what an IP check can see (KYC, payment, history, device, content):
-      // the cards stay short, the note under them and the hover text say it
-      const why = ["stream", "ai", "account"].includes(u) ? t(x.why) + " " + t("use_note") : t(x.why);
-      finding(u, lv, `<span class="tag ${x.lv}">${esc(t("lv_" + x.lv))}</span>`, why);
-    }
+    for (const u of ["stream", "ai", "captcha", "account", "mail"]) { const x = r.uses[u], lv = x.lv === "good" ? "ok" : x.lv; finding(u, lv, `<span class="tag ${x.lv}">${esc(t("lv_" + x.lv))}</span>`, t(x.why)); }
   }
   // the answers so far, drawn while the rest are still coming; a slower source must not hold the whole result back
   function livePaint() {
@@ -525,7 +488,6 @@ import { reportOf } from "./report.mjs";
     paintFacts(r);
 
     paintFindings(r);
-    paintUse3(r);
 
     // every deduction: its finding tinted in its color with the points, and every source mark that caused it
     for (const f in PARTS_OF) {

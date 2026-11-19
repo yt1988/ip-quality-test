@@ -82,7 +82,6 @@ h2 { font-size: 15px; font-weight: 700; }
    Its two lines are there from the start (a note below the verdict keeps its lines and fills in place), so the
    facts under it never move when the answer is in */
 .conf { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
-.use-note { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
 #conf { min-height: 3em; }
 .conf[hidden], .skip-n[hidden] { display: none !important; }
 /* the source rows a deployment can't ask (needs keys): said once above the list */
@@ -500,18 +499,3 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 }
 
 /* the three axes: what an IP check can say, and what it cannot */
-#uses { display: none; }
-.use3 { display: flex; flex-direction: column; gap: 8px; }
-.u3-row { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 10px 12px; }
-.u3-h { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.u3-h b { font-size: 13px; font-weight: 600; }
-.u3-test { margin-left: auto; font-size: 12px; color: var(--muted); text-decoration: none; }
-.u3-test:hover { color: var(--ink); }
-.u3-axes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.u3-ax { background: var(--soft); border-radius: 8px; padding: 6px 8px; min-width: 0; }
-.u3-ax em { display: block; font-style: normal; font-size: 11.5px; color: var(--muted); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.u3-ax b { display: flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; white-space: nowrap; min-width: 0; }
-.u3-ax .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--muted); }
-.u3-ax .dot.ok { background: var(--t1); } .u3-ax .dot.warn { background: var(--t3); }
-.u3-ax .dot.bad { background: var(--t5); } .u3-ax .dot.unk { background: #adb5bd; }
-@media (max-width: 420px) { .u3-axes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
