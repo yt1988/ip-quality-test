@@ -186,6 +186,7 @@ import { reportOf } from "./report.mjs";
     $$(".fc, .uc").forEach(c => { c.className = c.classList.contains("uc") ? "uc" : "fc"; c.style.removeProperty("--pc"); delete c.dataset.why; c.querySelector(".fc-v, .uc-v").innerHTML = '<span class="skl"></span>'; const p = c.querySelector(".fr-p"); if (p) p.textContent = ""; const st = c.querySelector(".st"); if (st) st.textContent = ""; });
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
+    const ex = $("#exList"); if (ex) ex.hidden = false;
     $("#fresh").hidden = true; $("#skipN").hidden = true;
     // the three notes under the verdict keep their lines from the start and fill in place, so nothing below them (the
     // facts, the exits, the whole page) moves when the answer is in; a note that doesn't apply keeps its line empty
@@ -198,7 +199,41 @@ import { reportOf } from "./report.mjs";
     cnShow(); cfShow();
     markExit(ip || selfIp);
   }
+  // an input that never reaches the API (a bad address, a private address, a name that doesn't resolve) never goes
+  // through reset(); without this, the last result's grade, deductions, source count and facts stayed on screen
+  // under the error. Clear every result area to "–" and hide the result actions; the layout keeps its lines.
+  function clearResult() {
+    FINAL = false;
+    gauge.classList.remove("busy", "live"); gauge.dataset.g = "";
+    $("#gArc").style.strokeDashoffset = 100; $("#gSeg").innerHTML = "";
+    $("#gNum").textContent = "–"; $("#gGrade").innerHTML = "&nbsp;";
+    $("#parts").innerHTML = "&nbsp;";
+    $$("#facts b").forEach((b, i) => { b.className = i ? "" : "ipv"; b.textContent = "–"; });
+    $$(".fc, .uc").forEach(c => {
+      c.className = c.classList.contains("uc") ? "uc" : "fc";
+      c.style.removeProperty("--pc"); delete c.dataset.why;
+      const v = c.querySelector(".fc-v, .uc-v"); if (v) v.textContent = "–";
+      const p = c.querySelector(".fr-p"); if (p) p.textContent = "";
+      const st = c.querySelector(".st"); if (st) st.textContent = "";
+    });
+    for (const id in PR) {
+      const r = PR[id];
+      r.hidden = false; r.className = "pr wait"; delete r.dataset.why;
+      const pa = r.querySelector(".pa"); if (pa) pa.textContent = "–";
+      const pk = r.querySelector(".pk"); if (pk) pk.innerHTML = "";
+      const pms = r.querySelector(".pms"); if (pms) pms.textContent = "";
+    }
+    for (const id of ["#conf", "#hist", "#nextG"]) { const e = $(id); e.hidden = false; e.innerHTML = "&nbsp;"; }
+    for (const id of ["#shareBtn", "#fresh", "#skipN", "#appealBtn", "#ulLink", "#ckLink", "#whoLink", "#egLink", "#v6Link", "#sgt", "#cnt", "#cft"]) {
+      const e = $(id); if (e) e.hidden = true;
+    }
+    const ex = $("#exList"); if (ex) ex.hidden = true;
+    $("#prog").classList.add("end"); $("#prog i").style.transform = "scaleX(0)"; $("#progTxt").innerHTML = "&nbsp;";
+    $("#rerun").disabled = false;
+    SNAP = null;
+  }
   function fail(key) {
+    clearResult();
     gauge.classList.remove("busy", "live"); $("#gNum").textContent = "–"; $("#sgt").hidden = true;
     $("#vHead").textContent = t("err_h");
     const vt = $("#vText"); vt.textContent = t(key); vt.classList.add("err");
