@@ -96,13 +96,11 @@ async function collect({ request, env, ctx, ip, self, v, hit, skip, send }) {
   const own = !skip.cloudflare ? runSource(SOURCES.find(s => s.own), ip, { env, cf: request.cf }).then(r => { send({ t: "src", ...r }); return r; }) : null;
   if (hit) {
     raw = await hit.json(); cached = true;
-    // a source that failed last time (rate limit, timeout) is asked again rather than served as a failure
+    // A cached answer is served as it was read: a source that failed last time is not asked again on every hit.
+    // Retrying those (SANS ISC, OTX, an RIR that refuses Cloudflare) on each hit is what made a cached answer cost
+    // subrequests and seconds; the page still asks its own browser-retry sources after the result.
+    // Sources added since the answer was cached are asked now, and ones no longer used are dropped.
     const ctx2 = { env, torList };
-    raw.sources = await Promise.all(raw.sources.map(r => {
-      const s = SOURCES.find(x => x.id === r.id);
-      return r.ok || !s ? r : runSource(s, ip, ctx2);
-    }));
-    // sources added since the answer was cached are asked now, and ones no longer used are dropped
     const missing = SOURCES.filter(s => !s.own && !skip[s.id] && !raw.sources.some(r => r.id === s.id));
     raw.sources = [...raw.sources.filter(r => SOURCES.some(s => s.id === r.id && !skip[s.id])), ...await Promise.all(missing.map(s => runSource(s, ip, ctx2)))];
     for (const r of raw.sources) await send({ t: "src", ...r });

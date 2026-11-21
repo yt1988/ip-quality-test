@@ -311,7 +311,7 @@ export const SOURCES = [
   {
     // SANS ISC's DShield records: attack reports and the feeds that name the address. IPv4 only (its API refuses v6).
     // Its API often stalls requests from Cloudflare's addresses: the page asks again from the browser when it does.
-    id: "isc", name: "SANS ISC", v6: false, browser: "retry",
+    id: "isc", name: "SANS ISC", v6: false, browser: "only",
     site: ip => "https://isc.sans.edu/ipinfo/" + ip,
     async run(ip) {
       const j = await getJSON(`https://isc.sans.edu/api/ip/${ip}?json`);
@@ -366,7 +366,7 @@ export const SOURCES = [
   {
     // AlienVault OTX: the open threat-intelligence pulses that name the address. Pulses are reports someone shared,
     // not a verdict — a popular address can be quoted by many — so this is shown, never scored.
-    id: "otx", name: "AlienVault OTX", browser: "retry",
+    id: "otx", name: "AlienVault OTX", browser: "only",
     site: ip => "https://otx.alienvault.com/indicator/ip/" + ip,
     async run(ip) {
       const j = await getJSON(`https://otx.alienvault.com/api/v1/indicators/IPv${family(ip)}/${encodeURIComponent(ip)}/general`);
