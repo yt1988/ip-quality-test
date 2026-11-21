@@ -91,6 +91,11 @@ GET /api                        the endpoints, machine-readable
 GET /openapi.json               the OpenAPI 3.1 document
 ```
 
+The endpoints above are what this open-source project provides: nothing in the code needs a key, and `npx wrangler deploy`
+gives you the same API. **A hosted instance is not obliged to serve unlimited automated traffic.** The live 1ms.dog
+deployment applies its own rate limits and may challenge or block automated clients, and its figures are not a promise
+about yours. Self-host it if you need a guaranteed quota.
+
 The streamed answer is NDJSON: a `start` line listing the rows, one `src` line per source and one `bl` line per blocklist as they answer, then a `done` line with `score`, `grade`, `parts`, `notes`, `uses` and `summary`. `?format=json` waits for every source and returns `{ip, version, self, at, cached, rate_limit, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}` (CORS open); notes and deductions carry an i18n key and parameters, not a sentence. Answers are cached for six hours per address. Fresh lookups are limited to 20 a minute per visitor: `X-RateLimit-Limit` and `X-RateLimit-Window` say the policy on every answer, `rate_limit` repeats it in the JSON, and a 429 carries `Retry-After` with `{error: "rate"}` (a cached answer doesn't count).
 
 ```bash

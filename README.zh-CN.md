@@ -89,6 +89,8 @@ GET /api                        接口清单（给脚本读）
 GET /openapi.json               OpenAPI 3.1 文档
 ```
 
+上面这些端点**是开源项目提供的**：代码里不需要任何密钥，`npx wrangler deploy` 就能得到同样的 API。**但线上实例没有义务免费承担无上限的自动化流量。** 1ms.dog 上的部署有自己的限速，也会挑战或拦截自动化客户端，它的额度不代表你的部署。需要确定的配额就自己部署一份。
+
 流式返回 NDJSON：先是一行 `start`（列出所有行），每个来源返回时一行 `src`，每个黑名单一行 `bl`，最后一行 `done`，包含 `score`、`grade`、`parts`、`notes`、`uses` 和 `summary`。`?format=json` 会等所有来源返回，给出 `{ip, version, self, at, cached, rate_limit, score, grade, parts, notes, uses, confidence, summary, sources, dnsbl, elsewhere}`（开放 CORS）；`notes` 和扣分项带的是文案 key 和参数，不是整句。每个地址的结果缓存 6 小时。每个访问者每分钟最多 20 次新查询：每个回答都带 `X-RateLimit-Limit` 和 `X-RateLimit-Window`，JSON 里的 `rate_limit` 重复这条规则，429 带 `Retry-After` 和 `{error: "rate"}`（命中缓存不计次）。
 
 ```bash

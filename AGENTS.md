@@ -56,6 +56,19 @@ running deployment.
 The tests (`test/*.test.mjs`, Node's built-in runner) cover the page contract, scoring, sharing, IP parsing, the
 batch page's parsing and links, the connection and /24 readers, and that every language has every string.
 
+### The public API and the hosted instance are two different things
+
+The repository provides `/api/check` and `/api/resolve` with no key and open CORS; that is a property of the code, and
+`npx wrangler deploy` gives anyone the same API. **The hosted instance at 1ms.dog is not obliged to serve unlimited
+automated traffic.** Its limits are the operator's, it may challenge or block automated clients (WAF), and its figures
+are no promise about another deployment. So:
+
+- Don't add origin/Referer/`Sec-Fetch-Site` checks to these endpoints as a cost-control measure: they break documented
+  `curl` use and self-hosting, and a client that spoofs a User-Agent spoofs those headers too.
+- Control cost at the edge (WAF rules, rate limits) or by a documented quota, and say so in the README when the hosted
+  instance is stricter than the code.
+- 1ms.dog's own rule tables (the WAF rules, the per-path limits) belong to the shell/operator, not to this repository.
+
 ## Deploy the pages and the Worker
 
 ```bash
