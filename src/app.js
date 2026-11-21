@@ -20,9 +20,7 @@ import { reportOf } from "./report.mjs";
   const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
-  const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask", hist: "ipqs:hist", srv: "ipqs:srvonly" };
-  // the visitor can keep the browser from asking the sources that limit Cloudflare's addresses; the setting is local
-  const srvOnly = () => store.get(K.srv) === "1";
+  const K = { theme: "ipqs:theme", lang: "ipqs:lang", mask: "ipqs:mask", hist: "ipqs:hist" };
   // The addresses checked on this device, with their last score: kept in this browser only, never sent anywhere (the
   // same store the theme uses). A result says how the address read last time, when it was checked here before.
   const histGet = ip => { try { const m = JSON.parse(store.get(K.hist) || "{}"); return m && typeof m === "object" ? m : {}; } catch (e) { return {}; } };
@@ -187,7 +185,7 @@ import { reportOf } from "./report.mjs";
     for (const id in PR) { const r = PR[id]; r.hidden = false; r.className = "pr wait"; delete r.dataset.why; r.querySelector(".pa").textContent = "…"; r.querySelector(".pk").innerHTML = ""; r.querySelector(".pms").textContent = ""; }
     $("#prog").classList.remove("end"); $("#rerun").disabled = true; $("#shareBtn").hidden = true; SNAP = null; $("#ulLink").hidden = true;
     const ex = $("#exList"); if (ex) ex.hidden = false;
-    $("#fresh").hidden = true; $("#skipN").hidden = true;
+    $("#fresh").hidden = true;
     // the three notes under the verdict keep their lines from the start and fill in place, so nothing below them (the
     // facts, the exits, the whole page) moves when the answer is in; a note that doesn't apply keeps its line empty
     for (const id of ["#conf", "#hist", "#nextG"]) { const e = $(id); e.hidden = false; e.innerHTML = "&nbsp;"; }
@@ -224,7 +222,7 @@ import { reportOf } from "./report.mjs";
       const pms = r.querySelector(".pms"); if (pms) pms.textContent = "";
     }
     for (const id of ["#conf", "#hist", "#nextG"]) { const e = $(id); e.hidden = false; e.innerHTML = "&nbsp;"; }
-    for (const id of ["#shareBtn", "#fresh", "#skipN", "#appealBtn", "#ulLink", "#ckLink", "#whoLink", "#egLink", "#v6Link", "#sgt", "#cnt", "#cft"]) {
+    for (const id of ["#shareBtn", "#fresh", "#appealBtn", "#ulLink", "#ckLink", "#whoLink", "#egLink", "#v6Link", "#sgt", "#cnt", "#cft"]) {
       const e = $(id); if (e) e.hidden = true;
     }
     const ex = $("#exList"); if (ex) ex.hidden = true;
@@ -326,12 +324,7 @@ import { reportOf } from "./report.mjs";
       const b = $("#facts b"); b.className = "ipv"; b.innerHTML = ipHtml(m.ip, m.v);
       // sources this deployment has no keys for stay out of the list (the same for every address); the ones that don't apply to this address (IPv4-only lists, the visitor's own address) keep their row
       const cur = m, browserIds = Object.keys(m.skip).filter(id => m.skip[id] === "browser");
-      // with "server only" on, the rows stay (the counts and the layout don't move) but the page asks nothing itself
-      const mine = srvOnly() ? [] : browserIds;
-      if (srvOnly()) for (const id of browserIds) { SKIP[id] = "priv"; prSet(id, "na", `<span class="m">${esc(t("prv_skip"))}</span>`, "", ""); }
-      // the sources this deployment has no keys for (hidden above): said once, because they decide the confidence
-      const nKey = Object.keys(m.skip).filter(id => m.skip[id] === "key").length;
-      const skn = $("#skipN"); skn.textContent = nKey ? t("skip_n", { n: nKey }) : ""; skn.hidden = !nKey;
+      const mine = browserIds;
       for (const id in m.skip) {
         if (!PR[id] || m.skip[id] === "browser") continue;
         if (m.skip[id] === "key") PR[id].hidden = true;
@@ -343,7 +336,7 @@ import { reportOf } from "./report.mjs";
       if (m.self) noteMine(m.ip);
       progress();
     } else if (m.t === "src") {
-      if (!m.ok && !srvOnly() && SRCDEF[m.id] && SRCDEF[m.id].browser) {
+      if (!m.ok && SRCDEF[m.id] && SRCDEF[m.id].browser) {
         const cur = CUR;
         PEND.push(inBrowser(m.id, cur.ip).then(r => { if (CUR === cur) accept(r.ok ? r : m); }));
         return;
@@ -1168,15 +1161,6 @@ import { reportOf } from "./report.mjs";
     return out.join("");
   }
   abBtn.onclick = () => { const a = appealOf(); if (!a) return; $("#abBody").innerHTML = appealBody(a); openDlg("appeal"); };
-
-  /* ---------- asking only this site's server ---------- */
-  // Some sources limit Cloudflare's shared addresses, so the page asks them from the visitor's browser by default.
-  // Turning this on keeps everything on our server: fewer third parties see the address, and those rows stay empty.
-  const svOnly = $("#srvOnly");
-  if (svOnly) {
-    svOnly.checked = srvOnly();
-    svOnly.onchange = () => { store.set(K.srv, svOnly.checked ? "1" : "0"); run(lastIp, false); };
-  }
 
   let toastEl, toastT = 0;
   function toast(msg, ms = 1800) {
