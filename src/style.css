@@ -494,6 +494,6 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
 /* On a phone the verdict sentence is the page's largest late paint if it outgrows the h1: keep the h1 the largest
    block and reserve three lines for the sentence before the check answers (LCP was #vText at p75 6.2 s). */
 @media (max-width: 600px) {
-  .hero h1 { font-size: 24px; }
-  .v-d { font-size: 12.5px; line-height: 1.45; min-height: 7.3em; }
+  .hero h1 { font-size: 26px; }
+  .v-d { font-size: 12px; line-height: 1.45; min-height: 7.3em; }
 }
