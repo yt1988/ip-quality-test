@@ -374,7 +374,7 @@ The audit's LCP table for ipqs had `#vText` as the largest element on 17% of pho
 an empty paragraph in the markup and is filled only after the sources answer, so on a slow network it paints last
 and, being three lines beside the gauge, covers more area than the one-line h1 above it.
 
-On a phone the h1 is now 24px (two lines, about 18.5k px² at 390px), the sentence is 12.5px and reserves four
-lines (`min-height: 5.8em`) from the first paint with a skeleton bar, so the block no longer grows into the h1's
+On a phone the h1 is now 24px (two lines, about 18.5k px² at 390px), the sentence is 12.5px and reserves five
+lines (`min-height: 7.3em`) from the first paint with a skeleton bar, so the block no longer grows into the h1's
 place when the answer lands. With the API delayed six seconds, the LCP entry is the h1 in zh-CN, fr, de and ru;
 CLS measured 0.05–0.07 in the longest languages. The field p75 is checked in the same LCP table after deploy.

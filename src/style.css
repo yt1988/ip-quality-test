@@ -495,5 +495,5 @@ html[data-embed] { scrollbar-gutter: auto; overflow-x: hidden; }
    block and reserve three lines for the sentence before the check answers (LCP was #vText at p75 6.2 s). */
 @media (max-width: 600px) {
   .hero h1 { font-size: 24px; }
-  .v-d { font-size: 12.5px; line-height: 1.45; min-height: 5.8em; }
+  .v-d { font-size: 12.5px; line-height: 1.45; min-height: 7.3em; }
 }
