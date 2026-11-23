@@ -381,7 +381,7 @@ CLS measured 0.05–0.07 in the longest languages. The field p75 is checked in t
 
 ## Exits are grouped by the shared egress component (2026-11-23)
 
-ipqs vendors `1ms.dog/src/egress.js` (VERSION 5) as `src/egress.js`; its header names the commit. `findExits()`
+ipqs vendors `1ms.dog/src/egress.js` (VERSION 6) as `src/egress.js`; its header names the commit. `findExits()`
 hands the probe answers (the page's own checks plus the two `/conn` anchors) to `groupExits()`, so one row is an
 exit (an ASN, else a /16 or /64) and every probe that saw it is kept, and the anchors are allowed in `connect-src`.
 

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { VERSION, groupExits } from "../src/egress.js";
 
 test("the vendored egress component is the contract's version", () => {
-  assert.equal(VERSION, "5");
+  assert.equal(VERSION, "6");
 });
 
 test("groupExits: addresses without an ASN group by /16, and keep every probe that saw them", () => {
