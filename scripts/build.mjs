@@ -201,7 +201,7 @@ export async function build({ check = false } = {}) {
       "https://ipwho.is https://get.geojs.io https://api.ipapi.is https://api.ipquery.io https://isc.sans.edu https://otx.alienvault.com https://rdap.arin.net https://rdap.org https://rdap.apnic.net https://rdap.db.ripe.net https://rdap.lacnic.net https://rdap.afrinic.net " +
       // the connection, measured on the 1ms.dog server: dns's authoritative server (random names under l.1ms.dog,
       // answered on its port 2053) and who's probe (this connection's TCP handshake)
-      "https://*.l.1ms.dog:2053 https://probe.1ms.dog" +
+      "https://*.l.1ms.dog:2053 https://probe.1ms.dog https://probe.dog.1msapp.com:9443" +
       // and the /24 portrait service
       (SEG ? " " + new URL(SEG).origin : ""),
     "manifest-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'"].join("; ");

@@ -74,7 +74,7 @@ test("every host the page asks itself is allowed by connect-src", async () => {
   const hosts = [
     "api.ipquery.io", "api.ipapi.is", "ipinfo.io", "ipwho.is", "api.ip.sb", "get.geojs.io",
     "rdap.arin.net", "rdap.org", "rdap.apnic.net", "rdap.db.ripe.net", "rdap.lacnic.net", "rdap.afrinic.net",
-    "isc.sans.edu", "otx.alienvault.com",
+    "isc.sans.edu", "otx.alienvault.com", "probe.1ms.dog", "probe.dog.1msapp.com",
   ];
   for (const host of hosts) assert.match(headers, new RegExp("connect-src[^;]*https://" + host.replace(/\./g, "\\.")), host);
 });

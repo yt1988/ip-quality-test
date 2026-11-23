@@ -9,6 +9,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
 import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
 import { reportOf } from "./report.mjs";
+import { groupExits, netOf } from "./egress.js";
 
 (function () {
   "use strict";
@@ -529,7 +530,7 @@ import { reportOf } from "./report.mjs";
       el.classList.add("hit"); el.style.setProperty("--pc", `var(--p-${p.k.slice(2)})`); el.dataset.why = why(p);
     }
 
-    const ex = EX.get(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
+    const ex = exitFor(CUR.ip); if (ex && !ex.cc && s.cc) { ex.cc = s.cc; if (exFinished) renderExits(); }
     SNAP = { at: r.at, v: CUR.v, ip: CUR.ip, res: RES.slice(), fails: FAILS.slice(), skip: { ...SKIP }, bl: BLR.map(b => ({ id: b.id, listed: b.listed })), r };
     abBtn.hidden = !appealOf();
     showLinks(); segShow(); cnShow(); cfShow();
@@ -596,16 +597,22 @@ import { reportOf } from "./report.mjs";
   // services, IPv4-only and IPv6-only hosts) and lists every address they saw with its country; each one can be checked.
   // The list draws once every check is in (two placeholder rows hold its place until then).
   const trace = host => () => getT(`https://${host}/cdn-cgi/trace`).then(x => ({ ip: (/^ip=(.+)$/m.exec(x) || [])[1], cc: (/^loc=(\w\w)$/m.exec(x) || [])[1] }));
+  // the shared egress contract's two anchors: our own probes, grey-cloud, answering GET /conn with the caller's address
   const PROBES = [
-    () => getJ("https://myip.ipip.net/json").then(j => ({ ip: j.data && j.data.ip })),
-    () => getT("https://api.ipify.cn").then(x => ({ ip: x.trim() })),
-    () => getJ("https://api.ip.sb/geoip").then(j => ({ ip: j.ip, cc: j.country_code })),
-    () => getJ("https://ipinfo.io/json").then(j => ({ ip: j.ip, cc: j.country })),
-    trace("chatgpt.com"), trace("claude.ai"),
-    () => getJ("https://ipv4-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })),
-    () => getJ("https://ipv6-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })),
+    { id: "ipip", group: "cn", run: () => getJ("https://myip.ipip.net/json").then(j => ({ ip: j.data && j.data.ip })) },
+    { id: "ipify-cn", group: "cn", run: () => getT("https://api.ipify.cn").then(x => ({ ip: x.trim() })) },
+    { id: "ipsb", group: "web", run: () => getJ("https://api.ip.sb/geoip").then(j => ({ ip: j.ip, cc: j.country_code })) },
+    { id: "ipinfo", group: "web", run: () => getJ("https://ipinfo.io/json").then(j => ({ ip: j.ip, cc: j.country })) },
+    { id: "chatgpt", group: "ai", run: trace("chatgpt.com") },
+    { id: "claude", group: "ai", run: trace("claude.ai") },
+    { id: "radar4", group: "web", run: () => getJ("https://ipv4-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })) },
+    { id: "radar6", group: "web", run: () => getJ("https://ipv6-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })) },
+    { id: "anchor-cn", group: "cn", run: () => getJ("https://probe.dog.1msapp.com:9443/conn").then(j => ({ ip: j.ip })) },
+    { id: "anchor-intl", group: "intl", run: () => getJ("https://probe.1ms.dog/conn").then(j => ({ ip: j.ip })) },
   ];
-  let EX = new Map(), exFinished = false, selfIp = null, selfCc = null, exGen = 0;
+  let EX = new Map(), EX_OF = new Map(), exFinished = false, selfIp = null, selfCc = null, exGen = 0;
+  const exitFor = ip => EX_OF.get(canon(ip || "")) || null;
+  const hasExit = ip => !!exitFor(ip);
   const egress = (document.querySelector('meta[name="egress"]') || {}).content || "";
   if (egress) { const a = $("#egLink"); a.href = egress + D.paths[LANG]; a.hidden = false; }
   // links to the other tools, each only when the shell names its host (<meta name="...">)
@@ -627,18 +634,21 @@ import { reportOf } from "./report.mjs";
   // the address opens its page in the ASN lookup (public addresses only)
   const ipHtml = (ip, v) => (asnHost && isPublic(ip) ? `<a class="asl" href="${esc(asnHost + D.paths[LANG] + "ip/" + ip)}" title="${esc(t("asn_go"))}" target="_blank" rel="noopener">${esc(ip)}</a>` : esc(ip)) + ` <span class="m">IPv${v}</span>`;
   function showLinks() {
-    const mine = SNAP && EX.has(SNAP.ip);
+    const mine = SNAP && hasExit(SNAP.ip);
     $("#whoLink").hidden = !(who && mine && /^[AB]$/.test(SNAP.r.grade));
     $("#ulLink").hidden = !(unlock && mine);
-    const checked = SNAP && SNAP.v === 6, none = exFinished && ![...EX.keys()].some(ip => family(ip) === 6);
+    const checked = SNAP && SNAP.v === 6, none = exFinished && ![...EX.values()].some(x => x.ips.some(ip => family(ip) === 6));
     const l = $("#v6Link"); l.hidden = !(v6 && (checked || none));
     if (!l.hidden) $("#v6T").textContent = t(checked ? "v6_more" : "v6_none");
   }
-  function markExit(ip) { $$("#exList .xr").forEach(li => li.classList.toggle("on", li.dataset.ip === ip)); }
+  function markExit(ip) {
+    const x = exitFor(ip);
+    $$("#exList .xr").forEach(li => li.classList.toggle("on", !!x && li.dataset.ip === x.ip));
+  }
   function renderExits() {
-    // addresses of the same country together, the visitor's own (the one the check sees) country first, then the
-    // countries by how many checks saw them; IPv4 before IPv6 within a country
-    const all = [...EX.values()], selfCc = (EX.get(selfIp) || {}).cc;
+    // one row per exit (an ASN, or a /16 or /64 when no ASN): the countries by how many checks saw them, the
+    // visitor's own country first; IPv4 before IPv6 within a country
+    const all = [...EX.values()], selfCc = (exitFor(selfIp) || {}).cc;
     const weight = cc => all.filter(x => x.cc === cc).reduce((a, x) => a + x.n, 0);
     const list = all.sort((a, b) => (b.cc === selfCc) - (a.cc === selfCc) || weight(b.cc) - weight(a.cc) || String(a.cc).localeCompare(String(b.cc)) || family(a.ip) - family(b.ip) || b.n - a.n);
     $("#exList").innerHTML = list.length ? list.map(x => `<li class="xr" data-ip="${esc(x.ip)}" tabindex="0" role="button">${flag(x.cc)}<b>${esc(x.ip)}</b><span class="m">${esc(x.cc ? country(x.cc) : "")}</span></li>`).join("")
@@ -655,20 +665,39 @@ import { reportOf } from "./report.mjs";
     if (ip !== selfIp) selfCc = null;
     if (cc) selfCc = cc;
     selfIp = ip;
-    const x = EX.get(ip);
-    if (!x) EX.set(ip, { ip, cc: selfCc, n: 1 }); else if (!x.cc) x.cc = selfCc;
+    const x = exitFor(ip);
+    if (!x) {
+      const key = netOf(ip);
+      const e = { key, ip, cc: selfCc, n: 1, ips: [ip] };
+      EX.set(key, e); EX_OF.set(ip, e);
+    } else {
+      if (!x.cc) x.cc = selfCc;
+      if (!x.ips.includes(ip)) x.ips.push(ip);
+      EX_OF.set(ip, x);
+    }
     if (exFinished) renderExits();
   }
   async function findExits() {
-    const gen = ++exGen; exFinished = false; EX = new Map(); if (selfIp) EX.set(selfIp, { ip: selfIp, cc: selfCc, n: 1 });
-    await Promise.allSettled(PROBES.map(p => p().then(r => {
+    const gen = ++exGen; exFinished = false;
+    const answers = [];
+    if (selfIp && isPublic(selfIp)) answers.push({ id: "self", group: "self", ip: selfIp, cc: selfCc });
+    await Promise.allSettled(PROBES.map(p => p.run().then(r => {
       const ip = canon(r.ip || "");
-      if (!ip || !isPublic(ip) || gen !== exGen) return;
-      const x = EX.get(ip) || { ip, cc: null, n: 0 };
-      x.n++; if (r.cc && /^[A-Z]{2}$/i.test(r.cc) && r.cc.toUpperCase() !== "XX") x.cc = x.cc || r.cc.toUpperCase();
-      EX.set(ip, x);
+      if (!ip || !isPublic(ip)) return;
+      const cc = /^[A-Z]{2}$/i.test(r.cc || "") && r.cc.toUpperCase() !== "XX" ? r.cc.toUpperCase() : null;
+      answers.push({ id: p.id, group: p.group, ip, cc });
     })));
-    // an address no check placed gets its country from ip.sb
+    if (gen !== exGen) return;
+    // the shared egress contract's grouping: one exit per ASN, else one per /16 (IPv4) or /64 (IPv6)
+    EX = new Map(); EX_OF = new Map();
+    for (const e of groupExits(answers)) {
+      const seen = answers.filter(a => e.seenBy.includes(a.id));
+      const ips = [...new Set(seen.map(a => a.ip))];
+      const x = { key: e.key, ip: e.ip, cc: (seen.find(a => a.cc) || {}).cc || null, n: e.seenBy.length, ips, v4: e.v4, v6: e.v6 };
+      EX.set(e.key, x);
+      for (const ip of ips) EX_OF.set(ip, x);
+    }
+    // an exit no check placed gets its country from ip.sb
     await Promise.allSettled([...EX.values()].filter(x => !x.cc).slice(0, 6).map(x =>
       getJ("https://api.ip.sb/geoip/" + encodeURIComponent(x.ip)).then(j => { if (j.country_code) x.cc = j.country_code.toUpperCase(); })));
     if (gen !== exGen) return;
@@ -764,7 +793,7 @@ import { reportOf } from "./report.mjs";
   // IPv4 only. The card says so, and for the visitor's own check offers their IPv4 exit (the one in the address's
   // country first), whose check then shows its /24.
   function segV6(snap) {
-    const box = $("#sgt"), v4s = mine() ? [...EX.values()].filter(x => family(x.ip) === 4) : [];
+    const box = $("#sgt"), v4s = mine() ? [...EX.values()].map(x => ({ ip: x.v4 || (family(x.ip) === 4 ? x.ip : null), cc: x.cc })).filter(x => x.ip) : [];
     const v4 = (v4s.find(x => x.cc && x.cc === snap.r.summary.cc) || v4s[0] || {}).ip;
     $("#sgN").textContent = ""; $("#sgBody").hidden = true;
     $("#sgV6T").textContent = t("sg_v6");
@@ -837,7 +866,7 @@ import { reportOf } from "./report.mjs";
   }
   // the visitor's own connection: their own check, or a check of one of the exits found for them (the connection
   // tests below and the IPv6 card's IPv4 exit are for them, not for someone else's address)
-  function mine() { return !SHARED && (!lastIp || EX.has(lastIp)); }
+  function mine() { return !SHARED && (!lastIp || hasExit(lastIp)); }
 
   /* ---------- the connection, measured on the 1ms.dog server: the DNS resolver and the TCP handshake ---------- */
   // What the sources above can't see, because it isn't in the address: which DNS resolvers look names up for the
@@ -874,7 +903,7 @@ import { reportOf } from "./report.mjs";
     // the visitor's own check is known before the answers: the card is there from the start, its two cells waiting
     // (reset drew them), so the page never moves when they come in. A shared result and someone else's address have
     // no card, and both are known before the check starts
-    const own = CN_ON && !SHARED && (!lastIp || EX.has(lastIp));
+    const own = CN_ON && !SHARED && (!lastIp || hasExit(lastIp));
     if (!CN_ON || (!own && (!snap || !mine()))) { box.hidden = true; return; }
     // the head script leaves the card out on a page that isn't the visitor's own check; a check of one of the
     // visitor's exits is theirs, so the page says so here (the same switch the first paint was drawn with)
@@ -883,7 +912,7 @@ import { reportOf } from "./report.mjs";
     if (!snap) return;
     const [hits, tcp] = await Promise.all([cnDns, cnTcp]);
     if (snap !== SNAP) return;
-    const s = snap.r.summary, exit = { ip: snap.ip, asn: s.asn, cc: s.cc, type: s.type, ips: [...EX.keys()] };
+    const s = snap.r.summary, exit = { ip: snap.ip, asn: s.asn, cc: s.cc, type: s.type, ips: [...EX_OF.keys()] };
     const d = hits && readDns(hits, exit), c = readConn(tcp, exit, navigator.userAgent);
     const off = `<span class="m">${esc(t("cn_none"))}</span>`;
     if (!d) finding("dns", "none", off, t(hits ? "cn_d_none" : "cn_d_down"));
@@ -955,7 +984,7 @@ import { reportOf } from "./report.mjs";
     const can = !!(CFK && SNAP && mine());
     // the visitor's own check draws the card as the check starts — the question is the card's own state — so the
     // answer never moves the page. A page whose Worker names no key, or a check of someone else, has no card
-    const wait = !SNAP && !EMBED && !SHARE_CODE && !cfKeyDead && (!lastIp || EX.has(lastIp));
+    const wait = !SNAP && !EMBED && !SHARE_CODE && !cfKeyDead && (!lastIp || hasExit(lastIp));
     box.hidden = !(res || can || wait);
     if (box.hidden) { $("#cfW").textContent = ""; cfUnhold(); return; }
     document.documentElement.setAttribute("data-own", "");
