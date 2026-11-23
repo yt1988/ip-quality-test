@@ -378,3 +378,13 @@ On a phone the h1 is now 26px (two lines, about 18.9k px² at 390px), the senten
 lines (`min-height: 7.3em`) from the first paint with a skeleton bar, so the block no longer grows into the h1's
 place when the answer lands. With the API delayed six seconds, the LCP entry is the h1 in zh-CN, fr, de and ru;
 CLS measured 0.05–0.07 in the longest languages. The field p75 is checked in the same LCP table after deploy.
+
+## Exits are grouped by the shared egress component (2026-11-23)
+
+ipqs vendors `1ms.dog/src/egress.js` (VERSION 1) as `src/egress.js`; its header names the commit. `findExits()`
+hands the probe answers (the page's own checks plus the two `/conn` anchors) to `groupExits()`, so one row is an
+exit (an ASN, else a /16 or /64) and every probe that saw it is kept, and the anchors are allowed in `connect-src`.
+
+Only discovery moved. `src/score.mjs` still answers "does this address look like a proxy" from third-party
+reputation, which is a different question from "is this visitor's route a proxy", and the page adds no
+direct/proxy label.

@@ -21,6 +21,7 @@ more sources.
 | Score | `src/score.mjs` | deductions, grade, notes and the five uses; the same code runs in the Worker and the page |
 | Local history | `src/app.js` (`ipqs:hist`) | the last 30 addresses checked on the device, in `localStorage` only; never sent anywhere |
 | Strings | `src/i18n/*.mjs` | every language has every key (the build fails otherwise) |
+| Egress grouping | `src/egress.js` | vendored from the shell's `1ms.dog/src/egress.js`; the header names the version |
 | /24 portrait service | `server/` (Go) | a small HTTPS API on a Linux server, not on Cloudflare: see [server/README.md](server/README.md) and "The /24 portrait service" below |
 
 ## Run it locally
