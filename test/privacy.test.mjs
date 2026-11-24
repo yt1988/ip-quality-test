@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 
-// The probes' host names are deployment details. A visitor reads 「本站的检测服务器」, never the host, so the
+// The probes' and helpers' host names are deployment details. A visitor reads 「本站的检测服务器」, never the host, so the
 // strings, the generated pages and the READMEs must not name them (the code and the CSP still do).
-const BAD = /probe\.(?:1ms\.dog|dog\.1msapp\.com)/;
+const BAD = /(?:probe\.(?:1ms\.dog|dog\.1msapp\.com)|l\.1ms\.dog)/;
 
 function files() {
   const out = ["README.md", "README.zh-CN.md"];
