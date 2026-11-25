@@ -85,7 +85,7 @@ Worker secrets (set with `npx wrangler secret put <NAME>`): `TURNSTILE_SITEKEY` 
 human-check test; without them it stays hidden), and the optional source keys listed in `wrangler.toml`
 (`IPQS_KEY`, `ABUSEIPDB_KEY`, `SCAMALYTICS_USER` + `SCAMALYTICS_KEY`, `IPDATA_KEY`, `PROXYCHECK_KEY`, `IPAPI_IS_KEY`,
 `IP2LOCATION_KEY`, `IPINFO_TOKEN`); a source without its key is left out. Bindings in `wrangler.toml`: `ASSETS`, the
-rate limit `LIMIT` (20 fresh lookups per visitor address a minute), and `[vars] SEG` — the address of the lists
+rate limit `LIMIT` (20 fresh lookups per visitor address a minute), `MS_ANCHORS` / `MS_EGRESS` (the page's own measurement endpoints, deploy-time only: the Worker writes them into `<head>` and the built CSP carries no probe hosts), and `[vars] SEG` — the address of the lists
 service below. Empty, the exact-address list source is left out (the /24 portrait card is separate; it is built by
 `scripts/build.mjs` from `SEG` or `SEG_API`).
 

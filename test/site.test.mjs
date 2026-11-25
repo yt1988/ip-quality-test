@@ -70,11 +70,19 @@ test("source ids are unique and every source links somewhere", () => {
 test("every host the page asks itself is allowed by connect-src", async () => {
   // the page-side sources (browser: "only" or "retry") are blocked by the CSP's connect-src before CORS matters; a
   // missing host is console noise in every checkup frame (AlienVault OTX was missed on 2026-11-19)
-  const headers = await readFile(new URL("../public/_headers", import.meta.url), "utf8");
+  const page = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+  const m = /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(page);
+  assert.ok(m, "the page carries the CSP as a meta, which the Worker can rewrite");
+  const csp = m[1];
   const hosts = [
     "api.ipquery.io", "api.ipapi.is", "ipinfo.io", "ipwho.is", "api.ip.sb", "get.geojs.io",
     "rdap.arin.net", "rdap.org", "rdap.apnic.net", "rdap.db.ripe.net", "rdap.lacnic.net", "rdap.afrinic.net",
-    "isc.sans.edu", "otx.alienvault.com", "probe.1ms.dog", "probe.dog.1msapp.com",
+    "isc.sans.edu", "otx.alienvault.com",
   ];
-  for (const host of hosts) assert.match(headers, new RegExp("connect-src[^;]*https://" + host.replace(/\./g, "\\.")), host);
+  for (const host of hosts) assert.match(csp, new RegExp("connect-src[^;]*https://" + host.replace(/\./g, "\\.")), host);
+  // the anchors come from env.MS_ANCHORS at runtime, so the built CSP must not carry their hosts
+  assert.doesNotMatch(csp, /probe\.1ms\.dog|probe\.dog\.1msapp\.com/);
+  assert.doesNotMatch(csp, /frame-ancestors/, "a meta CSP ignores frame-ancestors; _headers keeps it");
+  const headers = await readFile(new URL("../public/_headers", import.meta.url), "utf8");
+  assert.match(headers, /Content-Security-Policy: frame-ancestors 'none'/);
 });

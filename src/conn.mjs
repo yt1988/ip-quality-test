@@ -1,6 +1,6 @@
 // The visitor's connection as the 1ms.dog servers saw it, read against the exit the check scored:
-// - DNS: which resolvers asked dns's authoritative server (l.1ms.dog) for the random names the page looked up;
-// - TCP: the handshake who's probe read (probe.1ms.dog/conn): MSS (how much room the path leaves) and TTL (whose
+// - DNS: which resolvers asked dns's authoritative server (this site's authoritative DNS) for the random names the page looked up;
+// - TCP: the handshake who's probe read (this site's test server): MSS (how much room the path leaves) and TTL (whose
 //   network stack opened the connection).
 // Pure functions, shared by the page and the tests: they say what they see, the page words it.
 import { family, v6words, canon } from "./ip.mjs";
@@ -68,7 +68,7 @@ const uaOs = ua => /Windows/.test(ua) ? "windows" : /Mac OS X|iPhone|iPad/.test(
 // without the probe's system, the initial TTL only tells Windows (128) from the rest (64)
 const ttlOs = init => init === 128 ? "windows" : init === 64 ? "notwin" : "";
 
-// fp: who's probe.1ms.dog/fp ({ip, tcp: {mss, mtu, ttl, initial_ttl, os, ...}}; no tcp when the SYN wasn't read);
+// fp: who's probe /fp on this site's test server ({ip, tcp: {mss, mtu, ttl, initial_ttl, os, ...}}; no tcp when the SYN wasn't read);
 // exit as above (and its type); ua: the browser's user agent. → null when there is no reading, else
 // { lv, kind, mss, mtu, os, ua, other, ip }. The lines match who's connection check (MTU 1420 or less is a tunnel
 // sign; a TCP system that isn't the browser's is a proxy). kind:

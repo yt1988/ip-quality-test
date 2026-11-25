@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { VERSION, groupExits } from "../src/egress.js";
+import { VERSION, groupExits, readAnchors } from "../src/egress.js";
 
 test("the vendored egress component is the contract's version", () => {
-  assert.equal(VERSION, "6");
+  assert.equal(VERSION, "7");
 });
 
 test("groupExits: addresses without an ASN group by /16, and keep every probe that saw them", () => {
@@ -17,4 +17,17 @@ test("groupExits: addresses without an ASN group by /16, and keep every probe th
   assert.deepEqual([...exits[0].seenBy].sort(), ["ipip", "radar4"]);
   assert.equal(exits[0].ip, "1.2.3.4");
   assert.equal(exits[1].ip, "5.6.7.8");
+});
+
+test("readAnchors: no injected meta means no anchors, so a self-hosted page asks nothing", () => {
+  assert.deepEqual(readAnchors({ querySelector: () => null }), { cn: "", intl: "" });
+});
+
+test("readAnchors: the Worker's ms-anchors meta is read as two base URLs", () => {
+  const doc = {
+    querySelector: sel => sel === 'meta[name="ms-anchors"]'
+      ? { getAttribute: () => "cn=https://cn.example;intl=https://intl.example" }
+      : null,
+  };
+  assert.deepEqual(readAnchors(doc), { cn: "https://cn.example", intl: "https://intl.example" });
 });

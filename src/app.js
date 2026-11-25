@@ -9,13 +9,16 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
 import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
 import { reportOf } from "./report.mjs";
-import { groupExits, netOf } from "./egress.js";
+import { groupExits, netOf, readAnchors } from "./egress.js";
 
 (function () {
   "use strict";
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const D = JSON.parse($("#data").textContent);
   const L = window.L1MS || {}, LANG = D.lang;
+  // The deploy's own measurement endpoints (tool-contract §2): the Worker writes ms-anchors into <head> from
+  // env.MS_ANCHORS, and a self-hosted copy gets none, so its connection cells stay out and nothing is asked.
+  const ANCHORS = readAnchors();
   // a count of one picks the key_one sentence where there is one (docs: 1ms-shell translation.md, plurals)
   const PLURAL = new Intl.PluralRules(LANG), plural = (k, v) => { const c = v && (v.n ?? v.ok), r = c != null && k + "_" + PLURAL.select(+c); return r && L[r] != null ? r : k; };
   const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
@@ -607,8 +610,8 @@ import { groupExits, netOf } from "./egress.js";
     { id: "claude", group: "ai", run: trace("claude.ai") },
     { id: "radar4", group: "web", run: () => getJ("https://ipv4-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })) },
     { id: "radar6", group: "web", run: () => getJ("https://ipv6-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })) },
-    { id: "anchor-cn", group: "cn", run: () => getJ("https://probe.dog.1msapp.com:9443/conn").then(j => ({ ip: j.ip })) },
-    { id: "anchor-intl", group: "intl", run: () => getJ("https://probe.1ms.dog/conn").then(j => ({ ip: j.ip })) },
+    ...(ANCHORS.cn ? [{ id: "anchor-cn", group: "cn", run: () => getJ(ANCHORS.cn.replace(/\/+$/, "") + "/conn").then(j => ({ ip: j.ip })) }] : []),
+    ...(ANCHORS.intl ? [{ id: "anchor-intl", group: "intl", run: () => getJ(ANCHORS.intl.replace(/\/+$/, "") + "/conn").then(j => ({ ip: j.ip })) }] : []),
   ];
   let EX = new Map(), EX_OF = new Map(), exFinished = false, selfIp = null, selfCc = null, exGen = 0;
   const exitFor = ip => EX_OF.get(canon(ip || "")) || null;
@@ -870,11 +873,11 @@ import { groupExits, netOf } from "./egress.js";
 
   /* ---------- the connection, measured on the 1ms.dog server: the DNS resolver and the TCP handshake ---------- */
   // What the sources above can't see, because it isn't in the address: which DNS resolvers look names up for the
-  // visitor (dns's authoritative server on l.1ms.dog records who asks for a random name, its port 2053 answers with
+  // visitor (dns's authoritative server records who asks for a random name, its port 2053 answers with
   // them), and how the visitor's TCP connection looks on arrival (who's probe /fp: MSS, MTU and the system it came from). Both are read against the
   // exit the check scored (src/conn.mjs). Only for the visitor's own check; started once at load (each lookup is a new
   // random name), drawn when the check is in. The servers keep nothing beyond two minutes in memory.
-  const CN_ON = !EMBED && !SHARE_CODE;
+  const CN_ON = !EMBED && !SHARE_CODE && !!(ANCHORS.cn || ANCHORS.intl);
   $("#cnxGo").onclick = () => { input.value = ""; run(null, true); };
   let cnDns = null, cnTcp = null;
   if (CN_ON) {
@@ -883,7 +886,7 @@ import { groupExits, netOf } from "./egress.js";
     // three names: a resolver pool may send each through another of its addresses
     cnDns = Promise.all(["a", "b", "c"].map(look)).then(() => getJ(`https://api.l.1ms.dog:2053/t/${tok}?wait=1500`, 5000))
       .then(j => Array.isArray(j && j.hits) ? j.hits : null).catch(() => null);
-    cnTcp = getJ("https://probe.1ms.dog/fp", 5000).catch(() => null);
+    cnTcp = ANCHORS.intl ? getJ(ANCHORS.intl.replace(/\/+$/, "") + "/fp", 5000).catch(() => null) : null;
   }
   // the dns server places resolvers with DB-IP, whose licence asks for this line wherever its data shows
   const DBIP = "IP geolocation by DB-IP (https://db-ip.com), CC BY 4.0";
