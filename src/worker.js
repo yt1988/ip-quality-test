@@ -27,32 +27,6 @@ const json = (body, status = 200, extra = {}) => new Response(JSON.stringify(bod
   status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extra },
 });
 
-// The deploy's own measurement endpoints are runtime data (docs/tool-contract.md §2): env.MS_ANCHORS and
-// env.MS_EGRESS become <meta> tags in <head>, and the anchors' origins join connect-src (the built CSP has none).
-// Nothing set means a self-hosted copy: the page reads no anchors and hides the connection cells.
-const msValues = v => String(v || "").split(";").map(x => { const i = x.indexOf("="); return i > 0 ? x.slice(i + 1).trim() : ""; }).filter(Boolean);
-const escAttr = v => String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-function withMs(res, env, request) {
-  const metas = [];
-  if (env.MS_ANCHORS) metas.push(["ms-anchors", env.MS_ANCHORS]);
-  if (env.MS_EGRESS) metas.push(["ms-egress", env.MS_EGRESS]);
-  if (!metas.length || request.method !== "GET") return res;
-  const out = new Response(res.body, res);
-  if (!/text\/html/i.test(out.headers.get("Content-Type") || "")) return out;
-  const origins = msValues(env.MS_ANCHORS).map(v => { try { return new URL(v).origin; } catch (e) { return ""; } }).filter(Boolean);
-  const html = metas.map(([n, v]) => `<meta name="${n}" content="${escAttr(v)}">`).join("");
-  return new HTMLRewriter()
-    .on("head", { element(e) { e.append(html, { html: true }); } })
-    // the CSP is a <meta> (frame-ancestors stays in _headers), so it can carry the runtime anchors without
-    // shipping their hosts in the repository; nothing injected leaves the build-time policy as it is
-    .on('meta[http-equiv="Content-Security-Policy"]', { element(e) {
-      const c = e.getAttribute("content") || "";
-      const add = origins.filter(o => !c.includes(o));
-      if (add.length) e.setAttribute("content", c.replace(/connect-src([^;]*)/, m => m + " " + add.join(" ")));
-    } })
-    .transform(out);
-}
-
 // The Tor Project's exit list, kept per isolate for an hour (and in Cloudflare's cache between isolates)
 let TOR = { at: 0, set: null };
 async function torList() {
@@ -371,11 +345,11 @@ export default {
     }
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, 404);
     const m = SHARE_PATH.exec(url.pathname);
-    if (m && request.method === "GET") { const r = await shared(request, env, m); if (r) return withMs(r, env, request); }
+    if (m && request.method === "GET") { const r = await shared(request, env, m); if (r) return r; }
     // anything else is a static file; an unknown path is a plain 404 (the site's shell shows its own page for it)
     if (env.ASSETS) {
       const r = await env.ASSETS.fetch(request);
-      if (r.status !== 404) return withMs(r, env, request);
+      if (r.status !== 404) return r;
     }
     return new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   },

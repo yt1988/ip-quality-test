@@ -75,22 +75,18 @@ export async function build({ check = false } = {}) {
   const files = { ["assets/" + jsName]: js, ["assets/" + cssName]: css, ["assets/" + bjsName]: bjs };
 
   const path = slug => "/" + (slug ? slug + "/" : "");
-  // The CSP is split: the header carries everything that needs hashes the shell can extend at the edge (scripts,
-  // styles, framing), and a <meta> carries connect-src alone, so the Worker can add the deploy's anchor origins
-  // without shipping their host names. A meta policy also applies, so it must not constrain scripts.
-  const headerCsp = [`script-src 'self' 'sha256-${sha(PREPAINT)}' https://challenges.cloudflare.com`,
-    // Cloudflare's human check (Turnstile): its frame; the Rest is the page's own resources
+  // The shell appends the deploy's anchor origins to connect-src at the edge; the built policy names no probe host.
+  const csp = ["default-src 'self'", `script-src 'self' 'sha256-${sha(PREPAINT)}' https://challenges.cloudflare.com`,
+    // Cloudflare's human check (Turnstile): its script and its frame
     "frame-src https://challenges.cloudflare.com", "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data: blob:",
-    "manifest-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'"].join("; ");
-  const connectCsp = ["connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai " +
+    "connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai " +
       // sources the page asks itself (src/sources.mjs, browser: "only" or "retry"), RDAP with every registry it redirects to
       "https://ipwho.is https://get.geojs.io https://api.ipapi.is https://api.ipquery.io https://isc.sans.edu https://otx.alienvault.com https://rdap.arin.net https://rdap.org https://rdap.apnic.net https://rdap.db.ripe.net https://rdap.lacnic.net https://rdap.afrinic.net " +
-      // the DNS helper on the site's own domain (a wildcard, so no exact host is in the repository)
-      "https://*.1ms.dog:2053 " +
-      // the shell's own analytics and short links, which it cannot add to a meta policy at the edge
-      "https://s.1ms.dog https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com " +
-      // and the /24 portrait service
-      (SEG ? new URL(SEG).origin : "")].join("; ");
+      // the DNS helper on the site's own domain (a wildcard, so no exact host is in the repository), the shell's
+      // analytics and short links, and the /24 portrait service
+      "https://*.1ms.dog:2053 https://s.1ms.dog https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com " +
+      (SEG ? new URL(SEG).origin : ""),
+    "manifest-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'"].join("; ");
   for (const [lang, slug, locale] of langs) {
     const d = I[lang], T = k => { if (!(k in d)) throw new Error(`i18n/${lang}.mjs has no "${k}"`); return d[k]; };
     const strings = Object.fromEntries(Object.keys(en).filter(k => !BUILD_ONLY.has(k)).map(k => [k, T(k)]));
@@ -148,7 +144,7 @@ export async function build({ check = false } = {}) {
       .replace(/(<(\w+)\b[^>]*\sdata-i="(\w+)"[^>]*>)([^<]*)(<\/\2>)/g, (m, open, tag, k, inner, close) => open + esc(T(k)) + close)
       .replace(/\{\{a:(\w+)\}\}/g, (m, k) => esc(T(k)))   // translated attribute values (aria-label)
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
-      .replace("{{prepaint}}", PREPAINT).replace("{{head}}", head).replace("{{csp}}", connectCsp).replace("{{css}}", cssName).replace("{{js}}", jsName).replace("{{strings}}", sName)
+      .replace("{{prepaint}}", PREPAINT).replace("{{head}}", head).replace("{{css}}", cssName).replace("{{js}}", jsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("h1")))
       .replace("{{finds}}", finds).replace("{{groups}}", groups)
       .replace("{{helpNav}}", helpNav).replace("{{helpC}}", helpC).replace("{{data}}", JSON.stringify(data).replace(/</g, "\\u003c"));
@@ -178,7 +174,7 @@ export async function build({ check = false } = {}) {
       .replace(/(<(\w+)\b[^>]*\sdata-i="(\w+)"[^>]*>)([^<]*)(<\/\2>)/g, (m, open, tag, k, inner, close) => open + esc(T(k)) + close)
       .replace(/\{\{a:(\w+)\}\}/g, (m, k) => esc(T(k)))
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
-      .replace("{{prepaint}}", PREPAINT).replace("{{head}}", bhead).replace("{{csp}}", connectCsp).replace("{{css}}", cssName).replace("{{js}}", bjsName).replace("{{strings}}", sName)
+      .replace("{{prepaint}}", PREPAINT).replace("{{head}}", bhead).replace("{{css}}", cssName).replace("{{js}}", bjsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("b_h1")))
       .replace("{{data}}", JSON.stringify({ lang, paths, seg: SEG }).replace(/</g, "\\u003c"));
     if (/\{\{\w+\}\}/.test(bhtml)) throw new Error("unfilled placeholder in batch " + path(slug) + ": " + /\{\{\w+\}\}/.exec(bhtml)[0]);
@@ -209,7 +205,7 @@ export async function build({ check = false } = {}) {
 `;
   files["_headers"] = `# Generated by scripts/build.mjs
 /*
-  Content-Security-Policy: ${headerCsp}
+  Content-Security-Policy: ${csp}
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

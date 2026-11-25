@@ -10,19 +10,14 @@ preview_urls = false
 [assets]
 directory = "./public"
 binding = "ASSETS"
-# Only the HTML pages run the Worker, so it can write the deploy's ms-* metas into <head>; fonts, scripts and
-# images stay on the static path. Without this, Cloudflare serves an existing asset without invoking the script.
-run_worker_first = ["/", "/batch/", "/*/", "/*/batch/", "/r/*", "/*/r/*"]
 
 # The /24 portrait and the exact-IP public lists (server/, see server/README.md). Empty turns both off; a fork
 # without the service should leave it empty.
 [vars]
 SEG = "https://seg.1ms.dog:8444"
 
-# Deploy-time measurement endpoints (docs/tool-contract.md §2), set with `wrangler secret put`, never in this file:
-#   MS_ANCHORS  "cn=https://<cn>;intl=https://<intl>"  (the page's /conn and /fp anchors)
-#   MS_EGRESS   "stun=<host>:<port>;echo=https://<host>:<port>"  (written to <head>; ipqs has no echo reading yet)
-# Unset leaves the page's connection cells hidden; the built CSP has no probe hosts.
+# The page's measurement endpoints (`ms-anchors`, `ms-egress`) are injected by the shell's Worker at the edge
+# (docs/tool-contract.md §2), not by this one; this file and the built CSP carry no probe hosts.
 #
 # Fresh lookups per visitor address and minute (cached answers don't count). Remove the block to turn the limit off.
 [[ratelimits]]
