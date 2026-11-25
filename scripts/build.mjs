@@ -86,9 +86,11 @@ export async function build({ check = false } = {}) {
       // sources the page asks itself (src/sources.mjs, browser: "only" or "retry"), RDAP with every registry it redirects to
       "https://ipwho.is https://get.geojs.io https://api.ipapi.is https://api.ipquery.io https://isc.sans.edu https://otx.alienvault.com https://rdap.arin.net https://rdap.org https://rdap.apnic.net https://rdap.db.ripe.net https://rdap.lacnic.net https://rdap.afrinic.net " +
       // the DNS helper on the site's own domain (a wildcard, so no exact host is in the repository)
-      "https://*.1ms.dog:2053" +
+      "https://*.1ms.dog:2053 " +
+      // the shell's own analytics and short links, which it cannot add to a meta policy at the edge
+      "https://s.1ms.dog https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com " +
       // and the /24 portrait service
-      (SEG ? " " + new URL(SEG).origin : "")].join("; ");
+      (SEG ? new URL(SEG).origin : "")].join("; ");
   for (const [lang, slug, locale] of langs) {
     const d = I[lang], T = k => { if (!(k in d)) throw new Error(`i18n/${lang}.mjs has no "${k}"`); return d[k]; };
     const strings = Object.fromEntries(Object.keys(en).filter(k => !BUILD_ONLY.has(k)).map(k => [k, T(k)]));
