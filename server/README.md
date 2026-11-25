@@ -77,5 +77,5 @@ seg -addr <addr:port> -cert <fullchain.pem> -key <privkey.pem> -data /var/lib/1m
 The IP2Proxy token comes from `$IP2PROXY_TOKEN` or the systemd credential `ip2proxy`; without one the proxy
 list is skipped and the page says it isn't connected. The service picks up a new index within 10 minutes.
 Port, subdomain, directory and user are as registered in 1ms-shell `docs/processes.md` ("专用服务器"); the page reads
-the address from `SEG` in `scripts/build.mjs` (`SEG_API=http://127.0.0.1:8447 npm run build` for a local test, not to
-be committed).
+its base address from the shell's `<meta name="ms-seg">` at runtime (for a local test, add that meta by hand; it is
+not part of a build).

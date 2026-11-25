@@ -281,8 +281,8 @@ export const SOURCES = [
     id: "lists", name: "1ms public lists",
     site: () => "https://ipqs.1ms.dog/",
     async run(ip, { env }) {
-      if (!env.SEG) throw new Error("off");
-      const j = await getJSON(`${env.SEG}/v1/ip?ip=${encodeURIComponent(ip)}`, { ms: 5000 });
+      if (!env.SEG_URL) throw new Error("off");
+      const j = await getJSON(`${env.SEG_URL}/v1/ip?ip=${encodeURIComponent(ip)}`, { ms: 5000 });
       const L = j.lists || {};
       const bits = [];
       if (L.bad) bits.push("IPsum " + L.bad);

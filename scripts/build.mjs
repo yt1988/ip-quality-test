@@ -17,9 +17,6 @@ import { SOURCES, DNSBL } from "../src/sources.mjs";
 import { LANGS } from "../src/langs.mjs";
 
 const SITE = (process.env.SITE_URL || "https://ipqs.1ms.dog").replace(/\/+$/, "");
-// The /24 portrait service on the 1ms.dog VPS (server/), at the address Public registers in 1ms-shell
-// docs/processes.md (an empty one: no portrait card). SEG_API overrides it for a local test (never commit that build).
-const SEG = (process.env.SEG_API ?? "https://seg.1ms.dog:8444").replace(/\/+$/, "");
 const pub = new URL("../public/", import.meta.url), src = new URL("../src/", import.meta.url);
 export { LANGS };
 // the questions the sources table answers, one row each (src/app.js fills them)
@@ -82,10 +79,9 @@ export async function build({ check = false } = {}) {
     "connect-src 'self' https://ipv4-check-perf.radar.cloudflare.com https://ipv6-check-perf.radar.cloudflare.com https://myip.ipip.net https://api.ipify.cn https://api.ip.sb https://ipinfo.io https://chatgpt.com https://claude.ai " +
       // sources the page asks itself (src/sources.mjs, browser: "only" or "retry"), RDAP with every registry it redirects to
       "https://ipwho.is https://get.geojs.io https://api.ipapi.is https://api.ipquery.io https://isc.sans.edu https://otx.alienvault.com https://rdap.arin.net https://rdap.org https://rdap.apnic.net https://rdap.db.ripe.net https://rdap.lacnic.net https://rdap.afrinic.net " +
-      // the DNS helper on the site's own domain (a wildcard, so no exact host is in the repository), the shell's
-      // analytics and short links, and the /24 portrait service
-      "https://*.1ms.dog:2053 https://s.1ms.dog https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com " +
-      (SEG ? new URL(SEG).origin : ""),
+      // the DNS helper on the site's own domain (a wildcard, so no exact host is in the repository), and the shell's
+      // analytics and short links; the /24 portrait host comes from the shell's ms-seg meta at runtime
+      "https://*.1ms.dog:2053 https://s.1ms.dog https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
     "manifest-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'"].join("; ");
   for (const [lang, slug, locale] of langs) {
     const d = I[lang], T = k => { if (!(k in d)) throw new Error(`i18n/${lang}.mjs has no "${k}"`); return d[k]; };
@@ -138,7 +134,7 @@ export async function build({ check = false } = {}) {
     const helpC = docs.map(([q, a], i) => `<article data-hqb="${i}"${i ? " hidden" : ""}><h3>${esc(q)}</h3>${a.split(/\n+/).map(p => `<p>${esc(p)}</p>`).join("")}</article>`).join("");
     const langOpts = langs.map(([l]) => `<option value="${l}"${l === lang ? " selected" : ""}>${esc(I[l].name)}</option>`).join("");
     const paths = Object.fromEntries(langs.map(([l, sl]) => [l, path(sl)]));
-    const data = { lang, paths, seg: SEG };
+    const data = { lang, paths };
 
     const html = tpl
       .replace(/(<(\w+)\b[^>]*\sdata-i="(\w+)"[^>]*>)([^<]*)(<\/\2>)/g, (m, open, tag, k, inner, close) => open + esc(T(k)) + close)
@@ -176,7 +172,7 @@ export async function build({ check = false } = {}) {
       .replace("{{lang}}", lang).replace("{{pathsAttr}}", esc(JSON.stringify(paths))).replace("{{rootAttr}}", slug ? "" : " data-root")
       .replace("{{prepaint}}", PREPAINT).replace("{{head}}", bhead).replace("{{css}}", cssName).replace("{{js}}", bjsName).replace("{{strings}}", sName)
       .split("{{homeHref}}").join(path(slug)).replace("{{langOpts}}", langOpts).replace("{{h1}}", esc(T("b_h1")))
-      .replace("{{data}}", JSON.stringify({ lang, paths, seg: SEG }).replace(/</g, "\\u003c"));
+      .replace("{{data}}", JSON.stringify({ lang, paths }).replace(/</g, "\\u003c"));
     if (/\{\{\w+\}\}/.test(bhtml)) throw new Error("unfilled placeholder in batch " + path(slug) + ": " + /\{\{\w+\}\}/.exec(bhtml)[0]);
     files[(slug ? slug + "/" : "") + "batch/index.html"] = bhtml;
   }

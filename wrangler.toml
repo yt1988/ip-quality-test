@@ -11,10 +11,9 @@ preview_urls = false
 directory = "./public"
 binding = "ASSETS"
 
-# The /24 portrait and the exact-IP public lists (server/, see server/README.md). Empty turns both off; a fork
-# without the service should leave it empty.
-[vars]
-SEG = "https://seg.1ms.dog:8444"
+# The /24 portrait (read by the page from the shell's ms-seg meta) and the exact-IP public lists (the Worker reads
+# env.SEG). The lists service's address is deployment data: set it in the dashboard with `wrangler secret put SEG`,
+# never in this file. Without it the exact-address list source is left out.
 
 # The page's measurement endpoints (`ms-anchors`, `ms-egress`) are injected by the shell's Worker at the edge
 # (docs/tool-contract.md §2), not by this one; this file and the built CSP carry no probe hosts.

@@ -33,10 +33,10 @@ npm install
 npm run dev        # wrangler dev on http://localhost:8792
 ```
 
-Your own address isn't known locally: use `?ip=8.8.8.8`. The /24 portrait card reads the service at the address
-built in as `SEG` (`scripts/build.mjs`; `SEG_API=<url> npm run build` to point it at another one, empty to hide the
-card). The connection cells (DNS resolver, TCP handshake) read services that a fork may not have; they stay hidden
-when those don't answer.
+Your own address isn't known locally: use `?ip=8.8.8.8`. The /24 portrait card reads the service's base address from
+the shell's `<meta name="ms-seg" content="base=https://<your-domain>:<port>">`; without that meta (local builds and CI
+included) the card stays hidden. The connection cells (DNS resolver, TCP handshake) read services that a fork may not
+have; they stay hidden when those don't answer.
 
 The batch page can be tried without wrangler: serve `public/` with any static server and forward `/api/check` to a
 running deployment.
@@ -85,9 +85,14 @@ Worker secrets (set with `npx wrangler secret put <NAME>`): `TURNSTILE_SITEKEY` 
 human-check test; without them it stays hidden), and the optional source keys listed in `wrangler.toml`
 (`IPQS_KEY`, `ABUSEIPDB_KEY`, `SCAMALYTICS_USER` + `SCAMALYTICS_KEY`, `IPDATA_KEY`, `PROXYCHECK_KEY`, `IPAPI_IS_KEY`,
 `IP2LOCATION_KEY`, `IPINFO_TOKEN`); a source without its key is left out. Bindings in `wrangler.toml`: `ASSETS`, the
-rate limit `LIMIT` (20 fresh lookups per visitor address a minute), `MS_ANCHORS` / `MS_EGRESS` (the page's own measurement endpoints, injected by the shell's Worker at deploy time; this repository's Worker and built CSP carry no probe hosts), and `[vars] SEG` — the address of the lists
-service below. Empty, the exact-address list source is left out (the /24 portrait card is separate; it is built by
-`scripts/build.mjs` from `SEG` or `SEG_API`).
+rate limit `LIMIT` (20 fresh lookups per visitor address a minute), and `MS_ANCHORS` / `MS_EGRESS` (the page's own
+measurement endpoints, injected by the shell's Worker at deploy time; this repository's Worker and built CSP carry no
+probe hosts). `SEG_URL` — the address of the lists service below — is a **secret**: set it in the dashboard with
+`npx wrangler secret put SEG_URL`, not in `wrangler.toml` (a plain `[vars]` entry is erased by a Workers Builds deploy).
+It is `SEG_URL` and not `SEG` because a deployed plain `SEG` variable would block a secret of that name.
+Unset, the exact-address list source is left out. The /24 portrait card and the batch page's range comparison are
+separate: the page reads the service's base address from the shell-injected `<meta name="ms-seg">` at runtime, so
+without it that block stays hidden.
 
 ## The /24 portrait service
 
@@ -135,7 +140,8 @@ as root:
    `systemctl enable --now` the API service and the update timer.
 8. **Verify**: `curl -s https://<your-domain>:<port>/healthz` answers `{"ok":true,"lists":true}`;
    `/v1/seg?ip=95.216.1.2` has `"lists":{…,"at":"…"}`; the update unit's journal shows one line per list. Then build
-   the pages with `SEG_API=https://<your-domain>:<port>` and check that the card appears.
+   them behind a shell that injects `<meta name="ms-seg" content="base=https://<your-domain>:<port>">` (or add that
+   meta to a local copy by hand) and check that the card appears.
 
 To update the binary: download and check the latest release as in step 1, install it next to the old one
 (`install -m 755 ipqs-seg-linux-amd64 /opt/<app>/seg.new`), `mv` it over, restart the API service. The cache is in

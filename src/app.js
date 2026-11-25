@@ -21,6 +21,8 @@ import { pageAuth } from "./auth.mjs";
   // env.MS_ANCHORS, and a self-hosted copy gets none, so its connection cells stay out and nothing is asked.
   const ANCHORS = readAnchors();
   const SERVERS = endpoints("ms-servers"), DNS_BASE = (SERVERS.dns || "").replace(/\/+$/, "");
+  // The /24 portrait service's base address (server/): the shell injects it as ms-seg. Without it the card stays hidden.
+  const SEG = (endpoints("ms-seg").base || "").replace(/\/+$/, "");
   // VERSION 7's anchor values are full /conn URLs; a base URL also works, so accept either.
   const connUrl = u => /\/conn\/?$/.test(u) ? u : u.replace(/\/+$/, "") + "/conn";
   const fpUrl = u => /\/conn\/?$/.test(u) ? u.replace(/\/conn\/?$/, "/fp") : u.replace(/\/+$/, "") + "/fp";
@@ -111,7 +113,7 @@ import { pageAuth } from "./auth.mjs";
   const typeName = ty => t("t_" + ty);
   const riskLv = v => v >= 70 ? "bad" : v >= 35 ? "warn" : "ok";
   // The shell's short-lived token rides on the deployment's own endpoints only; a 401 refreshes it once.
-  const AUTH = pageAuth({ seg: D.seg, dns: DNS_BASE, anchors: [ANCHORS.cn, ANCHORS.intl] });
+  const AUTH = pageAuth({ seg: SEG, dns: DNS_BASE, anchors: [ANCHORS.cn, ANCHORS.intl] });
   const fetchAuthed = (u, init) => AUTH.load(u, init);
   const getJ = (u, ms = 5000) => fetchAuthed(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.json() : Promise.reject());
   const getT = (u, ms = 5000) => fetchAuthed(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.text() : Promise.reject());
@@ -757,14 +759,14 @@ import { pageAuth } from "./auth.mjs";
   /* ---------- the /24 portrait: what the 1ms.dog server finds for the address's /24 ---------- */
   // Asked as soon as the check knows the address (IPv4 only), drawn when the check is in (src/seg.mjs reads it). The
   // server (server/) reads the /24's 256 reverse names and a few public lists, daily; it contacts no address of the
-  // /24. Not in the line check (D.seg empty there too) and absent without the service.
+  // /24. Not in the line check and absent without the service (no ms-seg meta, so SEG is empty).
   // The card takes its place as soon as the check knows the address, as it will look (a grey grid of 256 squares, the
   // checked one ringed, the legend, the lists' credit), and fills in when the answer comes, so nothing around it moves.
   let segP = null, segKey = null;
   // ip null: the card is drawn as it will look, with the grid waiting, for a check whose address is not known yet
   // (a self check learns it from the shell a moment later) — the card is in place before the address is
   function segStart(ip, v) {
-    if (!D.seg || EMBED) { segP = null; segKey = null; $("#sgt").hidden = true; return; }
+    if (!SEG || EMBED) { segP = null; segKey = null; $("#sgt").hidden = true; return; }
     if (ip && v === 6) { segV6({ r: { summary: {} } }); return; }
     const base = ip ? ip.split(".").slice(0, 3).join(".") : "", me = ip ? +ip.split(".")[3] : -1;
     $("#sgV6").hidden = true; $("#sgBody").hidden = false;
@@ -781,7 +783,7 @@ import { pageAuth } from "./auth.mjs";
     if (!ip) { segP = null; segKey = null; return; }
     // the same /24 is asked once: a second call for it (the server's start message after reset already drew it)
     // keeps the request that is in flight
-    if (segKey !== ip) { segKey = ip; segP = getJ(D.seg + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null); }
+    if (segKey !== ip) { segKey = ip; segP = getJ(SEG + "/v1/seg?ip=" + encodeURIComponent(ip), 12000).catch(() => null); }
   }
   // the lists' credit (IP2Proxy LITE and Spamhaus ask for it), with the oldest list's date
   const SG_SRC = [["proxy", "IP2Proxy LITE", "https://lite.ip2location.com"], ["bad", "IPsum", "https://github.com/stamparm/ipsum"],
@@ -849,7 +851,7 @@ import { pageAuth } from "./auth.mjs";
   });
   async function segShow() {
     const box = $("#sgt"), snap = SNAP, p = segP;
-    if (snap && snap.v === 6 && D.seg && !EMBED) { segV6(snap); return; }
+    if (snap && snap.v === 6 && SEG && !EMBED) { segV6(snap); return; }
     $("#sgV6").hidden = true; $("#sgBody").hidden = false;
     if (!snap || !p) { box.hidden = true; return; }
     const j = await p;

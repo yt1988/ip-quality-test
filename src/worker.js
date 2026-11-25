@@ -73,7 +73,7 @@ async function runSource(s, ip, ctx) {
 
 // Why a source is skipped for this address: needs secrets this deployment lacks, IPv4 only, or the visitor's own address only
 function skipOf(s, ip, self, env) {
-  if (s.id === "lists" && !env.SEG) return "off";
+  if (s.id === "lists" && !env.SEG_URL) return "off";
   if (!enabled(s, env)) return "key";
   if (s.browser === "only" && !(s.opt || []).some(k => env[k])) return "browser";   // asked by the page itself
   if (family(ip) === 6 && s.v6 === false) return "v4";

@@ -6,13 +6,16 @@
 import { parseList, rowOf, packRows, unpackRows, sortRows, fitOf, MAX, SEGS, inRange, rangeLabel } from "./batch.mjs";
 import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
 import { pageAuth } from "./auth.mjs";
+import { endpoints } from "./egress.js";
 
 (function () {
   "use strict";
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const D = JSON.parse($("#data").textContent);
   const L = window.L1MS || {}, LANG = D.lang;
-  const AUTH = pageAuth({ seg: D.seg });
+  // The /24 portrait service's base address (server/): the shell injects it as ms-seg. Without it the block stays hidden.
+  const SEG = (endpoints("ms-seg").base || "").replace(/\/+$/, "");
+  const AUTH = pageAuth({ seg: SEG });
   // a count of one picks the key_one sentence where there is one (as on the main page)
   const PLURAL = new Intl.PluralRules(LANG), plural = (k, v) => { const c = v && v.n, r = c != null && k + "_" + PLURAL.select(+c); return r && L[r] != null ? r : k; };
   const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
@@ -203,6 +206,7 @@ import { pageAuth } from "./auth.mjs";
   $("#ask").onsubmit = e => {
     e.preventDefault();
     const P = parseList(box.value);
+    if (!SEG) { P.segs = []; P.segMore = []; P.big = []; }   // no injected service: the /24 block stays hidden
     if (!P.items.length && !P.segs.length) { say(P.big.length ? "b_seg_big" : "b_none", { p: P.big[0], n: SEGS }); box.focus(); return; }
     if (history.replaceState && location.hash) history.replaceState(null, "", SELF + location.search);
     listItems = P.items;
@@ -305,7 +309,7 @@ import { pageAuth } from "./auth.mjs";
   async function segFetch(g, me) {
     for (let tries = 0; tries < 4; tries++) {
       let res = null;
-      try { res = await AUTH.load(D.seg + "/v1/seg?ip=" + encodeURIComponent(g.base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); } catch (e) {}
+      try { res = await AUTH.load(SEG + "/v1/seg?ip=" + encodeURIComponent(g.base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); } catch (e) {}
       if (me !== segRun) return;
       if (res && res.ok) { try { const j = await res.json(); if (j && j.seg) { g.d = readSeg(j, null, null); g.v = viewOf(g); g.st = "ok"; return; } } catch (e) {} break; }
       if (res && res.status === 429) { g.why = "rate"; break; }
@@ -316,6 +320,7 @@ import { pageAuth } from "./auth.mjs";
   }
   let segRun = 0;
   async function segsStart(bases) {
+    if (!SEG) { segs = []; segList(); return; }   // no injected service: hide the /24 block
     const me = ++segRun;
     segs = bases.map(r => ({ ...r, st: "wait", d: null, picked: new Set() }));
     cur = segs.length ? 0 : -1;
