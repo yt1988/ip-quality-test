@@ -10,7 +10,7 @@ import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
 import { reportOf } from "./report.mjs";
 import { endpoints, groupExits, netOf, readAnchors } from "./egress.js";
-import { authFetch, authTargets } from "./auth.mjs";
+import { pageAuth } from "./auth.mjs";
 
 (function () {
   "use strict";
@@ -111,28 +111,8 @@ import { authFetch, authTargets } from "./auth.mjs";
   const typeName = ty => t("t_" + ty);
   const riskLv = v => v >= 70 ? "bad" : v >= 35 ? "warn" : "ok";
   // The shell's short-lived token rides on the deployment's own endpoints only; a 401 refreshes it once.
-  let authMeta = document.querySelector('meta[name="ms-auth"]');
-  const authToken = () => (authMeta && authMeta.getAttribute("content")) || "";
-  const setAuth = t => {
-    if (!authMeta) {
-      authMeta = document.createElement("meta");
-      authMeta.setAttribute("name", "ms-auth");
-      document.head.appendChild(authMeta);
-    }
-    authMeta.setAttribute("content", t);
-  };
-  const AUTH_TARGETS = authTargets({ seg: D.seg, dns: DNS_BASE, anchors: [ANCHORS.cn, ANCHORS.intl] });
-  let authWait = null;
-  const refreshAuth = () => {
-    if (!authWait) {
-      authWait = fetch("/_ms/token", { cache: "no-store", credentials: "same-origin" })
-        .then(r => r.ok ? r.json() : null)
-        .then(j => { const t = (j && j.token) || ""; if (t) setAuth(t); return t; })
-        .catch(() => "").finally(() => { authWait = null; });
-    }
-    return authWait;
-  };
-  const fetchAuthed = (u, init) => authFetch(u, init, { token: authToken, refresh: refreshAuth, targets: AUTH_TARGETS });
+  const AUTH = pageAuth({ seg: D.seg, dns: DNS_BASE, anchors: [ANCHORS.cn, ANCHORS.intl] });
+  const fetchAuthed = (u, init) => AUTH.load(u, init);
   const getJ = (u, ms = 5000) => fetchAuthed(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.json() : Promise.reject());
   const getT = (u, ms = 5000) => fetchAuthed(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.text() : Promise.reject());
   // the tooltip: rows and marks that explain themselves on hover (data-why)

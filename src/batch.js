@@ -5,12 +5,14 @@
 // Strings: window.L1MS (the main page's, plus the b_* ones).
 import { parseList, rowOf, packRows, unpackRows, sortRows, fitOf, MAX, SEGS, inRange, rangeLabel } from "./batch.mjs";
 import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
+import { pageAuth } from "./auth.mjs";
 
 (function () {
   "use strict";
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const D = JSON.parse($("#data").textContent);
   const L = window.L1MS || {}, LANG = D.lang;
+  const AUTH = pageAuth({ seg: D.seg });
   // a count of one picks the key_one sentence where there is one (as on the main page)
   const PLURAL = new Intl.PluralRules(LANG), plural = (k, v) => { const c = v && v.n, r = c != null && k + "_" + PLURAL.select(+c); return r && L[r] != null ? r : k; };
   const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
@@ -303,10 +305,11 @@ import { readSeg, addrLines, ST, verdictOf } from "./seg.mjs";
   async function segFetch(g, me) {
     for (let tries = 0; tries < 4; tries++) {
       let res = null;
-      try { res = await fetch(D.seg + "/v1/seg?ip=" + encodeURIComponent(g.base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); } catch (e) {}
+      try { res = await AUTH.load(D.seg + "/v1/seg?ip=" + encodeURIComponent(g.base), { credentials: "omit", signal: AbortSignal.timeout(15000) }); } catch (e) {}
       if (me !== segRun) return;
       if (res && res.ok) { try { const j = await res.json(); if (j && j.seg) { g.d = readSeg(j, null, null); g.v = viewOf(g); g.st = "ok"; return; } } catch (e) {} break; }
       if (res && res.status === 429) { g.why = "rate"; break; }
+      if (res && res.status === 401) { g.why = "auth"; break; }
       await sleep(2000 * (tries + 1));
     }
     g.st = "err";
