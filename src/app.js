@@ -19,6 +19,9 @@ import { groupExits, netOf, readAnchors } from "./egress.js";
   // The deploy's own measurement endpoints (tool-contract §2): the Worker writes ms-anchors into <head> from
   // env.MS_ANCHORS, and a self-hosted copy gets none, so its connection cells stay out and nothing is asked.
   const ANCHORS = readAnchors();
+  // VERSION 7's anchor values are full /conn URLs; a base URL also works, so accept either.
+  const connUrl = u => /\/conn\/?$/.test(u) ? u : u.replace(/\/+$/, "") + "/conn";
+  const fpUrl = u => /\/conn\/?$/.test(u) ? u.replace(/\/conn\/?$/, "/fp") : u.replace(/\/+$/, "") + "/fp";
   // a count of one picks the key_one sentence where there is one (docs: 1ms-shell translation.md, plurals)
   const PLURAL = new Intl.PluralRules(LANG), plural = (k, v) => { const c = v && (v.n ?? v.ok), r = c != null && k + "_" + PLURAL.select(+c); return r && L[r] != null ? r : k; };
   const t = (k, v) => { let s = L[plural(k, v)] ?? k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
@@ -610,8 +613,8 @@ import { groupExits, netOf, readAnchors } from "./egress.js";
     { id: "claude", group: "ai", run: trace("claude.ai") },
     { id: "radar4", group: "web", run: () => getJ("https://ipv4-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })) },
     { id: "radar6", group: "web", run: () => getJ("https://ipv6-check-perf.radar.cloudflare.com/").then(j => ({ ip: j.ip_address })) },
-    ...(ANCHORS.cn ? [{ id: "anchor-cn", group: "cn", run: () => getJ(ANCHORS.cn.replace(/\/+$/, "") + "/conn").then(j => ({ ip: j.ip })) }] : []),
-    ...(ANCHORS.intl ? [{ id: "anchor-intl", group: "intl", run: () => getJ(ANCHORS.intl.replace(/\/+$/, "") + "/conn").then(j => ({ ip: j.ip })) }] : []),
+    ...(ANCHORS.cn ? [{ id: "anchor-cn", group: "cn", run: () => getJ(connUrl(ANCHORS.cn)).then(j => ({ ip: j.ip })) }] : []),
+    ...(ANCHORS.intl ? [{ id: "anchor-intl", group: "intl", run: () => getJ(connUrl(ANCHORS.intl)).then(j => ({ ip: j.ip })) }] : []),
   ];
   let EX = new Map(), EX_OF = new Map(), exFinished = false, selfIp = null, selfCc = null, exGen = 0;
   const exitFor = ip => EX_OF.get(canon(ip || "")) || null;
@@ -886,7 +889,7 @@ import { groupExits, netOf, readAnchors } from "./egress.js";
     // three names: a resolver pool may send each through another of its addresses
     cnDns = Promise.all(["a", "b", "c"].map(look)).then(() => getJ(`https://api.l.1ms.dog:2053/t/${tok}?wait=1500`, 5000))
       .then(j => Array.isArray(j && j.hits) ? j.hits : null).catch(() => null);
-    cnTcp = ANCHORS.intl ? getJ(ANCHORS.intl.replace(/\/+$/, "") + "/fp", 5000).catch(() => null) : null;
+    cnTcp = ANCHORS.intl ? getJ(fpUrl(ANCHORS.intl), 5000).catch(() => null) : null;
   }
   // the dns server places resolvers with DB-IP, whose licence asks for this line wherever its data shows
   const DBIP = "IP geolocation by DB-IP (https://db-ip.com), CC BY 4.0";
