@@ -12,6 +12,8 @@ Group=1ms-ipqs
 ExecStart=/opt/1ms/ipqs/seg -addr :8444 -cert %d/fullchain.pem -key %d/privkey.pem -data /var/lib/1ms-ipqs
 LoadCredential=fullchain.pem:/etc/letsencrypt/live/seg.1ms.dog/fullchain.pem
 LoadCredential=privkey.pem:/etc/letsencrypt/live/seg.1ms.dog/privkey.pem
+# Optional endpoint auth (unset leaves it off):
+#LoadCredential=ms-auth:/etc/1ms/ipqs-auth
 StateDirectory=1ms-ipqs
 Restart=always
 RestartSec=3

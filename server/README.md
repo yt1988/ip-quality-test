@@ -54,6 +54,13 @@ ranges (0–256). Errors: 400 `bad_ip` (not a public IPv4 address), 429 `rate`, 
 IPv6. `asndrop` matches the origin AS of the covering prefix (Team Cymru), not the address itself. Errors: 400
 `bad_ip` (not a public address), 404 `not_found`, 503 `no_lists` (the index isn't loaded yet).
 
+**Endpoint auth (optional).** Set `MS_AUTH_SECRET` (environment, or a systemd credential named `ms-auth`) and every
+route except `/healthz` requires `Authorization: Bearer v1.<exp>.<nonce>.<hmac>`. The HMAC-SHA256 covers
+`v1|exp|nonce|scope`; this service accepts scope `seg` and the maintainer's service token scope `*`. The signature is
+base64url without padding, and hex or standard base64 is accepted too. Unset, nothing is checked: that is the
+self-hosted default and the switch used to roll the change out one service at a time. A browser preflight
+(`OPTIONS`) is answered without a token and allows the `Authorization` header. The per-/24 rate limit stays as it is.
+
 ## Build and run
 
 ```bash

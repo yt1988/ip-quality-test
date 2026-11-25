@@ -54,7 +54,7 @@ func main() {
 		return
 	}
 
-	s := &Server{data: *data, cache: NewCache(3000, 7*24*time.Hour), limit: NewLimiter(30, time.Hour), slots: make(chan struct{}, 4)}
+	s := &Server{data: *data, auth: authSecret(), cache: NewCache(3000, 7*24*time.Hour), limit: NewLimiter(30, time.Hour), slots: make(chan struct{}, 4)}
 	s.reload()
 	go func() {
 		for range time.Tick(10 * time.Minute) {
@@ -84,6 +84,7 @@ func token() string {
 
 type Server struct {
 	data  string
+	auth  string // empty: no endpoint auth (the self-hosted default and the rollout switch)
 	mu    sync.RWMutex
 	idx   *Index
 	idxAt time.Time
@@ -161,11 +162,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.Set("Access-Control-Allow-Origin", "*")
 	h.Set("Cache-Control", "no-store")
 	h.Set("Content-Type", "application/json")
+	// a browser that sends Authorization or the token query preflights first
+	if r.Method == http.MethodOptions {
+		h.Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		h.Set("Access-Control-Allow-Headers", "Authorization")
+		h.Set("Access-Control-Max-Age", "600")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if r.URL.Path == "/healthz" {
 		s.mu.RLock()
 		ok := s.idx != nil
 		s.mu.RUnlock()
 		json.NewEncoder(w).Encode(map[string]any{"ok": true, "lists": ok})
+		return
+	}
+	if ok, code := s.authorized(r); !ok {
+		deny(w, code)
 		return
 	}
 	if r.URL.Path == "/v1/ip" && r.Method == "GET" {
