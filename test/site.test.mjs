@@ -84,5 +84,5 @@ test("every host the page asks itself is allowed by connect-src", async () => {
   assert.doesNotMatch(csp, /probe\.1ms\.dog|probe\.dog\.1msapp\.com/);
   assert.doesNotMatch(csp, /frame-ancestors/, "a meta CSP ignores frame-ancestors; _headers keeps it");
   const headers = await readFile(new URL("../public/_headers", import.meta.url), "utf8");
-  assert.match(headers, /Content-Security-Policy: frame-ancestors 'none'/);
+  assert.match(headers, /Content-Security-Policy: [^\n]*frame-ancestors 'none'/);
 });
