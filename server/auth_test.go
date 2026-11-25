@@ -117,6 +117,22 @@ func TestAuthHexMAC(t *testing.T) {
 	}
 }
 
+func TestAuth401HasCORS(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/v1/seg?ip=1.2.3.4", nil)
+	r.Header.Set("Origin", "https://ipqs.1ms.dog")
+	w := httptest.NewRecorder()
+	(&Server{auth: "s3cret"}).ServeHTTP(w, r)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status: %d", w.Code)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Origin"); got != "https://ipqs.1ms.dog" {
+		t.Fatalf("ACAO = %q", got)
+	}
+	if !strings.Contains(w.Header().Get("Vary"), "Origin") {
+		t.Fatalf("Vary = %q", w.Header().Get("Vary"))
+	}
+}
+
 func TestAuthHealthzExempt(t *testing.T) {
 	w := get(t, &Server{auth: "s3cret"}, "/healthz", "")
 	if w.Code != http.StatusOK {

@@ -159,7 +159,13 @@ func segOf(s string) (uint32, string, bool) {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h := w.Header()
-	h.Set("Access-Control-Allow-Origin", "*")
+	// a page that sends the token must be able to read a 401 and go refresh it: echo the origin (and vary on it)
+	if origin := r.Header.Get("Origin"); origin != "" {
+		h.Set("Access-Control-Allow-Origin", origin)
+		h.Add("Vary", "Origin")
+	} else {
+		h.Set("Access-Control-Allow-Origin", "*")
+	}
 	h.Set("Cache-Control", "no-store")
 	h.Set("Content-Type", "application/json")
 	// a browser that sends Authorization or the token query preflights first
