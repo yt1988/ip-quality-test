@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { VERSION, groupExits, readAnchors } from "../src/egress.js";
+import { VERSION, endpoints, groupExits, readAnchors } from "../src/egress.js";
 
 test("the vendored egress component is the contract's version", () => {
   assert.equal(VERSION, "7");
@@ -30,4 +30,12 @@ test("readAnchors: the Worker's ms-anchors meta is read as two base URLs", () =>
       : null,
   };
   assert.deepEqual(readAnchors(doc), { cn: "https://cn.example", intl: "https://intl.example" });
+});
+
+test("endpoints: ms-servers without dns is empty, so the DNS-leak cell is unavailable", () => {
+  assert.deepEqual(endpoints("ms-servers", { querySelector: () => null }), {});
+  const doc = { querySelector: sel => sel === 'meta[name="ms-servers"]'
+    ? { getAttribute: () => "reach=https://reach.example;dns=https://dns.example:2053" }
+    : null };
+  assert.equal(endpoints("ms-servers", doc).dns, "https://dns.example:2053");
 });

@@ -9,7 +9,7 @@ import { pack, unpackResults, encode, decode, SHARE_PATH, CF_OF } from "./share.
 import { readDns, readConn } from "./conn.mjs";
 import { readSeg, addrLines } from "./seg.mjs";
 import { reportOf } from "./report.mjs";
-import { groupExits, netOf, readAnchors } from "./egress.js";
+import { endpoints, groupExits, netOf, readAnchors } from "./egress.js";
 
 (function () {
   "use strict";
@@ -19,6 +19,7 @@ import { groupExits, netOf, readAnchors } from "./egress.js";
   // The deploy's own measurement endpoints (tool-contract §2): the Worker writes ms-anchors into <head> from
   // env.MS_ANCHORS, and a self-hosted copy gets none, so its connection cells stay out and nothing is asked.
   const ANCHORS = readAnchors();
+  const SERVERS = endpoints("ms-servers"), DNS_BASE = (SERVERS.dns || "").replace(/\/+$/, "");
   // VERSION 7's anchor values are full /conn URLs; a base URL also works, so accept either.
   const connUrl = u => /\/conn\/?$/.test(u) ? u : u.replace(/\/+$/, "") + "/conn";
   const fpUrl = u => /\/conn\/?$/.test(u) ? u.replace(/\/conn\/?$/, "/fp") : u.replace(/\/+$/, "") + "/fp";
@@ -883,14 +884,22 @@ import { groupExits, netOf, readAnchors } from "./egress.js";
   const CN_ON = !EMBED && !SHARE_CODE && !!(ANCHORS.cn || ANCHORS.intl);
   $("#cnxGo").onclick = () => { input.value = ""; run(null, true); };
   let cnDns = null, cnTcp = null;
+  // the DNS half is optional: the shell's ms-servers.dns names the result API, and the random names live on its zone
+  const DNS_U = (() => { try { return DNS_BASE ? new URL(DNS_BASE) : null; } catch (e) { return null; } })();
+  const dnsZone = DNS_U ? DNS_U.hostname.replace(/^api\./, "") : "", dnsPort = DNS_U ? DNS_U.port || "2053" : "";
   if (CN_ON) {
     const tok = Array.from(crypto.getRandomValues(new Uint8Array(20)), b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
-    const look = tag => getJ(`https://${tok}-${tag}.l.1ms.dog:2053/`, 5000).catch(() => null);
-    // three names: a resolver pool may send each through another of its addresses
-    cnDns = Promise.all(["a", "b", "c"].map(look)).then(() => getJ(`https://api.l.1ms.dog:2053/t/${tok}?wait=1500`, 5000))
-      .then(j => Array.isArray(j && j.hits) ? j.hits : null).catch(() => null);
+    if (dnsZone) {
+      const look = tag => getJ(`https://${tok}-${tag}.${dnsZone}:${dnsPort}/`, 5000).catch(() => null);
+      // three names: a resolver pool may send each through another of its addresses
+      cnDns = Promise.all(["a", "b", "c"].map(look)).then(() => getJ(`${DNS_BASE}/t/${tok}?wait=1500`, 5000))
+        .then(j => Array.isArray(j && j.hits) ? j.hits : null).catch(() => null);
+    }
     cnTcp = ANCHORS.intl ? getJ(fpUrl(ANCHORS.intl), 5000).catch(() => null) : null;
   }
+  // without ms-servers.dns the DNS-leak cell is unavailable, not "failed": hide it and ask nothing
+  const dnsCell = document.querySelector('#cnt .fc[data-f="dns"]');
+  if (dnsCell) dnsCell.hidden = !dnsZone;
   // the dns server places resolvers with DB-IP, whose licence asks for this line wherever its data shows
   const DBIP = "IP geolocation by DB-IP (https://db-ip.com), CC BY 4.0";
   const SYS = { windows: "Windows", apple: "macOS / iOS", linux: "Linux / Android" };
