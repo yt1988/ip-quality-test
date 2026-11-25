@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +16,7 @@ import (
 func makeToken(secret, scope string, exp int64, nonce string) string {
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(fmt.Sprintf("v1|%d|%s|%s", exp, nonce, scope)))
-	return fmt.Sprintf("v1.%d.%s.%s", exp, nonce, base64.RawURLEncoding.EncodeToString(h.Sum(nil)))
+	return fmt.Sprintf("v1.%d.%s.%s.%s", exp, nonce, scope, base64.RawURLEncoding.EncodeToString(h.Sum(nil)))
 }
 
 func get(t *testing.T, s *Server, path, auth string) *httptest.ResponseRecorder {
@@ -80,6 +81,39 @@ func TestAuthScopeListWithoutSeg(t *testing.T) {
 	w := get(t, s, "/v1/seg?ip=1.2.3.4", "Bearer "+tok)
 	if w.Code != http.StatusUnauthorized || !strings.Contains(w.Body.String(), `"bad_token"`) {
 		t.Fatalf("scope list without seg: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthOldFourPartToken(t *testing.T) {
+	s := &Server{auth: "s3cret"}
+	tok := makeToken("s3cret", "seg", time.Now().Add(time.Minute).Unix(), "n5")
+	old := strings.Join(strings.Split(tok, ".")[:3], ".") + "." + strings.Split(tok, ".")[4]
+	w := get(t, s, "/v1/seg?ip=1.2.3.4", "Bearer "+old)
+	if w.Code != http.StatusUnauthorized || !strings.Contains(w.Body.String(), `"bad_token"`) {
+		t.Fatalf("four-part token: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthTamperedScope(t *testing.T) {
+	s := &Server{auth: "s3cret"}
+	tok := makeToken("s3cret", "dns", time.Now().Add(time.Minute).Unix(), "n6")
+	parts := strings.Split(tok, ".")
+	parts[3] = "seg" // signature still covers dns, so this must fail
+	w := get(t, s, "/v1/seg?ip=1.2.3.4", "Bearer "+strings.Join(parts, "."))
+	if w.Code != http.StatusUnauthorized || !strings.Contains(w.Body.String(), `"bad_token"`) {
+		t.Fatalf("tampered scope: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthHexMAC(t *testing.T) {
+	s := &Server{auth: "s3cret"}
+	exp := time.Now().Add(time.Minute).Unix()
+	h := hmac.New(sha256.New, []byte("s3cret"))
+	h.Write([]byte(fmt.Sprintf("v1|%d|n7|seg", exp)))
+	tok := fmt.Sprintf("v1.%d.n7.seg.%s", exp, hex.EncodeToString(h.Sum(nil)))
+	w := get(t, s, "/v1/seg?ip=not-an-ip", "Bearer "+tok)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("hex MAC: %d %s", w.Code, w.Body.String())
 	}
 }
 
