@@ -1166,7 +1166,10 @@ import { pageAuth } from "./auth.mjs";
   }
   $("#shareBtn").onclick = async () => {
     if (!SNAP) return;
-    const snap = SNAP, { share } = await import("/assets/share/share.js?v=11");
+    const snap = SNAP;
+    const shareMod = await import("/assets/share/share.js?v=11").catch(() => null);
+    if (!shareMod) { window.msShareDown && window.msShareDown(); return; }
+    const { share } = shareMod;
     // the link is packed (deflated) ahead, both ways, as the dialog asks for it without waiting
     const can = !SHARED || !!SHARED.i, links = { false: await shareLink(false), true: can ? await shareLink(true) : "" };
     if (snap !== SNAP) return;

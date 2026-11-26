@@ -439,7 +439,9 @@ import { endpoints } from "./egress.js";
   }
   $("#shareBtn").onclick = async () => {
     if (!okRows().length && !okSegs().length) return;
-    const { share } = await import("/assets/share/share.js?v=11");
+    const shareMod = await import("/assets/share/share.js?v=11").catch(() => null);
+    if (!shareMod) { window.msShareDown && window.msShareDown(); return; }
+    const { share } = shareMod;
     const S = okSegs().map(g => ({ base: g.base, lo: g.lo, bits: g.bits, sts: g.d.cells.map(c => c.st), kind: g.d.kind.kind, prefix: g.d.prefix && !g.d.prefix.none ? g.d.prefix : null }));
     const link = withIp => location.origin + SELF + "#b=" + packRows(rows, { at: at || new Date().toISOString(), withIp, segs: S });
     const links = { false: link(false), true: link(true) };
