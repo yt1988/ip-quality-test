@@ -118,16 +118,25 @@ import { pageAuth } from "./auth.mjs";
   const getJ = (u, ms = 5000) => fetchAuthed(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.json() : Promise.reject());
   const getT = (u, ms = 5000) => fetchAuthed(u, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(ms) }).then(r => r.ok ? r.text() : Promise.reject());
   // the tooltip: rows and marks that explain themselves on hover (data-why)
-  let tipEl;
+  // The bubble is in the page's HTML (div.tip.pre, holding text) and is painted with the first frame, shrunk to
+  // nothing. The browser records a text at its first paint and never again, so a first paint at zero size keeps it
+  // out of Chromium's largest paint; built here on demand it first paints when shown, at full size, and can outgrow
+  // the h1 (#146 一.5). Scripts run after the first frame, so building it here would also race a pointer already on
+  // a row. Shown later, it is only a repaint of a recorded text.
+  const tipEl = document.getElementById("tip");
+  const hideTip = () => { tipEl.classList.remove("on"); tipEl.setAttribute("aria-hidden", "true"); };
+  addEventListener("scroll", hideTip, { passive: true });
   function showTip(el) {
-    if (!tipEl) { tipEl = document.body.appendChild(Object.assign(document.createElement("div"), { className: "tip" })); addEventListener("scroll", () => tipEl.classList.remove("on"), { passive: true }); }
     tipEl.textContent = el.dataset.why;
+    tipEl.classList.remove("pre");
+    tipEl.removeAttribute("aria-hidden");
     const b = el.getBoundingClientRect(), w = tipEl.offsetWidth;
     tipEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left + b.width / 2 - w / 2)) + "px";
     tipEl.style.top = b.bottom + 6 + "px"; tipEl.classList.add("on");
   }
-  document.addEventListener("mouseover", e => { const el = e.target.closest && e.target.closest("[data-why]"); if (el) showTip(el); else if (tipEl) tipEl.classList.remove("on"); });
+  document.addEventListener("mouseover", e => { const el = e.target.closest && e.target.closest("[data-why]"); if (el) showTip(el); else hideTip(); });
   document.addEventListener("focusin", e => { const el = e.target.closest && e.target.closest("[data-why]"); if (el) showTip(el); });
+  document.addEventListener("focusout", hideTip);
 
   /* ---------- the source rows (second card), filled as answers arrive ---------- */
   const PR = Object.fromEntries($$(".pr[data-s]").map(r => [r.dataset.s, r]));
