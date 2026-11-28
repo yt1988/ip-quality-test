@@ -100,8 +100,10 @@ var (
 	dynamicWords = words("dynamic dyn dhcp pool pools ppp pppoe adsl dsl xdsl vdsl cable catv fttx ftth fttb fiber fibre broadband bb res resi residential cust customer customers home user users client clients subscriber sub mobile cpe wifi lte wireless gprs 3g 4g 5g dial dialup nat cgnat")
 	staticWords  = words("static fixed biz business corp corporate enterprise")
 	mailWords    = words("mail smtp mx mta email")
-	// domains whose reverse names are customers' servers, whatever words they use (Hetzner calls them "static")
-	hostingDomains = words("amazonaws.com googleusercontent.com your-server.de vultrusercontent.com vultr.com linode.com linodeusercontent.com ip.linodeusercontent.com ovh.net ovh.ca ovh.us contaboserver.net contabo.host choopa.net leaseweb.net leaseweb.com hostwindsdns.com digitaloceanspaces.com azure.com cloudapp.net akamaitechnologies.com bc.googleusercontent.com hetzner.com hetzner.cloud scaleway.com online.net poneytelecom.eu kimsufi.com ionos.com 1and1.com upcloud.host alicloudecs.com aliyun.com tencentcloud.com myqcloud.com oraclecloud.com secureserver.net servers.com psychz.net quadranet.com colocrossing.com as9009.net m247.com m247.ro datapacket.com cdn77.com zenlayer.net")
+	// domains whose reverse names are customers' servers, whatever words they use (Hetzner calls them "static").
+	// globalcapacity.com is GTT's wholesale/business space, named h-<a>-<b>-<c>-<d>.<city>.<state>. for every address:
+	// the bare template says nothing, so without the domain such a /24 read as "other" (#149, reported as home).
+	hostingDomains = words("amazonaws.com googleusercontent.com your-server.de vultrusercontent.com vultr.com linode.com linodeusercontent.com ip.linodeusercontent.com ovh.net ovh.ca ovh.us contaboserver.net contabo.host choopa.net leaseweb.net leaseweb.com hostwindsdns.com digitaloceanspaces.com azure.com cloudapp.net akamaitechnologies.com bc.googleusercontent.com hetzner.com hetzner.cloud scaleway.com online.net poneytelecom.eu kimsufi.com ionos.com 1and1.com upcloud.host alicloudecs.com aliyun.com tencentcloud.com myqcloud.com oraclecloud.com secureserver.net servers.com psychz.net quadranet.com colocrossing.com as9009.net m247.com m247.ro datapacket.com cdn77.com zenlayer.net globalcapacity.com")
 )
 
 func words(s string) map[string]bool {

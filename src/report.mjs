@@ -31,7 +31,7 @@ export function reportOf({ snap, lang, t, country }) {
   const nil = t("q_nodata");
   // the readings below are the page's own words for what it drew, so the lines read as the visitor's screen does
   const geo = !ccs.length ? nil : ccs.length === 1 ? country(ccs[0].cc) : ccs.map(c => country(c.cc)).join(t("v_join"));
-  const type = s.type ? t("t_" + s.type) : nil;
+  const type = s.type ? t("t_" + s.type) + (s.typeInferred ? " " + t("fs_guess") : "") : nil;
   const native = s.native == null ? nil : t(s.native ? "fs_native" : "fs_broadcast") + (s.regCc ? " · " + country(s.regCc) : "");
   const flagged = !!((F.vpn && F.vpn.yes) || (F.proxy && F.proxy.yes));
   const anon = !(F.vpn && F.vpn.of) && !(F.proxy && F.proxy.of) ? nil

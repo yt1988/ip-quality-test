@@ -457,6 +457,9 @@ import { pageAuth } from "./auth.mjs";
     const F = s.flags, tv = RES.filter(x => x.data.type), geoN = s.ccs.reduce((a, c) => a + c.by.length, 0);
     // a CDN edge is shared infrastructure, not a rented host: it says so, and takes the hosting cell's warning off
     if (s.edge) finding("type", "info", `${esc(t("t_edge"))} <span class="m">${s.cloud ? esc(CLOUD[s.cloud] || s.cloud) : ""}</span>`, t("n_edge", { p: s.cloud || "" }));
+    // a type a source asserts, with how many of those that typed said it; or the "not hosting" fallback, labelled a guess
+    else if (s.typeInferred) finding("type", "info", `${esc(typeName(s.type))} <span class="m">${esc(t("fs_guess"))}</span>`,
+      t("n_type_guess", { n: s.typeVotes }));
     else if (s.type) finding("type", s.type === "hosting" ? "warn" : s.type === "residential" || s.type === "mobile" ? "ok" : "info",
       `${esc(typeName(s.type))} <span class="m">${tv.filter(x => x.data.type === s.type).length}/${tv.length}</span>`, t("n_type_" + s.type) + (s.type === "mobile" ? " " + t("n_cgnat") : ""));
     else finding("type", "none", nodata());
@@ -866,7 +869,7 @@ import { pageAuth } from "./auth.mjs";
     const j = await p;
     if (snap !== SNAP || p !== segP) return;
     if (!j || !j.rdns) { box.hidden = true; return; }
-    const r = readSeg(j, snap.r.summary.type, snap.ip), L = j.lists || {};
+    const r = readSeg(j, snap.r.summary.type, snap.ip, snap.r.summary.typeInferred), L = j.lists || {};
     $("#sgN").textContent = `${r.base}.0 – ${r.base}.255`;
     // the verdict: how many neighbours the lists name; then the /24's kind, prefix and main domain on one line
     const vd = $("#sgVerdict"), v = r.verdict;

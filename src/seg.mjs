@@ -42,7 +42,7 @@ const KIND = { h: "hosting", d: "dynamic", s: "static", a: "anon", m: "mail", o:
 // address. → { base, kind: {kind, lv}, sum: [[key, params]...] (the kind and anything odd about the names), vs,
 // prefix: {prefix, asns} | {none: true} | null, domains: [{d, n}] (the most common three), cells: [{ip, name, kind,
 // flags, score, st, me}], count: {status: n}, lists: which lists were read }
-export function readSeg(j, type, ip) {
+export function readSeg(j, type, ip, typeInferred) {
   const r = j.rdns, L = j.lists || {}, base = j.seg.replace(/\.0\/24$/, "");
   const k = kindOf(r, L.dc || 0);
   const sum = [k.byList ? ["sg_kw_dc", {}] : ["sg_kw_" + k.kind, { n: k.n, named: r.named }]];
@@ -51,8 +51,10 @@ export function readSeg(j, type, ip) {
   const px = j.prefix;
   const prefix = px && px.prefix ? { prefix: px.prefix, asns: px.asns || [] } : px ? { none: true } : null;
   const domains = r.dead ? [] : (r.domains || []).slice(0, 3);
-  // the IP's databases call it a home or mobile line, but the /24 around it is servers
-  const vs = (type === "residential" || type === "mobile") && k.kind === "hosting" ? ["sg_kw_vs", { type }] : null;
+  // the IP's databases call it a home or mobile line, but the /24 around it is servers; no database said "home" and the
+  // type is only the "not hosting" fallback, so the /24 is the better evidence and the sentence says so (#149)
+  const vs = (type === "residential" || type === "mobile") && k.kind === "hosting"
+    ? [typeInferred ? "sg_kw_vs_guess" : "sg_kw_vs", { type }] : null;
 
   const names = j.names || [], kinds = j.kinds || "", flags = j.flags || [], score = j.score || [];
   const count = Object.fromEntries(ST.map(s => [s, 0]));

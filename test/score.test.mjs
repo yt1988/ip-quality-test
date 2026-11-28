@@ -21,6 +21,27 @@ test("a clean home connection gets an A", () => {
   assert.equal(a.uses.mail.lv, "warn");          // home connections are refused by mail servers
 });
 
+test("a type no source asserts is a guess, not a finding (#149)", () => {
+  // the reported address: ip-api and IPQuery only never said "hosting"; no source said "home" (69.3.236.5, a GTT block)
+  const a = assess([
+    r("ipapi", { cc: "US", city: "Los Angeles", asn: 2914, proxy: false, mobile: false }),
+    r("ipquery", { cc: "US", asn: 2914, proxy: false, vpn: false, tor: false, risk: 0 }),
+    r("rdap", { regCc: "US", rir: "ARIN" }),
+    r("tor", { tor: false }),
+  ], bl(0));
+  assert.equal(a.summary.type, "residential");
+  assert.equal(a.summary.typeInferred, true);
+  assert.equal(a.summary.typeVotes, 2);
+  assert.equal(a.summary.hostShare, 0);
+  const n = a.notes.find(x => x.k === "n_type_guess");
+  assert.ok(n && n.lv === "info" && n.p.n === 2, JSON.stringify(a.notes));
+  assert.ok(!a.notes.some(x => x.k === "n_type_residential"));
+  // asserted by a source: still a finding, not a guess
+  const b = assess([r("proxycheck", { cc: "DE", type: "residential", risk: 0 }), r("ipapi", { cc: "DE" })], bl(0));
+  assert.equal(b.summary.type, "residential"); assert.equal(b.summary.typeInferred, false);
+  assert.ok(b.notes.some(x => x.k === "n_type_residential"));
+});
+
 test("a clean data-center address tops out at B", () => {
   const a = assess([
     r("ipapi", { cc: "US", type: "hosting", proxy: false, host: "x.example" }),

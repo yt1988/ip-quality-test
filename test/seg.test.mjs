@@ -55,6 +55,10 @@ test("readSeg: the summary says the kind, the names, the prefix; a home IP in a 
   assert.deepEqual(r.prefix, { prefix: "95.216.0.0/16", asns: [24940] }); assert.equal(r.domains[0].d, "your-server.de");
   const home = readSeg(hetzner, "residential", "95.216.1.2");
   assert.equal(home.kind.lv, "bad"); assert.equal(home.vs[0], "sg_kw_vs");
+  // no database asserted "home" (the residential fallback): the /24 is the better evidence, and the line says so (#149)
+  const guess = readSeg(hetzner, "residential", "95.216.1.2", true);
+  assert.equal(guess.vs[0], "sg_kw_vs_guess"); assert.deepEqual(guess.vs[1], { type: "residential" });
+  assert.equal(readSeg(hetzner, "hosting", "95.216.1.2", true).vs, null);
 });
 
 test("readSeg: dead reverse servers, a partial sweep, no prefix, a list never fetched", () => {

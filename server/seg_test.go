@@ -18,6 +18,7 @@ func TestKindOf(t *testing.T) {
 		"ppp-118-2-3-4.dynamic.ocn.ne.jp":                    "dynamic",
 		"123.125.119.144.static.bjtelecom.net":               "static",
 		"c-73-1-2-3.hsd1.ca.comcast.net":                     "other",
+		"h-69-3-236-5.atln.ga.globalcapacity.com":            "hosting", // GTT wholesale space; the template says nothing (#149)
 		"pool-71-1-2-3.nycmny.fios.verizon.net":              "dynamic",
 		"vpn-node-17.example.com":                            "anon",
 		"tor-exit-3.example.org":                             "anon",

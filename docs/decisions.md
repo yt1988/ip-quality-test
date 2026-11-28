@@ -388,3 +388,26 @@ exit (an ASN, else a /16 or /64) and every probe that saw it is kept, and the an
 Only discovery moved. `src/score.mjs` still answers "does this address look like a proxy" from third-party
 reputation, which is a different question from "is this visitor's route a proxy", and the page adds no
 direct/proxy label.
+
+## A network type nobody stated is a guess, not a finding (2026-11-29)
+
+A visitor reported 69.3.236.5, a GTT/Global Capacity block, shown as "home broadband" with 100 points and an A. The
+type there came from the residential fallback alone: ip-api and IPQuery only did not list the address as hosting,
+which is what a business or data-centre line no database flags looks like too, and the page put "Home broadband" in
+the findings and "looks like an ordinary home connection" in the verdict.
+
+The fallback stays (the keyless sources never assert "home"; without it no home address would have a type), but it is
+now marked: `summary.typeInferred`, the finding reads "Home broadband (guess)" in the info colour with a sentence
+saying what it rests on, the note is `n_type_guess`, and the report dialog carries the same marker. A type a source
+does state is still the green finding it was. The A description no longer mentions home connections — the grade is
+about reputation, not the network type.
+
+The /24 portrait is the counter-evidence that already existed (`sg_kw_vs`) and did not fire: the address's reverse
+names are all `h-69-3-236-N.<city>.<state>.globalcapacity.com`, and `server/rdns.go` read the domain as `other`, so
+the /24 came out "mixed". `globalcapacity.com` is now in `hostingDomains` (GTT's wholesale space, no consumer
+subscribers), so the card says the range is a server range and its `vs` line, now `sg_kw_vs_guess`, says the type was
+a guess the range contradicts.
+
+The score does not move: no source asserts hosting, and decisions are scored from findings. Making a /24's names
+deduct the 20 would need that fact in `/api/check` too — `/v1/ip` answers from the lists index and does not sweep
+reverse DNS, so the page would score differently from the API. That is a scoring-policy decision, not this fix.

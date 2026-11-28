@@ -83,6 +83,10 @@ export function assess(results, dnsbl = []) {
   let type = tv.size ? top(tv)[0] : null;
   if (type === "hosting" && hostShare < 0.5) type = (tv.get("mobile") ? "mobile" : null);
   if (!type && typeVotes) type = "residential";
+  // a type some source asserts is a finding; the residential fallback is a guess: no source said "home", some only did
+  // not say "hosting". A business or data-centre line no source flags reads exactly like that (#149: a GTT block shown
+  // as home broadband), so it is marked and worded as a guess, never as a green finding.
+  const typeInferred = type === "residential" && !tv.get("residential");
 
   // yes/no flags: how many of the sources that say anything say yes
   const flag = k => { const s = results.filter(r => typeof r.data[k] === "boolean"); const y = s.filter(r => r.data[k]); return { yes: y.length, of: s.length, by: y.map(r => r.id) }; };
@@ -147,7 +151,8 @@ export function assess(results, dnsbl = []) {
   if (torListed || rate(flags.tor) >= 0.5) note("bad", "n_tor");
   else if (flags.vpn.yes || flags.proxy.yes) note(rateMulti(flags.vpn) + rateMulti(flags.proxy) >= 0.5 ? "bad" : "warn", "n_anon", { n: new Set([...flags.vpn.by, ...flags.proxy.by]).size });
   else if (typeVotes && !flags.relay.yes) note("good", "n_noanon");
-  if (type) note(type === "hosting" ? "warn" : type === "residential" || type === "mobile" ? "good" : "info", "n_type_" + type);
+  if (typeInferred) note("info", "n_type_guess", { n: typeVotes });
+  else if (type) note(type === "hosting" ? "warn" : type === "residential" || type === "mobile" ? "good" : "info", "n_type_" + type);
   if (type === "mobile") note("info", "n_cgnat");
   if (native === true) note("good", "n_native", { reg: regCc });
   else if (native === false) note("warn", regFrom === "rir" ? "n_broadcast" : "n_broadcast_as", { reg: regCc, cc });
@@ -207,11 +212,14 @@ export function assess(results, dnsbl = []) {
   if (torListed || (risk !== null && risk >= 70) || flags.abuser.yes >= 2) set("account", "bad", "u_account_bad");
   else if ((risk !== null && risk >= 35) || anyFlag || hosting || flags.abuser.yes) set("account", "warn", "u_account_some");
   else set("account", "good", "u_account_ok");
-  // sending mail directly: blocklists, and home connections are refused by policy
+  // sending mail directly: blocklists, and home connections are refused by policy. When the type is only a guess, the
+  // address's own reverse-DNS facts say why first; the home rule still answers when they are clean.
+  const home = type === "residential" || type === "mobile";
   if (bl.length) set("mail", "bad", "u_mail_listed");
-  else if (type === "residential" || type === "mobile") set("mail", "warn", "u_mail_home");
+  else if (home && !typeInferred) set("mail", "warn", "u_mail_home");
   else if (!host) set("mail", "warn", "u_mail_rdns");
   else if (ptr.fcrdns === false) set("mail", "warn", "u_mail_fcrdns");
+  else if (home) set("mail", "warn", "u_mail_home");
   else set("mail", "good", "u_mail_ok");
 
   // ---- how much the verdict rests on: the sources that answered, the ones that said anything about risk, and
@@ -224,7 +232,7 @@ export function assess(results, dnsbl = []) {
 
   return {
     score, grade, parts, notes, uses, confidence,
-    summary: { cc, city, cities, ccs, asn, org, host, type, hostShare: Math.round(hostShare * 100) / 100, regCc, regFrom, native, risk, risks, flags, torListed,
+    summary: { cc, city, cities, ccs, asn, org, host, type, typeInferred, typeVotes, hostShare: Math.round(hostShare * 100) / 100, regCc, regFrom, native, risk, risks, flags, torListed,
       ports, tags, regName: by.rdap?.regName || null, regDate: by.rdap?.regDate || null, rir: by.rdap?.rir || by.ipguide?.rir || by.ipapiis?.rir || null,
       riskSources, dnsbl: { listed: bl.length, checked: blChecked, weighted: Math.round(blW * 10) / 10 }, cap: cap ? cap.k : null,
       lists: { bad: listBad, drop: listDrop, asndrop: listAsn, relay: listRelay, torrelay: listTorRelay, proxy: L.proxy === true, vpn: L.vpn === true,
